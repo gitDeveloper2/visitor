@@ -1,0 +1,12 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/tactical-snow-429309-u8/manyutils', '.']
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'gcr.io/tactical-snow-429309-u8/manyutils']
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'gcloud'
+  args: ['run', 'deploy', 'manyutils', '--image', 'gcr.io/tactical-snow-429309-u8/manyutils', '--platform', 'managed', '--region', 'us-central1', '--port', '3000', '--allow-unauthenticated']
+images:
+- 'gcr.io/tactical-snow-429309-u8/manyutils'
+options:
+  logging: CLOUD_LOGGING_ONLY

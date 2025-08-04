@@ -1,0 +1,25 @@
+:root{
+    background-color: aliceblue;
+}
+.flex-container{
+    background-color: rgb(235, 231, 231);
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    justify-content: flex-end;
+    /* justify-content: flex-end; */
+    height: 200px;
+    align-items: flex-end;
+    
+}
+.flex-child{
+    background-color: aquamarine;
+    margin: 8px;
+    flex: 0 0 600px;
+
+    
+
+}
+.start{
+    align-self: stretch                                                                                                                     ;
+}                                                                                           
