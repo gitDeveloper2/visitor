@@ -46,19 +46,10 @@ export default function SubmitAppCTA() {
 
       <Button
         component={Link}
-        href="/submit"
+        href="/launch/submit"
         variant="contained"
-        sx={{
-          borderRadius: "999px",
-          px: 3,
-          py: 1.2,
-          fontWeight: 600,
-          color: theme.palette.primary.contrastText,
-          bgcolor: theme.palette.primary.main,
-          ":hover": {
-            bgcolor: theme.palette.primary.dark,
-          },
-        }}
+        sx={commonStyles.gradientButton(theme)}
+       
       >
         Submit Your App
       </Button>

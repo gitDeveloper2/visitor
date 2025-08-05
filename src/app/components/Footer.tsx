@@ -28,7 +28,7 @@ const Footer = () => {
 
   const footerLinks = {
     product: [
-      { name: "Tools", href: "#tools", icon: Code },
+      { name: "Tools", href: "/launch", icon: Code },
       { name: "Blog", href: "/blogs", icon: FileText },
       { name: "About", href: "/aboutus", icon: Users },
       { name: "Contact", href: "/contactus", icon: Mail },
