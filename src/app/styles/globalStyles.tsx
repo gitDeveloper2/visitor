@@ -5,7 +5,7 @@ import { useTheme , styled} from  '@mui/material/styles';
 import { Global, css } from '@emotion/react';
 import { Theme } from '@mui/material/styles';
 import React from 'react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+// import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { solarizedlight, solarizeddark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import customTheme from './customSyntaxTheme';
 
@@ -20,6 +20,7 @@ const GlobalStyles: React.FC = () => {
     --color-scrollbar: #c1c1c1;
     --color-scrollbar-hover: #a1a1a1;
   }
+   
 
   ::-webkit-scrollbar {
     width: 6px;
@@ -340,9 +341,9 @@ export const CodeBox: React.FC<CodeBoxProps> = ({ children, language = 'javascri
 
   return (
     <CodeContainer>
-      <SyntaxHighlighter language={language} style={style}>
+      {/* <SyntaxHighlighter language={language} style={style}> */}
         {children}
-      </SyntaxHighlighter>
+      {/* </SyntaxHighlighter> */}
     </CodeContainer>
   );
 };
