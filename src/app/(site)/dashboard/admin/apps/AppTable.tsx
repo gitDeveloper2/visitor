@@ -7,38 +7,24 @@ import {
   Chip,
   Stack,
   Typography,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { useEffect, useState } from "react";
 
-// Dummy data — replace this with actual data later
-const rows = [
-  {
-    id: 1,
-    name: "My Cool App",
-    url: "https://coolapp.com",
-    status: "pending",
-    submitter: "johndoe@example.com",
-    date: "2025-08-01",
-  },
-  {
-    id: 2,
-    name: "ProductiveTool",
-    url: "https://productive.io",
-    status: "approved",
-    submitter: "alice@example.com",
-    date: "2025-07-30",
-  },
-  {
-    id: 3,
-    name: "Time Tracker",
-    url: "https://track.io",
-    status: "rejected",
-    submitter: "bob@example.com",
-    date: "2025-07-29",
-  },
-];
+interface AppItem {
+  _id: string;
+  name: string;
+  description: string;
+  authorName: string;
+  authorEmail: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  updatedAt: string;
+}
 
-// Helper to display status chip
+// Status chips
 const getStatusChip = (status: string) => {
   const colors = {
     pending: "warning",
@@ -56,62 +42,174 @@ const getStatusChip = (status: string) => {
   );
 };
 
-const columns: GridColDef[] = [
-  {
-    field: "name",
-    headerName: "App Name",
-    flex: 1,
-    renderCell: (params) => (
-      <Stack>
-        <Typography fontWeight={600}>{params.row.name}</Typography>
-        <Typography variant="caption" color="text.secondary">
-          {params.row.url}
-        </Typography>
-      </Stack>
-    ),
-  },
-  {
-    field: "status",
-    headerName: "Status",
-    width: 120,
-    renderCell: (params) => getStatusChip(params.row.status),
-  },
-  {
-    field: "submitter",
-    headerName: "Submitter",
-    width: 220,
-  },
-  {
-    field: "date",
-    headerName: "Submitted On",
-    width: 140,
-  },
-  {
-    field: "actions",
-    headerName: "Actions",
-    width: 220,
-    sortable: false,
-    renderCell: (params) => {
-      return (
-        <Stack direction="row" spacing={1}>
-          <Button size="small" variant="outlined" color="success">
-            Approve
-          </Button>
-          <Button size="small" variant="outlined" color="error">
-            Reject
-          </Button>
-        </Stack>
-      );
-    },
-  },
-];
-
 export default function AppTable() {
+  const [apps, setApps] = useState<AppItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchApps() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch("/api/user-apps");
+       
+        if (!res.ok) throw new Error("Failed to fetch apps");
+        const data = await res.json();
+        console.log(data)
+        setApps(data.apps || []);
+      } catch (err: any) {
+        setError(err.message || "Unknown error");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchApps();
+  }, []);
+
+  const handleStatusUpdate = async (appId: string, newStatus: 'pending' | 'approved' | 'rejected') => {
+    try {
+      const res = await fetch(`/api/user-apps/${appId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!res.ok) throw new Error("Failed to update app status");
+
+      // Update the local state
+      setApps(prev => prev.map(app => 
+        app._id === appId ? { ...app, status: newStatus } : app
+      ));
+    } catch (err: any) {
+      console.error("Error updating app status:", err);
+      setError(err.message || "Failed to update app status");
+    }
+  };
+
+  const columns: GridColDef[] = [
+    {
+      field: "name",
+      headerName: "App Name",
+      flex: 1,
+      renderCell: (params) => (
+        <Typography fontWeight={600}>{params.row.name}</Typography>
+      ),
+    },
+    {
+      field: "description",
+      headerName: "Description",
+      flex: 1.5,
+      renderCell: (params) => (
+        <Typography variant="body2" sx={{ 
+          overflow: 'hidden', 
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          maxWidth: 300 
+        }}>
+          {params.row.description}
+        </Typography>
+      ),
+    },
+    {
+      field: "status",
+      headerName: "Status",
+      width: 120,
+      renderCell: (params) => getStatusChip(params.row.status),
+    },
+    {
+      field: "authorName",
+      headerName: "Author",
+      width: 200,
+    },
+    {
+      field: "createdAt",
+      headerName: "Submitted On",
+      width: 140,
+      valueGetter: (params) => {
+        return new Date(params.row.createdAt).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
+      },
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 220,
+      sortable: false,
+      renderCell: (params) => (
+        <Stack direction="row" spacing={1}>
+          {params.row.status === 'pending' && (
+            <>
+              <Button 
+                size="small" 
+                variant="outlined" 
+                color="success"
+                onClick={() => handleStatusUpdate(params.row._id, 'approved')}
+              >
+                Approve
+              </Button>
+              <Button 
+                size="small" 
+                variant="outlined" 
+                color="error"
+                onClick={() => handleStatusUpdate(params.row._id, 'rejected')}
+              >
+                Reject
+              </Button>
+            </>
+          )}
+          {params.row.status === 'approved' && (
+            <Button 
+              size="small" 
+              variant="outlined" 
+              color="error"
+              onClick={() => handleStatusUpdate(params.row._id, 'rejected')}
+            >
+              Reject
+            </Button>
+          )}
+          {params.row.status === 'rejected' && (
+            <Button 
+              size="small" 
+              variant="outlined" 
+              color="success"
+              onClick={() => handleStatusUpdate(params.row._id, 'approved')}
+            >
+              Approve
+            </Button>
+          )}
+        </Stack>
+      ),
+    },
+  ];
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert severity="error" sx={{ mb: 2 }}>
+        {error}
+      </Alert>
+    );
+  }
+
   return (
     <Box sx={{ height: 500, width: "100%" }}>
       <DataGrid
-        rows={rows}
+        rows={apps}
         columns={columns}
+        getRowId={(row) => row._id}
         pageSize={5}
         disableRowSelectionOnClick
         sx={{

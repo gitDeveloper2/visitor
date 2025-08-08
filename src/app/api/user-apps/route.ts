@@ -41,15 +41,40 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const status = url.searchParams.get('status');
     const authorId = url.searchParams.get('authorId');
+    const limit = parseInt(url.searchParams.get('limit') || '50');
+    const page = parseInt(url.searchParams.get('page') || '1');
+    const tag = url.searchParams.get('tag');
+    const approved = url.searchParams.get('approved');
+
     const filter: any = {};
+    
     if (status) filter.status = status;
     if (authorId) filter.authorId = authorId;
+    if (tag) filter.tags = { $in: [tag] };
+    if (approved === 'true') filter.status = 'approved';
+
+    const skip = (page - 1) * limit;
+
     const apps = await db
       .collection('userapps')
       .find(filter)
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .toArray();
-    return NextResponse.json({ apps }, { status: 200 });
+
+    // Get total count for pagination
+    const totalCount = await db.collection('userapps').countDocuments(filter);
+
+    return NextResponse.json({ 
+      apps,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit)
+      }
+    }, { status: 200 });
   } catch (error) {
     return NextResponse.json({ message: 'Failed to fetch apps.', error: error?.toString() }, { status: 500 });
   }

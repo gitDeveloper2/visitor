@@ -1,9 +1,9 @@
 "use client";
 
 import { Box, Typography, Container, Paper } from "@mui/material";
-import AppTable from "./AppTable";
 import { getShadow, getGlassStyles } from "../../../../../utils/themeUtils";
 import { useTheme } from "@mui/material/styles";
+import AppTable from "./AppTable";
 
 export default function AdminAppsPage() {
   const theme = useTheme();

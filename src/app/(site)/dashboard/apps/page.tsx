@@ -20,6 +20,7 @@ import {
   Tooltip,
   Popover,
   Divider,
+  CircularProgress,
 } from "@mui/material";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useTheme } from "@mui/material/styles";
@@ -29,44 +30,21 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import Badge from "@components/badges/Badge";
 import { useEffect, useState } from "react";
 
-
-type AppItem = {
-  id: string;
+interface AppItem {
+  _id: string;
   name: string;
-  status: string;
   description: string;
   tags: string[];
-  verification_status?: "unverified" | "pending" | "verified" | "failed";
-  last_verification_result?: string | null;
-  backlink_check_url?: string | null; // default URL where we will look
-};
-
-const initialApps: AppItem[] = [
-  {
-    id: "app-1",
-    name: "Snippet Saver",
-    status: "approved",
-    description: "Save and manage your favorite code snippets with ease.",
-    tags: ["productivity", "code", "tools"],
-    verification_status: "unverified",
-    last_verification_result: null,
-    backlink_check_url: "https://snippet-saver.example.com/",
-  },
-  {
-    id: "app-2",
-    name: "Focus Timer",
-    status: "pending",
-    description: "Pomodoro-style timer to boost productivity and focus.",
-    tags: ["timer", "focus", "AI"],
-    verification_status: "verified",
-    last_verification_result: "found:dofollow",
-    backlink_check_url: "https://focus-timer.example.com/",
-  },
-];
+  authorName: string;
+  authorEmail: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  updatedAt: string;
+}
 
 export default function ManageAppsPage() {
   const theme = useTheme();
-  const [apps, setApps] = useState<any[]>([]);
+  const [apps, setApps] = useState<AppItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [popoverAnchor, setPopoverAnchor] = React.useState<HTMLElement | null>(null);
@@ -106,7 +84,7 @@ export default function ManageAppsPage() {
   // open modal to submit verification (user cannot verify themselves)
   const openSubmitModal = (app: AppItem) => {
     setActiveApp(app);
-    setPageUrl(app.backlink_check_url ?? "");
+    setPageUrl("");
     setOpen(true);
   };
 
@@ -119,7 +97,7 @@ export default function ManageAppsPage() {
   // copy expected HTML snippet to clipboard
   const copySnippet = async () => {
     if (!activeApp) return;
-    const snippet = `<a href="https://your-site.com/apps/${activeApp.id}">View ${activeApp.name} on OurSite</a>`;
+    const snippet = `<a href="https://your-site.com/apps/${activeApp._id}">View ${activeApp.name} on OurSite</a>`;
     try {
       await navigator.clipboard.writeText(snippet);
       setSnack({ open: true, message: "Snippet copied to clipboard", severity: "success" });
@@ -134,22 +112,13 @@ export default function ManageAppsPage() {
 
     // Prepare payload for your future API:
     const payload = {
-      appId: activeApp.id,
-      pageUrl: pageUrl || activeApp.backlink_check_url,
+      appId: activeApp._id,
+      pageUrl: pageUrl,
       requestedAt: new Date().toISOString(),
     };
 
     // (TODO: later call your API endpoint here)
     // await fetch("/api/user/request-verification", { method: "POST", body: JSON.stringify(payload) })
-
-    // Update UI locally: set verification_status => pending
-    setApps((prev) =>
-      prev.map((a) =>
-        a.id === activeApp.id
-          ? { ...a, verification_status: "pending", last_verification_result: null }
-          : a
-      )
-    );
 
     setSnack({ open: true, message: "Verification requested. We'll check this shortly.", severity: "info" });
     closeModal();
@@ -173,13 +142,27 @@ export default function ManageAppsPage() {
     backdropFilter: "none",
   } as const;
 
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert severity="error" sx={{ mb: 4 }}>
+        {error}
+      </Alert>
+    );
+  }
+
   return (
     <Box>
       <Typography variant="h5" gutterBottom>
         Manage Submitted Apps
       </Typography>
-      {loading && <Typography>Loading...</Typography>}
-      {error && <Typography color="error">{error}</Typography>}
       <Grid container spacing={3} mt={2}>
         {apps.map((app) => (
           <Grid item xs={12} md={6} key={app._id}>
@@ -192,21 +175,15 @@ export default function ManageAppsPage() {
                 overflow: "visible",
               }}
             >
-              {/* show ribbon only when verified */}
-              {/* {app.verification_status === "verified" && <Badge variant="ribbon" label="VerifiedBadge" />} */}
-
               <Typography variant="h6" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 {app.name}
-                {/* small inline pill near title (optional) */}
-                {app.verification_status === "verified" && <Box sx={{ ml: 1 }}>
-                  <Badge size="small" variant="pill" label="Verified" />
-                <Tooltip title={tooltipText} placement="top" arrow>
-                  <IconButton size="small" onClick={openInfoPopover} aria-label="Verification info">
-                    <InfoOutlined fontSize="small" />
-                  </IconButton>
-                </Tooltip></Box>}
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mb: 1 }}
+              >
                 {app.description}
               </Typography>
 
@@ -216,193 +193,86 @@ export default function ManageAppsPage() {
                 ))}
               </Stack>
 
-              <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
-                <Chip
-                  label={app.status}
-                  color={
-                    app.status === "approved"
-                      ? "success"
-                      : app.status === "pending"
-                      ? "warning"
-                      : "default"
-                  }
-                  size="small"
-                />
+              <Chip
+                label={app.status}
+                color={
+                  app.status === "approved"
+                    ? "success"
+                    : app.status === "pending"
+                    ? "warning"
+                    : "default"
+                }
+                sx={{ mt: 1 }}
+              />
 
-                {/* <Chip
-                  label={
-                    app.verification_status === "verified"
-                      ? "Verified"
-                      : app.verification_status === "pending"
-                      ? "Pending"
-                      : app.verification_status === "failed"
-                      ? "Failed"
-                      : "Unverified"
-                  }
-                  color={
-                    app.verification_status === "verified"
-                      ? "success"
-                      : app.verification_status === "pending"
-                      ? "warning"
-                      : app.verification_status === "failed"
-                      ? "error"
-                      : "default"
-                  }
-                  size="small"
-                /> */}
-                
-              </Stack>
-              <Popover
-    open={popoverOpen}
-    anchorEl={popoverAnchor}
-    onClose={closeInfoPopover}
-    anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-    transformOrigin={{ vertical: "top", horizontal: "left" }}
-    PaperProps={{
-      sx: {
-        width: 360,
-        p: 2,
-        // Prefer opaque surface so it's readable over your glass theme
-        background:
-          typeof window !== "undefined" && getComputedStyle(document.documentElement).getPropertyValue("--glass-bg")
-            ? "var(--glass-bg)"
-            : (theme.palette.mode === "dark" ? "rgba(18,18,20,0.98)" : "rgba(255,255,255,0.98)"),
-        border: typeof window !== "undefined" && getComputedStyle(document.documentElement).getPropertyValue("--glass-border")
-          ? "1px solid var(--glass-border)"
-          : `1px solid ${theme.palette.divider}`,
-        boxShadow: getShadow(theme, "elevated"),
-      },
-    }}
-  >
-    <Typography variant="subtitle2">About the verification badge</Typography>
-    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-      This badge confirms we found a link on your site that points to your app page on OurSite. Verification confirms the link’s presence and attributes, and does not imply editorial endorsement or guarantee search ranking changes.
-    </Typography>
-
-    <Divider sx={{ my: 1 }} />
-
-    <Typography variant="caption" color="text.secondary" display="block">
-      Backlink attributes (follow/nofollow) are applied per platform policy. If verification fails you'll see why (no link found, nofollow/ugc/sponsored, or blocked rendering).
-    </Typography>
-
-    <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
-      <Button size="small" onClick={closeInfoPopover}>Close</Button>
-    </Box>
-  </Popover>
               <Box mt={2}>
-                <Button size="small" variant="outlined" sx={{ mr: 1 }}>
-                  Edit
+                <Button size="small" variant="outlined" onClick={() => openSubmitModal(app)}>
+                  Request Verification
                 </Button>
-
-                {/* Submit for verification (user cannot verify themselves) */}
-                {app.verification_status !== "verified" && (
-  <Button
-    size="small"
-    variant="contained"
-    onClick={() => openSubmitModal(app)}
-    disabled={app.verification_status === "pending"}
-  >
-    {app.verification_status === "pending"
-      ? "Requested"
-      : "Submit for verification"}
-  </Button>
-)}
-
               </Box>
-
-              {/* show last verification text if present */}
-              {app.last_verification_result && (
-                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
-                  Last result: {app.last_verification_result}
-                </Typography>
-              )}
             </Paper>
           </Grid>
         ))}
       </Grid>
 
-      {/* Modal: Submit for Verification */}
-      <Dialog
-        open={open}
-        onClose={closeModal}
-        fullWidth
-        maxWidth="sm"
-        BackdropProps={{
-          sx: {
-            // stronger backdrop so underlying page isn't visible
-            backgroundColor: "rgba(2,6,23,0.6)",
-            backdropFilter: "blur(3px)",
-          },
-        }}
-        PaperProps={{
-          sx: {
-            ...dialogPaperSX,
-            p: 0,
-            overflow: "hidden",
-          },
-        }}
-      >
-        <DialogTitle sx={{ background: "transparent", pb: 0, px: 3 }}>
-          Request Backlink Verification
+      {/* Verification Modal */}
+      <Dialog open={open} onClose={closeModal} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          Request Verification for {activeApp?.name}
         </DialogTitle>
-        <DialogContent sx={{ px: 3, pt: 1 }}>
-          <Typography variant="body2" sx={{ mb: 1 }}>
-            Add the backlink to your site, then submit the page URL below. We will perform the verification on our side — you won't be able to verify it yourself immediately.
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            To verify your app, we need to check that you've added a link to our site. Please provide the URL where you've added the link.
           </Typography>
-
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 1,
-              mb: 2,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              fontFamily: "monospace",
-              fontSize: 13,
-            }}
-          >
-            <Box sx={{ mr: 1, color: "text.primary", overflowWrap: "anywhere" }}>
-              {activeApp ? `<a href="https://your-site.com/apps/${activeApp.id}">View ${activeApp.name} on OurSite</a>` : ""}
-            </Box>
-            <IconButton size="small" onClick={copySnippet} aria-label="Copy snippet">
-              <ContentCopyIcon fontSize="small" />
-            </IconButton>
-          </Paper>
-
-          <Typography variant="body2" sx={{ mb: 1 }}>
-            Page to check (where you added the link). Leave blank to check the URL you submitted earlier.
-          </Typography>
-
+          
           <TextField
+            fullWidth
+            label="Page URL"
             value={pageUrl}
             onChange={(e) => setPageUrl(e.target.value)}
-            placeholder="https://your-site.com/blog/post-containing-link"
-            fullWidth
-            size="small"
-            sx={{ mb: 1 }}
+            placeholder="https://your-site.com/about"
+            sx={{ mb: 2 }}
           />
 
-          <Typography variant="caption" color="text.secondary">
-            After submitting, our system will queue the check and update your verification status. You will see the status here when it completes.
-          </Typography>
-        </DialogContent>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+            <Typography variant="body2">Expected HTML snippet:</Typography>
+            <Button size="small" onClick={copySnippet} startIcon={<ContentCopyIcon />}>
+              Copy
+            </Button>
+          </Box>
 
-        <DialogActions sx={{ background: "transparent", px: 3, py: 2 }}>
+          <Box
+            component="pre"
+            sx={{
+              p: 2,
+              backgroundColor: theme.palette.grey[100],
+              borderRadius: 1,
+              fontSize: '0.875rem',
+              overflowX: 'auto',
+            }}
+          >
+            {activeApp && `<a href="https://your-site.com/apps/${activeApp._id}">View ${activeApp.name} on OurSite</a>`}
+          </Box>
+        </DialogContent>
+        <DialogActions>
           <Button onClick={closeModal}>Cancel</Button>
-          <Button variant="contained" onClick={submitForVerification}>
-            Submit for verification
+          <Button onClick={submitForVerification} variant="contained">
+            Submit for Verification
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* snackbar */}
+      {/* Snackbar for notifications */}
       <Snackbar
         open={snack.open}
-        autoHideDuration={3500}
-        onClose={() => setSnack((s) => ({ ...s, open: false }))}
+        autoHideDuration={6000}
+        onClose={() => setSnack({ open: false })}
       >
-        <Alert onClose={() => setSnack((s) => ({ ...s, open: false }))} severity={snack.severity || "info"} sx={{ width: "100%" }}>
+        <Alert
+          onClose={() => setSnack({ open: false })}
+          severity={snack.severity}
+          sx={{ width: '100%' }}
+        >
           {snack.message}
         </Alert>
       </Snackbar>
