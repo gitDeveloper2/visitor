@@ -1,10 +1,18 @@
 // utils/dbConnect.ts
 import mongoose from 'mongoose';
+import { Schema, model, models } from 'mongoose';
 
-const dbConnect = async () => {
-  if (mongoose.connection.readyState >= 1) return;
 
-  return mongoose.connect(process.env.NEXT_PUBLIC_MONGO_URI_DEV || 'mongodb://localhost:27017/your_database_name');
-};
 
-export default dbConnect;
+const UserSchema = new Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String }, // Only for credentials provider
+  role: { type: String, enum: ['user', 'admin'], default: 'user' },
+  status: { type: String, enum: ['active', 'banned'], default: 'active' },
+  image: { type: String }, // For OAuth profile images
+}, { timestamps: true });
+
+export const User = models.User || model('User', UserSchema);
+
+

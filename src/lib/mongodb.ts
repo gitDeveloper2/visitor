@@ -38,3 +38,6 @@ export const updatePageStats = async (slug: string, stats: PageStats) => {
 
   return result;
 };
+
+
+export const dbObject = client.db(databasename);

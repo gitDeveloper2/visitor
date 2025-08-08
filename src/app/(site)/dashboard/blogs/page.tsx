@@ -11,36 +11,42 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { getShadow } from "../../../../utils/themeUtils";
-
-const mockBlogs = [
-  {
-    id: "blog-1",
-    title: "10 VSCode Extensions You Must Try",
-    status: "approved",
-    summary: "A curated list of powerful VSCode extensions to boost productivity.",
-    tags: ["VSCode", "tools", "productivity"],
-  },
-  {
-    id: "blog-2",
-    title: "How I Built a GPT-Powered CLI",
-    status: "pending",
-    summary: "Step-by-step breakdown of integrating OpenAI into a CLI tool.",
-    tags: ["AI", "GPT", "CLI"],
-  },
-];
+import { useEffect, useState } from "react";
 
 export default function ManageBlogsPage() {
   const theme = useTheme();
+  const [blogs, setBlogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchBlogs() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch("/api/user-blogs");
+        if (!res.ok) throw new Error("Failed to fetch blogs");
+        const data = await res.json();
+        setBlogs(data.blogs || []);
+      } catch (err: any) {
+        setError(err.message || "Unknown error");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchBlogs();
+  }, []);
 
   return (
     <Box>
       <Typography variant="h5" gutterBottom>
         Manage Blog Posts
       </Typography>
-
+      {loading && <Typography>Loading...</Typography>}
+      {error && <Typography color="error">{error}</Typography>}
       <Grid container spacing={3} mt={2}>
-        {mockBlogs.map((blog) => (
-          <Grid item xs={12} md={6} key={blog.id}>
+        {blogs.map((blog) => (
+          <Grid item xs={12} md={6} key={blog._id}>
             <Paper
               sx={{
                 p: 3,
@@ -54,15 +60,13 @@ export default function ManageBlogsPage() {
                 color="text.secondary"
                 sx={{ mb: 1 }}
               >
-                {blog.summary}
+                {blog.content?.slice(0, 100)}
               </Typography>
-
               <Stack direction="row" spacing={1} mb={1}>
-                {blog.tags.map((tag, i) => (
+                {(blog.tags || []).map((tag: string, i: number) => (
                   <Chip key={i} size="small" label={tag} />
                 ))}
               </Stack>
-
               <Chip
                 label={blog.status}
                 color={
@@ -74,7 +78,6 @@ export default function ManageBlogsPage() {
                 }
                 sx={{ mt: 1 }}
               />
-
               <Box mt={2}>
                 <Button size="small" variant="outlined">
                   Edit

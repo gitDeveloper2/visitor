@@ -3,6 +3,8 @@ import { connectToDatabase } from '../../../lib/mongodb';
 import logger from '../../../utils/logger/customLogger';
 import { getServerSession } from 'next-auth';
 import {redirect} from "next/navigation"
+import dbConnect from '../../../lib/config/mongodb';
+import BlogPost from '../../../models/BlogPost';
 // Optionally import a sanitization library here
 // import DOMPurify from 'dompurify';
 
@@ -24,57 +26,45 @@ const defaultResponse = {
 };
 
 export async function POST(req: Request) {
-  const session=await getServerSession()
-  
-
-
-  if (!session) {
-    return NextResponse.json({ message: "Unauthenticated User" }, { status: 401 });
-
-
+  const session = await getServerSession();
+  if (!session || !session.user) {
+    return NextResponse.json({ message: 'Unauthenticated User' }, { status: 401 });
   }
   try {
-    // Parse the JSON body
     const body = await req.json();
-  
-  
-
-    // Define the response object with default values
-    let response = { ...defaultResponse };
-
-    // Update the response object with provided values
-    response = {
-      ...response,
-      ...body,
-      created_at: new Date().toISOString(), // Always set to the current date and time
-      updated_at: new Date().toISOString(), // Always set to the current date and time
-    };
-
-    // Validate required fields
-    const requiredFields = ['domain', 'slug', 'title', 'content'];
+    const requiredFields = ['domain', 'slug', 'title', 'content', 'keywords', 'meta_description', 'content_type'];
     for (const field of requiredFields) {
       if (!body[field]) {
-        return NextResponse.json({ message: `${field} is missing`, example: response }, { status: 400 });
+        return NextResponse.json({ message: `${field} is missing` }, { status: 400 });
       }
     }
-
-    // Optional: Sanitize HTML content
-    // response.content = DOMPurify.sanitize(response.content);
-
-    // Connect to the database
-    const { db } = await connectToDatabase();
-
-    // Insert the document into the 'pages' collection
-    const collection = db.collection('pages');
-    const result = await collection.insertOne(response);
-
-    // Return a success response
-    // logger.info("Page inserted successfully",{id: result.insertedId.toString(), insertedDocument: response })
-    
-    return NextResponse.json({ message: 'Page inserted successfully', id: result.insertedId.toString(), insertedDocument: response }, { status: 201 });
+    await dbConnect();
+    const newBlog = await BlogPost.create({
+      ...body,
+      author: session.user.email || session.user.name,
+      published: false,
+      date: new Date(),
+      date_updated: new Date(),
+    });
+    return NextResponse.json({ message: 'Blog post submitted successfully.', blog: newBlog }, { status: 201 });
   } catch (error) {
-    logger.error('Error:', {error:error});
-    return NextResponse.json({ message: 'Error inserting content', error: error }, { status: 500 });
+    return NextResponse.json({ message: 'Blog submission failed.', error: error?.toString() }, { status: 500 });
+  }
+}
+
+export async function GET(request: Request) {
+  try {
+    await dbConnect();
+    const url = new URL(request.url);
+    const status = url.searchParams.get('status');
+    const author = url.searchParams.get('author');
+    const filter: any = {};
+    if (status) filter.published = status === 'published';
+    if (author) filter.author = author;
+    const blogs = await BlogPost.find(filter).sort({ date: -1 });
+    return NextResponse.json({ blogs }, { status: 200 });
+  } catch (error) {
+    return NextResponse.json({ message: 'Failed to fetch blogs.', error: error?.toString() }, { status: 500 });
   }
 }
 

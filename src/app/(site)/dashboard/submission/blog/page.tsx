@@ -16,29 +16,31 @@ import { getShadow, getGlassStyles } from "../../../../../utils/themeUtils";
 import StepMetadata from "./StepMetadata";
 import StepEditor from "./StepEditor";
 import StepReview from "./StepReview";
+import { useState } from "react";
+import { authClient } from '../../../auth-client';
 
 const steps = ["Blog Info", "Write Blog", "Review & Submit"];
 
 export default function BlogSubmitPage() {
   const theme = useTheme();
   const [activeStep, setActiveStep] = React.useState(0);
-
-  // ✅ ADD THIS STATE
   const [formData, setFormData] = React.useState({
     title: "",
     author: "",
     role: "",
     tags: "",
     authorBio: "",
-    content: "", // you'll use this in StepEditor
+    content: "",
     isFounderStory: false,
     founderUrl: "",
     founderDomainCheck: { status: "unknown", message: "" } as {
       status: "unknown" | "checking" | "ok" | "taken" | "invalid";
       message?: string;
     },
-    
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   const handleNext = () => setActiveStep((prev) => prev + 1);
   const handleBack = () => setActiveStep((prev) => prev - 1);
@@ -46,40 +48,45 @@ export default function BlogSubmitPage() {
     setFormData((prev) => ({ ...prev, ...data }));
   };
   const handleSubmit = async () => {
-    console.log("Submitting blog:", formData);
-
-    // try {
-    //   // 1) save blog (existing behavior)
-    //   const blogRes = await fetch("/api/blogs", {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify(formData),
-    //   });
-    //   if (!blogRes.ok) throw new Error("Could not save blog");
-  
-    //   // 2) if founder story is requested, submit it separately
-    //   if (formData.isFounderStory && formData.founderUrl) {
-    //     // assume you know the appId (maybe from page context)
-    //     const appId = /* fill in app id from props or page context */;
-    //     const res = await fetch(`/api/apps/${appId}/founder-story`, {
-    //       method: "POST",
-    //       headers: { "Content-Type": "application/json" },
-    //       body: JSON.stringify({ url: formData.founderUrl }),
-    //     });
-    //     if (!res.ok) {
-    //       const j = await res.json().catch(()=>({}));
-    //       // show error to user (but blog already created) — handle with toast
-    //       console.error("Founder story Failed", j);
-    //     } else {
-    //       // success: show pending state toast
-    //     }
-    //   }
-  
-    //   // success UI
-    //   console.log("Blog + founder story submitted");
-    // } catch (err) {
-    //   console.error(err);
-    // }
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+    try {
+      // Optionally get user info from authClient (if needed on client)
+      // const user = await authClient.getSession();
+      const payload = {
+        title: formData.title,
+        content: formData.content,
+        tags: formData.tags.split(',').map((t) => t.trim()).filter(Boolean),
+        isInternal: true, // or set based on your logic/UI
+      };
+      const res = await fetch("/api/user-blogs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.message || "Could not save blog");
+      }
+      setSuccess(true);
+      setActiveStep(0);
+      setFormData({
+        title: "",
+        author: "",
+        role: "",
+        tags: "",
+        authorBio: "",
+        content: "",
+        isFounderStory: false,
+        founderUrl: "",
+        founderDomainCheck: { status: "unknown", message: "" },
+      });
+    } catch (err: any) {
+      setError(err.message || "Unknown error");
+    } finally {
+      setLoading(false);
+    }
   };
   
   
@@ -89,7 +96,8 @@ export default function BlogSubmitPage() {
         <Typography variant="h4" align="center" gutterBottom>
           Submit Your Blog
         </Typography>
-
+        {error && <Typography color="error" align="center">{error}</Typography>}
+        {success && <Typography color="success.main" align="center">Blog submitted successfully!</Typography>}
         <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 6 }}>
           {steps.map((label) => (
             <Step key={label}>
@@ -97,7 +105,6 @@ export default function BlogSubmitPage() {
             </Step>
           ))}
         </Stepper>
-
         <Paper
           sx={{
             p: 4,
@@ -109,36 +116,29 @@ export default function BlogSubmitPage() {
         >
           {activeStep === 0 && (
             <StepMetadata formData={formData} setFormData={handleFormDataChange} />
-
-
           )}
           {activeStep === 1 && (
-           
             <StepEditor formData={formData} setFormData={handleFormDataChange} />
           )}
           {activeStep === 2 && (
-    <StepReview metadata={formData} content={formData.content} />
-)}
+            <StepReview metadata={formData} content={formData.content} />
+          )}
         </Paper>
-
         <Box mt={4} display="flex" justifyContent="space-between">
           <Button
-            disabled={activeStep === 0}
+            disabled={activeStep === 0 || loading}
             onClick={handleBack}
             variant="outlined"
           >
             Back
           </Button>
           <Button
-  variant="contained"
-  onClick={activeStep === steps.length - 1 ? handleSubmit : handleNext}
->
-  {activeStep === steps.length - 1 ? "Submit" : "Next"}
-</Button>
-
-
-
-
+            variant="contained"
+            onClick={activeStep === steps.length - 1 ? handleSubmit : handleNext}
+            disabled={loading}
+          >
+            {loading ? "Submitting..." : activeStep === steps.length - 1 ? "Submit" : "Next"}
+          </Button>
         </Box>
       </Container>
     </Box>

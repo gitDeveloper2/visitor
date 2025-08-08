@@ -27,7 +27,7 @@ import { getShadow } from "../../../../utils/themeUtils";
 import { InfoOutlined } from "@mui/icons-material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import Badge from "@components/badges/Badge";
-
+import { useEffect, useState } from "react";
 
 
 type AppItem = {
@@ -66,7 +66,9 @@ const initialApps: AppItem[] = [
 
 export default function ManageAppsPage() {
   const theme = useTheme();
-  const [apps, setApps] = React.useState<AppItem[]>(initialApps);
+  const [apps, setApps] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [popoverAnchor, setPopoverAnchor] = React.useState<HTMLElement | null>(null);
   const openInfoPopover = (e: React.MouseEvent<HTMLElement>) => {
     setPopoverAnchor(e.currentTarget);
@@ -82,6 +84,24 @@ export default function ManageAppsPage() {
   const [activeApp, setActiveApp] = React.useState<AppItem | null>(null);
   const [pageUrl, setPageUrl] = React.useState<string>("");
   const [snack, setSnack] = React.useState<{ open: boolean; message?: string; severity?: "success" | "info" | "error" }>({ open: false });
+
+  useEffect(() => {
+    async function fetchApps() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch("/api/user-apps");
+        if (!res.ok) throw new Error("Failed to fetch apps");
+        const data = await res.json();
+        setApps(data.apps || []);
+      } catch (err: any) {
+        setError(err.message || "Unknown error");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchApps();
+  }, []);
 
   // open modal to submit verification (user cannot verify themselves)
   const openSubmitModal = (app: AppItem) => {
@@ -158,39 +178,40 @@ export default function ManageAppsPage() {
       <Typography variant="h5" gutterBottom>
         Manage Submitted Apps
       </Typography>
-
+      {loading && <Typography>Loading...</Typography>}
+      {error && <Typography color="error">{error}</Typography>}
       <Grid container spacing={3} mt={2}>
         {apps.map((app) => (
-          <Grid item xs={12} md={6} key={app.id}>
-           <Paper
-  sx={{
-    p: 3,
-    borderRadius: 3,
-    boxShadow: getShadow(theme, "elegant"),
-    position: "relative", // allow absolute badge
-    overflow: "visible",
-  }}
->
-  {/* show ribbon only when verified */}
-  {/* {app.verification_status === "verified" && <Badge variant="ribbon" label="VerifiedBadge" />} */}
+          <Grid item xs={12} md={6} key={app._id}>
+            <Paper
+              sx={{
+                p: 3,
+                borderRadius: 3,
+                boxShadow: getShadow(theme, "elegant"),
+                position: "relative", // allow absolute badge
+                overflow: "visible",
+              }}
+            >
+              {/* show ribbon only when verified */}
+              {/* {app.verification_status === "verified" && <Badge variant="ribbon" label="VerifiedBadge" />} */}
 
-  <Typography variant="h6" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-    {app.name}
-    {/* small inline pill near title (optional) */}
-    {app.verification_status === "verified" && <Box sx={{ ml: 1 }}>
-      <Badge size="small" variant="pill" label="Verified" />
-    <Tooltip title={tooltipText} placement="top" arrow>
-      <IconButton size="small" onClick={openInfoPopover} aria-label="Verification info">
-        <InfoOutlined fontSize="small" />
-      </IconButton>
-    </Tooltip></Box>}
-  </Typography>
+              <Typography variant="h6" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                {app.name}
+                {/* small inline pill near title (optional) */}
+                {app.verification_status === "verified" && <Box sx={{ ml: 1 }}>
+                  <Badge size="small" variant="pill" label="Verified" />
+                <Tooltip title={tooltipText} placement="top" arrow>
+                  <IconButton size="small" onClick={openInfoPopover} aria-label="Verification info">
+                    <InfoOutlined fontSize="small" />
+                  </IconButton>
+                </Tooltip></Box>}
+              </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 {app.description}
               </Typography>
 
               <Stack direction="row" spacing={1} mb={1}>
-                {app.tags.map((tag, i) => (
+                {(app.tags || []).map((tag: string, i: number) => (
                   <Chip key={i} size="small" label={tag} />
                 ))}
               </Stack>
@@ -198,7 +219,13 @@ export default function ManageAppsPage() {
               <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
                 <Chip
                   label={app.status}
-                  color={app.status === "approved" ? "success" : app.status === "pending" ? "warning" : "default"}
+                  color={
+                    app.status === "approved"
+                      ? "success"
+                      : app.status === "pending"
+                      ? "warning"
+                      : "default"
+                  }
                   size="small"
                 />
 
