@@ -215,7 +215,6 @@ const AboutUs = () => {
           </Container>
         </Box>
       </Box>
-      <Footer />
     </Box>
   );
 };

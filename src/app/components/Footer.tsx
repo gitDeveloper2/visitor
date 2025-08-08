@@ -51,8 +51,8 @@ const Footer = () => {
     { label: "Privacy Policy", href: "/privacy" },
     { label: "Terms of Use", href: "/terms" },
     { label: "Disclaimer", href: "/disclaimer" },
-    { label: "DMCA", href: "/dmca" },
-    { label: "Legal", href: "/legal" },
+    { label: "DMCA", href: "/dcma-policy" },
+    // { label: "Legal", href: "/legal" },
   ];
 
   // Detect external links (http, mailto)

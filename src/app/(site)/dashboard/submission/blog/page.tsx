@@ -31,6 +31,13 @@ export default function BlogSubmitPage() {
     tags: "",
     authorBio: "",
     content: "", // you'll use this in StepEditor
+    isFounderStory: false,
+    founderUrl: "",
+    founderDomainCheck: { status: "unknown", message: "" } as {
+      status: "unknown" | "checking" | "ok" | "taken" | "invalid";
+      message?: string;
+    },
+    
   });
 
   const handleNext = () => setActiveStep((prev) => prev + 1);
@@ -38,9 +45,43 @@ export default function BlogSubmitPage() {
   const handleFormDataChange = (data: Partial<typeof formData>) => {
     setFormData((prev) => ({ ...prev, ...data }));
   };
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     console.log("Submitting blog:", formData);
+
+    // try {
+    //   // 1) save blog (existing behavior)
+    //   const blogRes = await fetch("/api/blogs", {
+    //     method: "POST",
+    //     headers: { "Content-Type": "application/json" },
+    //     body: JSON.stringify(formData),
+    //   });
+    //   if (!blogRes.ok) throw new Error("Could not save blog");
+  
+    //   // 2) if founder story is requested, submit it separately
+    //   if (formData.isFounderStory && formData.founderUrl) {
+    //     // assume you know the appId (maybe from page context)
+    //     const appId = /* fill in app id from props or page context */;
+    //     const res = await fetch(`/api/apps/${appId}/founder-story`, {
+    //       method: "POST",
+    //       headers: { "Content-Type": "application/json" },
+    //       body: JSON.stringify({ url: formData.founderUrl }),
+    //     });
+    //     if (!res.ok) {
+    //       const j = await res.json().catch(()=>({}));
+    //       // show error to user (but blog already created) — handle with toast
+    //       console.error("Founder story Failed", j);
+    //     } else {
+    //       // success: show pending state toast
+    //     }
+    //   }
+  
+    //   // success UI
+    //   console.log("Blog + founder story submitted");
+    // } catch (err) {
+    //   console.error(err);
+    // }
   };
+  
   
   return (
     <Box component="main" sx={{ bgcolor: "background.default", py: 8 }}>

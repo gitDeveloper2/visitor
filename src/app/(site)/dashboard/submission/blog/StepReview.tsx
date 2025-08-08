@@ -19,6 +19,16 @@ export default function StepReview({ metadata, content }: { metadata: any, conte
 
       <Typography variant="subtitle1" fontWeight={600} mt={2}>Author</Typography>
       <Typography>{metadata?.author}</Typography>
+      // StepReview.tsx excerpt — after existing fields
+{metadata?.isFounderStory && (
+  <>
+    <Typography variant="subtitle1" fontWeight={600} mt={2}>Founder Story</Typography>
+    <Typography variant="body2">URL: {metadata?.founderUrl}</Typography>
+    <Typography variant="caption" color="text.secondary">
+      Status: {metadata?.founderDomainCheck?.status} — {metadata?.founderDomainCheck?.message}
+    </Typography>
+  </>
+)}
 
       <Divider sx={{ my: 4 }} />
 

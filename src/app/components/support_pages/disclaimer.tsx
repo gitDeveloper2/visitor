@@ -116,7 +116,6 @@ const Disclaimer = () => {
           </Container>
         </Box>
       </Box>
-      <Footer />
     </Box>
   );
 };
