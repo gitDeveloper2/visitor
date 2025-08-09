@@ -128,8 +128,9 @@ export default function AppTable() {
       field: "createdAt",
       headerName: "Submitted On",
       width: 140,
-      valueGetter: (params) => {
-        return new Date(params.row.createdAt).toLocaleDateString('en-US', {
+      valueGetter: (value: string) => {
+        if (!value) return '';
+        return new Date(value).toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'short',
           day: 'numeric'

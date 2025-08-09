@@ -38,7 +38,12 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
   try {
     const { db } = await connectToDatabase();
+    console.log("💾 Connected DB:", db.databaseName);
+console.log("📚 Collections:", await db.listCollections().toArray());
+console.log("🔍 First doc in userapps:", await db.collection('userapps').findOne({}));
+
     const url = new URL(request.url);
+
     const status = url.searchParams.get('status');
     const authorId = url.searchParams.get('authorId');
     const limit = parseInt(url.searchParams.get('limit') || '50');
@@ -46,12 +51,25 @@ export async function GET(request: Request) {
     const tag = url.searchParams.get('tag');
     const approved = url.searchParams.get('approved');
 
+    // Log incoming query params
+    console.log("🔍 Query Params:", {
+      status,
+      authorId,
+      limit,
+      page,
+      tag,
+      approved
+    });
+
     const filter: any = {};
     
     if (status) filter.status = status;
     if (authorId) filter.authorId = authorId;
     if (tag) filter.tags = { $in: [tag] };
     if (approved === 'true') filter.status = 'approved';
+
+    // Log final filter before query
+    console.log("🗂️ MongoDB Filter:", JSON.stringify(filter, null, 2));
 
     const skip = (page - 1) * limit;
 
@@ -63,8 +81,11 @@ export async function GET(request: Request) {
       .limit(limit)
       .toArray();
 
+    console.log(`📦 Retrieved ${apps.length} apps`);
+
     // Get total count for pagination
     const totalCount = await db.collection('userapps').countDocuments(filter);
+    console.log(`📊 Total Count: ${totalCount}`);
 
     return NextResponse.json({ 
       apps,
@@ -75,7 +96,13 @@ export async function GET(request: Request) {
         totalPages: Math.ceil(totalCount / limit)
       }
     }, { status: 200 });
+
   } catch (error) {
-    return NextResponse.json({ message: 'Failed to fetch apps.', error: error?.toString() }, { status: 500 });
+    console.error("❌ Error fetching apps:", error);
+    return NextResponse.json({ 
+      message: 'Failed to fetch apps.', 
+      error: error?.toString() 
+    }, { status: 500 });
   }
 }
+

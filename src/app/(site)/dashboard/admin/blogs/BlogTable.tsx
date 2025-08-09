@@ -110,14 +110,16 @@ export default function BlogTable() {
       field: "createdAt",
       headerName: "Submitted On",
       width: 140,
-      valueGetter: (params) => {
-        return new Date(params.row.createdAt).toLocaleDateString('en-US', {
+      valueGetter: (value, row) => {
+        if (!value) return '';
+        return new Date(value as string).toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'short',
           day: 'numeric'
         });
       },
     },
+    
     {
       field: "actions",
       headerName: "Actions",

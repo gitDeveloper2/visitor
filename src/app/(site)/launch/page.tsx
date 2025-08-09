@@ -12,6 +12,8 @@ import {
   InputAdornment,
   Grid,
   Pagination,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { AppWindow, BadgeCheck, DollarSign, Search } from "lucide-react";
@@ -23,6 +25,7 @@ import {
   commonStyles,
 } from "../../../utils/themeUtils";
 import SubmitAppCTA from "./SubmitAppCTA";
+import { useEffect, useState } from "react";
 
 // --- Static Filters ---
 const filters = ["All", "Free", "Verified", "Premium", "AI", "Tools", "Design", "Productivity"];
@@ -73,9 +76,47 @@ const allApps = [
 export default function AppsMainPage() {
   const theme = useTheme();
 
+  const [apps, setApps] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedFilter, setSelectedFilter] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    async function fetchApps() {
+      setLoading(true);
+      setError(null);
+      try {
+        const params = new URLSearchParams();
+        params.append("approved", "true");
+        if (selectedFilter !== "All") {
+          params.append("tag", selectedFilter);
+        }
+
+        const res = await fetch(`/api/user-apps?${params.toString()}`);
+        if (!res.ok) throw new Error("Failed to fetch apps");
+        const data = await res.json();
+        setApps(data.apps || []);
+      } catch (err: any) {
+        setError(err.message || "Unknown error");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchApps();
+  }, [selectedFilter]);
+
+  const filteredApps = apps.filter(
+    (app) =>
+      app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      app.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      app.tags.some((tag) =>
+        tag.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+  );
+
   const renderBadges = (badges: string[]) => {
-    const theme = useTheme();
-  
     const getBadgeStyles = (badge: string) => {
       const baseColor =
         badge === "Verified"
@@ -83,7 +124,7 @@ export default function AppsMainPage() {
           : badge === "Premium"
           ? theme.palette.warning.main
           : theme.palette.primary.main;
-  
+
       return {
         borderColor: baseColor,
         color: baseColor,
@@ -94,7 +135,7 @@ export default function AppsMainPage() {
         px: 1.2,
       };
     };
-  
+
     const getIcon = (badge: string) => {
       const size = 16;
       const color =
@@ -103,32 +144,32 @@ export default function AppsMainPage() {
           : badge === "Premium"
           ? theme.palette.warning.main
           : theme.palette.primary.main;
-  
+
       if (badge === "Verified") return <BadgeCheck size={size} color={color} />;
       if (badge === "Premium") return <DollarSign size={size} color={color} />;
       return undefined;
     };
-  
+
     return (
       <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mt: 1 }}>
-        {badges.map((badge) => (
-          <Chip
-            key={badge}
-            size="small"
-            variant="outlined"
-            label={badge}
-            icon={getIcon(badge)}
-            sx={getBadgeStyles(badge)}
-          />
-        ))}
+        {(badges || []).map((badge) => (
+  <Chip
+    key={badge}
+    size="small"
+    variant="outlined"
+    label={badge}
+    icon={getIcon(badge)}
+    sx={getBadgeStyles(badge)}
+  />
+))}
+
       </Box>
     );
   };
-  
 
-  const renderAppCard = (app: typeof allApps[number]) => (
+  const renderAppCard = (app) => (
     <Paper
-      key={app.id}
+      key={app._id}
       sx={{
         p: 3,
         borderRadius: "1rem",
@@ -151,7 +192,10 @@ export default function AppsMainPage() {
         </Box>
       </Box>
 
-      <Typography variant="body2" sx={{ mt: 1, mb: 2, color: "text.secondary" }}>
+      <Typography
+        variant="body2"
+        sx={{ mt: 1, mb: 2, color: "text.secondary" }}
+      >
         {app.description}
       </Typography>
 
@@ -178,8 +222,17 @@ export default function AppsMainPage() {
               Innovative Apps
             </Box>
           </Typography>
-          <Typography variant="h6" sx={{ color: "text.secondary", mt: 2, maxWidth: 700, mx: "auto" }}>
-            Explore featured tools and user-submitted apps that boost productivity, creativity, and more.
+          <Typography
+            variant="h6"
+            sx={{
+              color: "text.secondary",
+              mt: 2,
+              maxWidth: 700,
+              mx: "auto",
+            }}
+          >
+            Explore featured tools and user-submitted apps that boost
+            productivity, creativity, and more.
           </Typography>
         </Box>
 
@@ -201,6 +254,8 @@ export default function AppsMainPage() {
           <TextField
             size="small"
             placeholder="Search apps..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -214,24 +269,38 @@ export default function AppsMainPage() {
             <Chip
               key={filter}
               label={filter}
-              clickable
-              variant="outlined"
+              onClick={() => setSelectedFilter(filter)}
+              variant={selectedFilter === filter ? "filled" : "outlined"}
               sx={{
                 fontWeight: 500,
-                color: theme.palette.text.primary,
+                color:
+                  selectedFilter === filter
+                    ? "white"
+                    : theme.palette.text.primary,
+                backgroundColor:
+                  selectedFilter === filter
+                    ? theme.palette.primary.main
+                    : "transparent",
                 borderColor: theme.palette.divider,
-                backgroundColor: theme.palette.background.paper,
                 "&:hover": {
-                  backgroundColor: theme.palette.action.hover,
+                  backgroundColor:
+                    selectedFilter === filter
+                      ? theme.palette.primary.dark
+                      : theme.palette.action.hover,
                 },
               }}
             />
           ))}
         </Paper>
+
         <SubmitAppCTA />
+
         {/* Featured Apps */}
         <Box sx={{ mb: 6 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: "text.primary" }}>
+          <Typography
+            variant="h6"
+            sx={{ fontWeight: 700, mb: 2, color: "text.primary" }}
+          >
             <Box component="span" sx={{ color: theme.palette.primary.main }}>
               Featured
             </Box>{" "}
@@ -247,24 +316,44 @@ export default function AppsMainPage() {
         </Box>
 
         {/* All Apps */}
-        <Box>
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: "text.primary" }}>
-            All Apps
-          </Typography>
-          <Grid container spacing={4}>
-            {allApps.map((app) => (
-              <Grid item xs={12} sm={6} md={4} key={app.id}>
-                {renderAppCard(app)}
-              </Grid>
-            ))}
-          </Grid>
-
-          {/* Pagination */}
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
-            <Pagination count={5} color="primary" shape="rounded" />
+        {loading && (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+            <CircularProgress />
           </Box>
-        </Box>
+        )}
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 4 }}>
+            {error}
+          </Alert>
+        )}
+
+        {!loading && !error && (
+          <Box>
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 700, mb: 2, color: "text.primary" }}
+            >
+              All Apps
+            </Typography>
+            <Grid container spacing={4}>
+              {filteredApps.map((app) => (
+                <Grid item xs={12} sm={6} md={4} key={app._id}>
+                  {renderAppCard(app)}
+                </Grid>
+              ))}
+            </Grid>
+            {filteredApps.length === 0 && (
+              <Box sx={{ textAlign: "center", py: 4 }}>
+                <Typography variant="h6" color="text.secondary">
+                  No apps found matching your criteria.
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        )}
       </Container>
     </Box>
   );
 }
+
