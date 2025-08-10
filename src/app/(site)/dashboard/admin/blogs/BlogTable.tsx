@@ -66,7 +66,7 @@ export default function BlogTable() {
 
   const handleStatusUpdate = async (blogId: string, newStatus: 'pending' | 'approved' | 'rejected') => {
     try {
-      const res = await fetch(`/api/user-blogs/${blogId}`, {
+      const res = await fetch(`/api/user-blogs/admin/${blogId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

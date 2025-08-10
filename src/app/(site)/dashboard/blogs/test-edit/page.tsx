@@ -36,7 +36,7 @@ export default function TestBlogEditPage() {
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Now try to edit the blog
-      const editRes = await fetch(`/api/user-blogs/${blogId}`, {
+      const editRes = await fetch(`/api/user-blogs/admin/${blogId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

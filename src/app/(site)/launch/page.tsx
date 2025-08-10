@@ -28,7 +28,10 @@ import SubmitAppCTA from "./SubmitAppCTA";
 import { useEffect, useState } from "react";
 
 // --- Static Filters ---
-const filters = ["All", "Free", "Verified", "Premium", "AI", "Tools", "Design", "Productivity"];
+const filters = [
+  "All", "Free", "Freemium", "Premium", "AI", "Tools", "Design", "Productivity", 
+  "Development", "Marketing", "Analytics", "Communication", "Finance", "Education", "Entertainment"
+];
 
 // --- Mock Featured Apps ---
 const featuredApps = [
@@ -90,7 +93,14 @@ export default function AppsMainPage() {
         const params = new URLSearchParams();
         params.append("approved", "true");
         if (selectedFilter !== "All") {
-          params.append("tag", selectedFilter);
+          // Check if it's a pricing filter
+          if (["Free", "Freemium", "Premium"].includes(selectedFilter)) {
+            params.append("pricing", selectedFilter);
+          } else {
+            // For other filters, check both category and tags
+            params.append("category", selectedFilter);
+            params.append("tag", selectedFilter);
+          }
         }
 
         const res = await fetch(`/api/user-apps?${params.toString()}`);
@@ -111,9 +121,12 @@ export default function AppsMainPage() {
     (app) =>
       app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       app.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      app.tags.some((tag) =>
+      (app.tags && Array.isArray(app.tags) && app.tags.some((tag) =>
         tag.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+      )) ||
+      (app.techStack && Array.isArray(app.techStack) && app.techStack.some((tech) =>
+        tech.toLowerCase().includes(searchQuery.toLowerCase())
+      ))
   );
 
   const renderBadges = (badges: string[]) => {
@@ -153,16 +166,15 @@ export default function AppsMainPage() {
     return (
       <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mt: 1 }}>
         {(badges || []).map((badge) => (
-  <Chip
-    key={badge}
-    size="small"
-    variant="outlined"
-    label={badge}
-    icon={getIcon(badge)}
-    sx={getBadgeStyles(badge)}
-  />
-))}
-
+          <Chip
+            key={badge}
+            size="small"
+            variant="outlined"
+            label={badge}
+            icon={getIcon(badge)}
+            sx={getBadgeStyles(badge)}
+          />
+        ))}
       </Box>
     );
   };
@@ -180,34 +192,119 @@ export default function AppsMainPage() {
         boxShadow: getShadow(theme, "elegant"),
       }}
     >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
         <Avatar>
           <AppWindow size={18} />
         </Avatar>
-        <Box>
-          <Typography fontWeight={600}>{app.name}</Typography>
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>{app.name}</Typography>
           <Typography variant="caption" color="text.secondary">
-            by {app.author}
+            by {app.authorName || app.author}
           </Typography>
         </Box>
       </Box>
 
       <Typography
         variant="body2"
-        sx={{ mt: 1, mb: 2, color: "text.secondary" }}
+        sx={{ mb: 2, color: "text.secondary" }}
       >
         {app.description}
       </Typography>
 
-      {renderBadges(app.badges)}
+      {/* Tech Stack */}
+      {app.techStack && Array.isArray(app.techStack) && app.techStack.length > 0 && (
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="caption" color="text.secondary" display="block" mb={1}>
+            Tech Stack
+          </Typography>
+          <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+            {app.techStack.slice(0, 3).map((tech, i) => (
+              <Chip key={i} size="small" label={tech} variant="outlined" />
+            ))}
+            {app.techStack.length > 3 && (
+              <Chip size="small" label={`+${app.techStack.length - 3}`} variant="outlined" />
+            )}
+          </Box>
+        </Box>
+      )}
 
-      <Button
-        variant="outlined"
-        size="small"
-        sx={{ mt: "auto", alignSelf: "start", borderRadius: "999px" }}
-      >
-        View App
-      </Button>
+      {/* Tags */}
+      {app.tags && Array.isArray(app.tags) && app.tags.length > 0 && (
+        <Box sx={{ mb: 2 }}>
+          <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+            {app.tags.slice(0, 4).map((tag, i) => (
+              <Chip key={i} size="small" label={tag} variant="outlined" />
+            ))}
+            {app.tags.length > 4 && (
+              <Chip size="small" label={`+${app.tags.length - 4}`} variant="outlined" />
+            )}
+          </Box>
+        </Box>
+      )}
+
+      {/* Pricing and Stats */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, mt: 'auto' }}>
+        {app.pricing && (
+          <Chip
+            icon={<DollarSign size={16} />}
+            label={app.pricing}
+            size="small"
+            color={app.pricing === 'Free' ? 'success' : 'primary'}
+            variant="outlined"
+          />
+        )}
+        {app.views && (
+          <Typography variant="caption" color="text.secondary">
+            {app.views} views
+          </Typography>
+        )}
+        {app.likes && (
+          <Typography variant="caption" color="text.secondary">
+            {app.likes} likes
+          </Typography>
+        )}
+      </Box>
+
+      {/* Action Buttons */}
+      <Box sx={{ display: 'flex', gap: 1, width: '100%' }}>
+        {app.website && (
+          <Button
+            component="a"
+            href={app.website}
+            target="_blank"
+            rel="noopener noreferrer"
+            variant="outlined"
+            size="small"
+            sx={{ flex: 1 }}
+          >
+            Visit App
+          </Button>
+        )}
+        {app.github && (
+          <Button
+            component="a"
+            href={app.github}
+            target="_blank"
+            rel="noopener noreferrer"
+            variant="outlined"
+            size="small"
+            sx={{ flex: 1 }}
+          >
+            View Code
+          </Button>
+        )}
+        {!app.website && !app.github && (
+          <Button
+            variant="outlined"
+            size="small"
+            sx={{ flex: 1 }}
+          >
+            View Details
+          </Button>
+        )}
+      </Box>
+
+      {renderBadges(app.badges || [])}
     </Paper>
   );
 

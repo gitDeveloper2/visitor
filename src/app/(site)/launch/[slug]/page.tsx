@@ -48,6 +48,13 @@ export default async function Page({ params }: { params: { slug: string } }) {
           views: app.stats?.views ?? 0,
           installs: app.stats?.installs ?? 0,
         }}
+        // Additional fields
+        description={app.description ?? ""}
+        category={app.category ?? ""}
+        techStack={app.techStack ?? []}
+        pricing={app.pricing ?? ""}
+        website={app.website ?? ""}
+        github={app.github ?? ""}
       />
     </main>
   );

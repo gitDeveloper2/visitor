@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@lib/mongodb';
-import { ObjectId } from 'mongodb';
 import { getSession } from '@/features/shared/utils/auth';
+import { ObjectId } from 'mongodb';
 
 export async function GET(
   request: Request,
@@ -10,10 +10,11 @@ export async function GET(
   try {
     const { db } = await connectToDatabase();
     
-    if (!ObjectId.isValid(params.id)) {
-      return NextResponse.json({ message: 'Invalid blog ID' }, { status: 400 });
+    if (!params.id) {
+      return NextResponse.json({ message: 'ID is required' }, { status: 400 });
     }
 
+    // Find blog by ObjectId for admin/editing purposes
     const blog = await db
       .collection('userblogs')
       .findOne({ _id: new ObjectId(params.id) });
@@ -41,8 +42,8 @@ export async function PATCH(
 
     const { db } = await connectToDatabase();
     
-    if (!ObjectId.isValid(params.id)) {
-      return NextResponse.json({ message: 'Invalid blog ID' }, { status: 400 });
+    if (!params.id) {
+      return NextResponse.json({ message: 'ID is required' }, { status: 400 });
     }
 
     const { 
@@ -108,6 +109,7 @@ export async function PATCH(
 
     return NextResponse.json({ message: 'Blog updated successfully' }, { status: 200 });
   } catch (error) {
+    console.error('Error updating blog:', error);
     return NextResponse.json({ message: 'Failed to update blog.', error: error?.toString() }, { status: 500 });
   }
 }
@@ -117,18 +119,34 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    const session = await getSession();
+    
+    if (!session?.user) {
+      return NextResponse.json({ message: 'Unauthenticated User' }, { status: 401 });
+    }
+
     const { db } = await connectToDatabase();
     
-    if (!ObjectId.isValid(params.id)) {
-      return NextResponse.json({ message: 'Invalid blog ID' }, { status: 400 });
+    if (!params.id) {
+      return NextResponse.json({ message: 'ID is required' }, { status: 400 });
     }
 
     const { status } = await request.json();
 
     if (!status || !['pending', 'approved', 'rejected'].includes(status)) {
-      return NextResponse.json({ message: 'Invalid status' }, { status: 400 });
+      return NextResponse.json({ message: 'Invalid status. Must be pending, approved, or rejected.' }, { status: 400 });
     }
 
+    // Check if the blog exists
+    const existingBlog = await db
+      .collection('userblogs')
+      .findOne({ _id: new ObjectId(params.id) });
+
+    if (!existingBlog) {
+      return NextResponse.json({ message: 'Blog not found' }, { status: 404 });
+    }
+
+    // Update the status
     const result = await db
       .collection('userblogs')
       .updateOne(
@@ -142,6 +160,7 @@ export async function PUT(
 
     return NextResponse.json({ message: 'Blog status updated successfully' }, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ message: 'Failed to update blog.', error: error?.toString() }, { status: 500 });
+    console.error('Error updating blog status:', error);
+    return NextResponse.json({ message: 'Failed to update blog status.', error: error?.toString() }, { status: 500 });
   }
 } 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/features/shared/utils/auth';
 import { connectToDatabase } from '@lib/mongodb';
+import { generateUniqueSlug } from '../../../utils/slugGenerator';
 
 export async function POST(request: Request) {
   try {
@@ -28,8 +29,18 @@ export async function POST(request: Request) {
 
     const { db } = await connectToDatabase();
 
+    // Generate a unique slug for the blog
+    const existingSlugs = await db
+      .collection('userblogs')
+      .find({}, { projection: { slug: 1 } })
+      .toArray();
+    
+    const existingSlugStrings = existingSlugs.map(blog => blog.slug);
+    const slug = generateUniqueSlug(title, existingSlugStrings);
+
     const newBlog = {
       title,
+      slug, // Add the generated slug
       content,
       tags: tags || [],
       authorId: session.user.id,

@@ -49,7 +49,7 @@ export default function SubmitAppCTA() {
         href="/launch/submit"
         variant="contained"
         sx={commonStyles.gradientButton(theme)}
-       
+        startIcon={<Rocket size={20} />}
       >
         Submit Your App
       </Button>

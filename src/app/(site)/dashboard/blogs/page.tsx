@@ -199,7 +199,7 @@ export default function ManageBlogsPage() {
                     <Tooltip title="View Blog">
                       <IconButton
                         component={Link}
-                        href={`/blogs/${blog._id}`}
+                        href={`/blogs/${blog.slug}`}
                         size="small"
                         color="info"
                       >

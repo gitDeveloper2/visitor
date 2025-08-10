@@ -25,6 +25,7 @@ import {
 interface BlogPost {
   _id: string;
   title: string;
+  slug: string; // Added slug field
   content: string;
   tags: string[];
   authorName: string;
@@ -70,12 +71,13 @@ export default function BlogPageWrapper() {
 
   useEffect(() => {
     async function fetchBlog() {
-      if (!params.id) return;
+      if (!params.slug) return;
       
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/user-blogs/${params.id}`);
+        // Updated to use slug-based API endpoint
+        const res = await fetch(`/api/user-blogs/${params.slug}`);
         if (!res.ok) throw new Error("Failed to fetch blog");
         const data = await res.json();
         setBlog(data.blog);
@@ -86,7 +88,7 @@ export default function BlogPageWrapper() {
       }
     }
     fetchBlog();
-  }, [params.id]);
+  }, [params.slug]); // Changed from params.id to params.slug
 
   if (loading) {
     return (
@@ -98,42 +100,29 @@ export default function BlogPageWrapper() {
 
   if (error || !blog) {
     return (
-      <Container maxWidth="md" sx={{ py: 8 }}>
-        <Alert severity="error">
-          {error || "Blog not found"}
-        </Alert>
-      </Container>
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <Alert severity="error">{error || "Blog not found"}</Alert>
+      </Box>
     );
   }
-
-  const date = new Date(blog.createdAt).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
 
   return (
     <BlogArticlePage
       author={blog.author || blog.authorName}
       role={blog.role || "Author"}
-      authorBio={blog.authorBio || "Passionate developer and writer sharing insights about modern web development."}
-      socialHandles={{
-        twitter: "author_twitter",
-        linkedin: "author-linkedin",
-        github: "author-github"
-      }}
+      authorBio={blog.authorBio}
       title={blog.title}
-      date={date}
-      readTime={blog.readTime ? `${blog.readTime} min read` : "5 min read"}
-      views={0}
-      likes={0}
+      date={new Date(blog.createdAt).toLocaleDateString()}
+      readTime={`${blog.readTime || 5} min read`}
+      views={0} // You can add view tracking later
+      likes={0} // You can add like tracking later
       tags={blog.tags}
       content={blog.content}
     />
   );
 }
 
- function BlogArticlePage({
+function BlogArticlePage({
     author,
     role,
     authorBio,

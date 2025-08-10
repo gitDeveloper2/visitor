@@ -2,6 +2,7 @@ import mongoose, { Document, Schema, model, models } from 'mongoose';
 
 interface IUserBlog {
   title: string;
+  slug: string; // Added slug field
   content: string;
   tags: string[];
   authorId: string;
@@ -25,6 +26,7 @@ interface IUserBlogDocument extends IUserBlog, Document {}
 const userBlogSchema = new Schema<IUserBlogDocument>(
   {
     title: { type: String, required: true },
+    slug: { type: String, required: true, unique: true, index: true }, // Added slug with index
     content: { type: String, required: true },
     tags: { type: [String], default: [] },
     authorId: { type: String, required: true },
@@ -42,6 +44,9 @@ const userBlogSchema = new Schema<IUserBlogDocument>(
   },
   { timestamps: true }
 );
+
+// Create a compound index for better query performance
+userBlogSchema.index({ slug: 1, status: 1 });
 
 const UserBlog = (mongoose.models.UserBlog as  mongoose.Model<IUserBlogDocument>)||model<IUserBlogDocument>('UserBlog', userBlogSchema);
 

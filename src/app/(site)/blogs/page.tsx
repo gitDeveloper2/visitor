@@ -194,6 +194,7 @@ const founderStoriesMock = [
 interface BlogPost {
   _id: string;
   title: string;
+  slug: string; // Added slug field
   content: string;
   tags: string[];
   authorName: string;
@@ -533,7 +534,7 @@ export default function BlogMainPage() {
 
         <Button
           component={Link}
-          href={`/blogs/${blog._id}`}
+          href={`/blogs/${blog.slug}`}
           variant="outlined"
           size="small"
           sx={{

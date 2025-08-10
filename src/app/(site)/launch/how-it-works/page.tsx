@@ -177,7 +177,7 @@ export default function HowItWorksPage() {
                 ))}
               </List>
               <Box textAlign="center">
-                <Button variant="contained" size="large" sx={commonStyles.gradientButton(theme)} href="/apps/upgrade">
+                <Button variant="contained" size="large" sx={commonStyles.gradientButton(theme)} href="/launch/submit">
                   Upgrade to Premium
                 </Button>
               </Box>
@@ -214,7 +214,7 @@ export default function HowItWorksPage() {
                 <Button variant="outlined" size="large"  sx={{
     ...commonStyles.glassButton(theme),
     color: theme.palette.common.white, // ✅ ensure white text (if not already set)
-  }} href="/apps/example">
+  }} href="/launch/example">
                   See Example Page
                 </Button>
               </Box>
@@ -234,7 +234,7 @@ export default function HowItWorksPage() {
               </Typography>
               <CardList items={reqApp} />
               <Box textAlign="center" mt={3}>
-                <Button variant="contained" size="large" sx={commonStyles.gradientButton(theme)} href="/apps/submit">
+                <Button variant="contained" size="large" sx={commonStyles.gradientButton(theme)} href="/launch/submit">
                   Submit Your App
                 </Button>
               </Box>
@@ -250,7 +250,7 @@ export default function HowItWorksPage() {
                 <Button variant="outlined" size="large"  sx={{
     ...commonStyles.glassButton(theme),
     color: theme.palette.common.white, // ✅ ensure white text (if not already set)
-  }} href="/blog/submit">
+  }} href="/launch/blog-submit">
                   Submit an Article
                 </Button>
               </Box>
@@ -264,13 +264,13 @@ export default function HowItWorksPage() {
             subtitle="Join thousands of developers and innovators who have successfully showcased their work."
           />
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
-            <Button variant="contained" size="large" sx={commonStyles.gradientButton(theme)} href="/apps/submit">
+            <Button variant="contained" size="large" sx={commonStyles.gradientButton(theme)} href="/launch/submit">
               Submit Your App
             </Button>
             <Button variant="outlined" size="large"  sx={{
     ...commonStyles.glassButton(theme),
     color: theme.palette.common.white, // ✅ ensure white text (if not already set)
-  }} href="/blog/submit">
+  }} href="/launch/blog-submit">
               Submit a Blog Post
             </Button>
           </Box>

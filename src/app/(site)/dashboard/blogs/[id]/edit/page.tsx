@@ -39,7 +39,7 @@ export default function BlogEditPage() {
       setFetching(true);
       setError(null);
       try {
-        const res = await fetch(`/api/user-blogs/${params.id}`);
+        const res = await fetch(`/api/user-blogs/admin/${params.id}`);
         if (!res.ok) throw new Error("Failed to fetch blog");
         const data = await res.json();
         const blog = data.blog;
@@ -86,7 +86,7 @@ export default function BlogEditPage() {
         founderUrl: formData.founderUrl,
         isFounderStory: formData.isFounderStory,
       };
-      const res = await fetch(`/api/user-blogs/${params.id}`, {
+      const res = await fetch(`/api/user-blogs/admin/${params.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

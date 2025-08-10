@@ -9,6 +9,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Unauthenticated User' }, { status: 401 });
     }
     
+    const requestBody = await request.json();
+    console.log('📝 Received app submission:', requestBody);
+    console.log('👤 User session:', { id: session.user.id, name: session.user.name, email: session.user.email });
+    
     const { 
       name, 
       description, 
@@ -20,30 +24,74 @@ export async function POST(request: Request) {
       category,
       techStack,
       pricing,
-      features
-    } = await request.json();
+      features,
+      // New fields for better presentation
+      tagline,
+      fullDescription,
+      authorBio
+    } = requestBody;
     
     if (!name || !description) {
-      return NextResponse.json({ message: 'Missing required fields.' }, { status: 400 });
+      const missingFields = [];
+      if (!name) missingFields.push('name');
+      if (!description) missingFields.push('description');
+      return NextResponse.json({ 
+        message: `Missing required fields: ${missingFields.join(', ')}` 
+      }, { status: 400 });
     }
     
     const { db } = await connectToDatabase();
     
+    // Check if the collection exists, if not create it
+    const collections = await db.listCollections().toArray();
+    const collectionNames = collections.map(col => col.name);
+    console.log('📚 Available collections:', collectionNames);
+    
+    if (!collectionNames.includes('userapps')) {
+      console.log('⚠️ userapps collection not found, creating it...');
+      await db.createCollection('userapps');
+    }
+    
+    // Generate a unique slug from the name
+    let slug = name.toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    
+    // Check if slug already exists and make it unique
+    let counter = 1;
+    let originalSlug = slug;
+    while (await db.collection('userapps').findOne({ slug })) {
+      slug = `${originalSlug}-${counter}`;
+      counter++;
+    }
+    
+    // Process arrays properly
+    const processedTags = tags ? (Array.isArray(tags) ? tags : tags.split(',').map(t => t.trim()).filter(Boolean)) : [];
+    const processedTechStack = techStack ? (Array.isArray(techStack) ? techStack : techStack.split(',').map(t => t.trim()).filter(Boolean)) : [];
+    const processedFeatures = features ? (Array.isArray(features) ? features : features.split(',').map(t => t.trim()).filter(Boolean)) : [];
+    
     const newApp = {
       name,
       description,
-      tags: tags || [],
+      tagline: tagline || description.slice(0, 100), // Use description as fallback
+      fullDescription: fullDescription || description, // Use description as fallback
+      tags: processedTags,
       authorId: session.user.id,
       authorName: session.user.name,
       authorEmail: session.user.email,
+      authorBio: authorBio || '',
+      authorAvatar: session.user.image || null,
       isInternal: !!isInternal,
       // Additional metadata
       website: website || '',
       github: github || '',
       category: category || 'Other',
-      techStack: techStack || [],
+      techStack: processedTechStack,
       pricing: pricing || 'Free',
-      features: features || [],
+      features: processedFeatures,
+      // URL and slug
+      slug,
+      externalUrl: website || null,
       // Display metadata
       views: 0,
       likes: 0,
@@ -51,6 +99,8 @@ export async function POST(request: Request) {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
+    
+    console.log('💾 Inserting new app:', newApp);
     
     const result = await db.collection('userapps').insertOne(newApp);
     return NextResponse.json(
