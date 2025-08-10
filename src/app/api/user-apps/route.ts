@@ -65,10 +65,10 @@ export async function POST(request: Request) {
       counter++;
     }
     
-    // Process arrays properly
-    const processedTags = tags ? (Array.isArray(tags) ? tags : tags.split(',').map(t => t.trim()).filter(Boolean)) : [];
-    const processedTechStack = techStack ? (Array.isArray(techStack) ? techStack : techStack.split(',').map(t => t.trim()).filter(Boolean)) : [];
-    const processedFeatures = features ? (Array.isArray(features) ? features : features.split(',').map(t => t.trim()).filter(Boolean)) : [];
+    // Ensure arrays are properly formatted (no more comma-separated string handling)
+    const processedTags = Array.isArray(tags) ? tags : [];
+    const processedTechStack = Array.isArray(techStack) ? techStack : [];
+    const processedFeatures = Array.isArray(features) ? features : [];
     
     const newApp = {
       name,

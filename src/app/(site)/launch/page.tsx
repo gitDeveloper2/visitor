@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { AppWindow, BadgeCheck, DollarSign, Search } from "lucide-react";
-
+import Link from "next/link";
 import {
   getGlassStyles,
   getShadow,
@@ -266,43 +266,46 @@ export default function AppsMainPage() {
       </Box>
 
       {/* Action Buttons */}
-      <Box sx={{ display: 'flex', gap: 1, width: '100%' }}>
-        {app.website && (
-          <Button
-            component="a"
-            href={app.website}
-            target="_blank"
-            rel="noopener noreferrer"
-            variant="outlined"
-            size="small"
-            sx={{ flex: 1 }}
-          >
-            Visit App
-          </Button>
-        )}
-        {app.github && (
-          <Button
-            component="a"
-            href={app.github}
-            target="_blank"
-            rel="noopener noreferrer"
-            variant="outlined"
-            size="small"
-            sx={{ flex: 1 }}
-          >
-            View Code
-          </Button>
-        )}
-        {!app.website && !app.github && (
-          <Button
-            variant="outlined"
-            size="small"
-            sx={{ flex: 1 }}
-          >
-            View Details
-          </Button>
-        )}
-      </Box>
+      <Box sx={{ display: "flex", gap: 1, width: "100%" }}>
+  {app.website && (
+    <Button
+      component="a"
+      href={app.website}
+      target="_blank"
+      rel="noopener noreferrer"
+      variant="outlined"
+      size="small"
+      sx={{ flex: 1 }}
+    >
+      Visit App
+    </Button>
+  )}
+
+  {app.github && (
+    <Button
+      component="a"
+      href={app.github}
+      target="_blank"
+      rel="noopener noreferrer"
+      variant="outlined"
+      size="small"
+      sx={{ flex: 1 }}
+    >
+      View Code
+    </Button>
+  )}
+
+  {/* always shown */}
+  <Button
+    component={Link}
+    href={`/launch/${app.slug}`}
+    variant="outlined"
+    size="small"
+    sx={{ flex: 1 }}
+  >
+    View Details
+  </Button>
+</Box>
 
       {renderBadges(app.badges || [])}
     </Paper>

@@ -18,9 +18,11 @@ import {
   Stack,
   Divider,
   Alert,
+  IconButton,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { BadgeCheck, DollarSign, UploadCloud, Github, Globe, User, Code, Star } from "lucide-react";
+import { BadgeCheck, DollarSign, UploadCloud, Github, Globe, User, Code, Star, ArrowUp, ArrowDown, X } from "lucide-react";
+import { KeyboardArrowUp as UpIcon, KeyboardArrowDown as DownIcon, Delete as DeleteIcon } from "@mui/icons-material";
 import { getGlassStyles, getShadow, typographyVariants, commonStyles } from "../../../../utils/themeUtils";
 import { useState, useEffect } from "react";
 
@@ -51,13 +53,18 @@ export default function SubmitAppPage() {
     github: "",
     category: "",
     pricing: "",
-    tags: "",
-    techStack: "",
-    features: "",
+    tags: [] as string[], // Changed to array
+    techStack: [] as string[], // Changed to array
+    features: [] as string[], // Changed to array
     authorName: "",
     authorEmail: "",
     authorBio: "",
   });
+  
+  // Feature management state
+  const [newFeature, setNewFeature] = useState("");
+  const [newTag, setNewTag] = useState("");
+  const [newTech, setNewTech] = useState("");
   
   // Check authentication status
   const [authStatus, setAuthStatus] = useState<'checking' | 'authenticated' | 'unauthenticated'>('checking');
@@ -97,6 +104,76 @@ export default function SubmitAppPage() {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+  
+  // Feature management functions
+  const addFeature = () => {
+    if (newFeature.trim() && !formData.features.includes(newFeature.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        features: [...prev.features, newFeature.trim()]
+      }));
+      setNewFeature("");
+    }
+  };
+  
+  const removeFeature = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      features: prev.features.filter((_, i) => i !== index)
+    }));
+  };
+  
+  const moveFeature = (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index > 0) {
+      setFormData(prev => {
+        const newFeatures = [...prev.features];
+        [newFeatures[index], newFeatures[index - 1]] = [newFeatures[index - 1], newFeatures[index]];
+        return { ...prev, features: newFeatures };
+      });
+    } else if (direction === 'down' && index < formData.features.length - 1) {
+      setFormData(prev => {
+        const newFeatures = [...prev.features];
+        [newFeatures[index], newFeatures[index + 1]] = [newFeatures[index + 1], newFeatures[index]];
+        return { ...prev, features: newFeatures };
+      });
+    }
+  };
+
+  // Tag management functions
+  const addTag = () => {
+    if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        tags: [...prev.tags, newTag.trim()]
+      }));
+      setNewTag("");
+    }
+  };
+
+  const removeTag = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      tags: prev.tags.filter((_, i) => i !== index)
+    }));
+  };
+
+  // Tech stack management functions
+  const addTech = () => {
+    if (newTech.trim() && !formData.techStack.includes(newTech.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        techStack: [...prev.techStack, newTech.trim()]
+      }));
+      setNewTech("");
+    }
+  };
+
+  const removeTech = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      techStack: prev.techStack.filter((_, i) => i !== index)
+    }));
   };
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -138,9 +215,9 @@ export default function SubmitAppPage() {
         github: formData.github.trim(),
         category: formData.category,
         pricing: formData.pricing,
-        tags: formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
-        techStack: formData.techStack ? formData.techStack.split(',').map(t => t.trim()).filter(Boolean) : [],
-        features: formData.features ? formData.features.split(',').map(f => f.trim()).filter(Boolean) : [],
+        tags: formData.tags, // Already an array, no need to split
+        techStack: formData.techStack, // Already an array, no need to split
+        features: formData.features, // Already an array, no need to split
         authorName: formData.authorName.trim(),
         authorEmail: formData.authorEmail.trim(),
         authorBio: formData.authorBio.trim(),
@@ -171,23 +248,26 @@ export default function SubmitAppPage() {
         message: 'App submitted successfully! We\'ll review it within 48-72 hours.'
       });
       
-      // Reset form after successful submission
-      setFormData({
-        name: "",
-        tagline: "",
-        description: "",
-        fullDescription: "",
-        website: "",
-        github: "",
-        category: "",
-        pricing: "",
-        tags: "",
-        techStack: "",
-        features: "",
-        authorName: "",
-        authorEmail: "",
-        authorBio: "",
-      });
+              // Reset form after successful submission
+        setFormData({
+          name: "",
+          tagline: "",
+          description: "",
+          fullDescription: "",
+          website: "",
+          github: "",
+          category: "",
+          pricing: "",
+          tags: [], // Reset to empty array
+          techStack: [], // Reset to empty array
+          features: [], // Reset to empty array
+          authorName: "",
+          authorEmail: "",
+          authorBio: "",
+        });
+        setNewFeature(""); // Reset feature input
+        setNewTag(""); // Reset tag input
+        setNewTech(""); // Reset tech stack input
       
     } catch (error: any) {
       console.error('Submission error:', error);
@@ -349,15 +429,40 @@ export default function SubmitAppPage() {
               </Grid>
 
               <Grid item xs={12}>
-                <TextField
-                  label="Tags"
-                  fullWidth
-                  required
-                  placeholder="e.g. React, Mobile, Productivity, AI, SaaS"
-                  value={formData.tags}
-                  onChange={(e) => handleInputChange("tags", e.target.value)}
-                  helperText="Add 3-8 relevant tags separated by commas. These help users discover your app."
-                />
+                <Typography variant="subtitle1" fontWeight={600} mb={2} color="text.secondary">
+                  Tags
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                  <TextField
+                    label="Add a tag"
+                    fullWidth
+                    placeholder="e.g. React, Mobile, Productivity, AI, SaaS"
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && addTag()}
+                    helperText="Press Enter or click Add to add a tag"
+                    disabled={authStatus !== 'authenticated' || isSubmitting}
+                  />
+                  <Button
+                    variant="outlined"
+                    onClick={addTag}
+                    disabled={!newTag.trim() || authStatus !== 'authenticated' || isSubmitting}
+                    sx={{ minWidth: 100 }}
+                  >
+                    Add
+                  </Button>
+                </Box>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {formData.tags.map((tag, index) => (
+                    <Chip
+                      key={index}
+                      label={tag}
+                      onDelete={() => removeTag(index)}
+                      color="primary"
+                      variant="outlined"
+                    />
+                  ))}
+                </Box>
               </Grid>
 
               {/* Links and URLs */}
@@ -413,15 +518,41 @@ export default function SubmitAppPage() {
                 </Typography>
               </Grid>
 
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Tech Stack"
-                  fullWidth
-                  placeholder="e.g. React, Node.js, MongoDB, AWS"
-                  value={formData.techStack}
-                  onChange={(e) => handleInputChange("techStack", e.target.value)}
-                  helperText="Technologies, frameworks, and tools used"
-                />
+              <Grid item xs={12}>
+                <Typography variant="subtitle1" fontWeight={600} mb={2} color="text.secondary">
+                  Tech Stack
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                  <TextField
+                    label="Add technology"
+                    fullWidth
+                    placeholder="e.g. React, Node.js, MongoDB, AWS"
+                    value={newTech}
+                    onChange={(e) => setNewTech(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && addTech()}
+                    helperText="Press Enter or click Add to add a technology"
+                    disabled={authStatus !== 'authenticated' || isSubmitting}
+                  />
+                  <Button
+                    variant="outlined"
+                    onClick={addTech}
+                    disabled={!newTech.trim() || authStatus !== 'authenticated' || isSubmitting}
+                    sx={{ minWidth: 100 }}
+                  >
+                    Add
+                  </Button>
+                </Box>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {formData.techStack.map((tech, index) => (
+                    <Chip
+                      key={index}
+                      label={tech}
+                      onDelete={() => removeTech(index)}
+                      color="secondary"
+                      variant="outlined"
+                    />
+                  ))}
+                </Box>
               </Grid>
 
               <Grid item xs={12} md={6}>
@@ -443,64 +574,72 @@ export default function SubmitAppPage() {
                 <Typography variant="subtitle1" fontWeight={600} mb={2} color="text.secondary">
                   Key Features
                 </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      label="Feature 1"
-                      fullWidth
-                      placeholder="e.g. Real-time collaboration"
-                      value={formData.features.split(',')[0] || ''}
-                      onChange={(e) => {
-                        const features = formData.features.split(',');
-                        features[0] = e.target.value;
-                        handleInputChange("features", features.join(','));
+                {/* Feature Input */}
+                <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                  <TextField
+                    label="Add a feature"
+                    fullWidth
+                    placeholder="e.g. Real-time collaboration, AI-powered suggestions, Cross-platform sync..."
+                    value={newFeature}
+                    onChange={(e) => setNewFeature(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && addFeature()}
+                    helperText="Press Enter or click Add to add a feature"
+                    disabled={authStatus !== 'authenticated' || isSubmitting}
+                  />
+                  <Button
+                    variant="outlined"
+                    onClick={addFeature}
+                    disabled={!newFeature.trim() || authStatus !== 'authenticated' || isSubmitting}
+                    sx={{ minWidth: 100 }}
+                  >
+                    Add
+                  </Button>
+                </Box>
+                
+                {/* Features List */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 3 }}>
+                  {formData.features.map((feature, index) => (
+                    <Paper
+                      key={index}
+                      sx={{
+                        p: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        backgroundColor: theme.palette.background.paper,
+                        border: `1px solid ${theme.palette.divider}`,
                       }}
-                      helperText="Main feature that makes your app unique"
-                    />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      label="Feature 2"
-                      fullWidth
-                      placeholder="e.g. AI-powered suggestions"
-                      value={formData.features.split(',')[1] || ''}
-                      onChange={(e) => {
-                        const features = formData.features.split(',');
-                        features[1] = e.target.value;
-                        handleInputChange("features", features.join(','));
-                      }}
-                      helperText="Second key feature"
-                    />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      label="Feature 3"
-                      fullWidth
-                      placeholder="e.g. Cross-platform sync"
-                      value={formData.features.split(',')[2] || ''}
-                      onChange={(e) => {
-                        const features = formData.features.split(',');
-                        features[2] = e.target.value;
-                        handleInputChange("features", features.join(','));
-                      }}
-                      helperText="Third key feature"
-                    />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      label="Feature 4"
-                      fullWidth
-                      placeholder="e.g. Advanced analytics"
-                      value={formData.features.split(',')[3] || ''}
-                      onChange={(e) => {
-                        const features = formData.features.split(',');
-                        features[3] = e.target.value;
-                        handleInputChange("features", features.join(','));
-                      }}
-                      helperText="Fourth key feature (optional)"
-                    />
-                  </Grid>
-                </Grid>
+                    >
+                      <Typography variant="body2" sx={{ flex: 1 }}>
+                        ✨ {feature}
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 0.5 }}>
+                        <IconButton
+                          size="small"
+                          onClick={() => moveFeature(index, 'up')}
+                          disabled={index === 0}
+                        >
+                          <UpIcon />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => moveFeature(index, 'down')}
+                          disabled={index === formData.features.length - 1}
+                        >
+                          <DownIcon />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => removeFeature(index)}
+                          color="error"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
+                    </Paper>
+                  ))}
+                </Box>
+                
                 <Typography variant="caption" color="text.secondary" mt={1} display="block">
                   Focus on the most important features that solve real problems for your users
                 </Typography>
