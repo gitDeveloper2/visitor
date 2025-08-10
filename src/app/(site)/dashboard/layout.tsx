@@ -40,6 +40,7 @@ import { useRef } from "react";
       group: "Write",
       links: [
         { label: "Write Blog", href: "/dashboard/blogs/write" },
+        { label: "Test Edit", href: "/dashboard/blogs/test-edit" },
       ],
     },
     {

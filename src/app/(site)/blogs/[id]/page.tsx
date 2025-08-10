@@ -29,6 +29,14 @@ interface BlogPost {
   tags: string[];
   authorName: string;
   authorEmail: string;
+  // Additional fields from forms
+  author?: string;
+  role?: string;
+  authorBio?: string;
+  founderUrl?: string;
+  isInternal?: boolean;
+  isFounderStory?: boolean;
+  readTime?: number;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
   updatedAt: string;
@@ -106,9 +114,9 @@ export default function BlogPageWrapper() {
 
   return (
     <BlogArticlePage
-      author={blog.authorName}
-      role="Author"
-      authorBio="Passionate developer and writer sharing insights about modern web development."
+      author={blog.author || blog.authorName}
+      role={blog.role || "Author"}
+      authorBio={blog.authorBio || "Passionate developer and writer sharing insights about modern web development."}
       socialHandles={{
         twitter: "author_twitter",
         linkedin: "author-linkedin",
@@ -116,7 +124,7 @@ export default function BlogPageWrapper() {
       }}
       title={blog.title}
       date={date}
-      readTime="5 min read"
+      readTime={blog.readTime ? `${blog.readTime} min read` : "5 min read"}
       views={0}
       likes={0}
       tags={blog.tags}

@@ -10,19 +10,23 @@ import {
   Typography,
   Container,
   Paper,
+  Alert,
+  CircularProgress,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { getShadow, getGlassStyles } from "../../../../../utils/themeUtils";
-import StepMetadata from "./StepMetadata";
-import StepEditor from "./StepEditor";
-import StepReview from "./StepReview";
-import { useState } from "react";
-import { authClient } from '../../../auth-client';
+import { getShadow, getGlassStyles } from "../../../../../../utils/themeUtils";
+import StepMetadata from "../../../submission/blog/StepMetadata";
+import StepEditor from "../../../submission/blog/StepEditor";
+import StepReview from "../../../submission/blog/StepReview";
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 
 const steps = ["Blog Info", "Write Blog", "Review & Submit"];
 
-export default function BlogSubmitPage() {
+export default function BlogEditPage() {
   const theme = useTheme();
+  const params = useParams();
+  const router = useRouter();
   const [activeStep, setActiveStep] = React.useState(0);
   const [formData, setFormData] = React.useState({
     title: "",
@@ -39,26 +43,60 @@ export default function BlogSubmitPage() {
     },
   });
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  // Fetch existing blog data
+  useEffect(() => {
+    async function fetchBlog() {
+      if (!params.id) return;
+      
+      setFetching(true);
+      setError(null);
+      try {
+        const res = await fetch(`/api/user-blogs/${params.id}`);
+        if (!res.ok) throw new Error("Failed to fetch blog");
+        const data = await res.json();
+        const blog = data.blog;
+        
+        // Populate form with existing data
+        setFormData({
+          title: blog.title || "",
+          author: blog.author || blog.authorName || "",
+          role: blog.role || "Author",
+          tags: Array.isArray(blog.tags) ? blog.tags.join(", ") : "",
+          authorBio: blog.authorBio || "Passionate developer and writer sharing insights about modern web development.",
+          content: blog.content || "",
+          isFounderStory: blog.isInternal || blog.isFounderStory || false,
+          founderUrl: blog.founderUrl || "",
+          founderDomainCheck: { status: "unknown", message: "" },
+        });
+      } catch (err: any) {
+        setError(err.message || "Failed to fetch blog");
+      } finally {
+        setFetching(false);
+      }
+    }
+    fetchBlog();
+  }, [params.id]);
 
   const handleNext = () => setActiveStep((prev) => prev + 1);
   const handleBack = () => setActiveStep((prev) => prev - 1);
   const handleFormDataChange = (data: Partial<typeof formData>) => {
     setFormData((prev) => ({ ...prev, ...data }));
   };
+
   const handleSubmit = async () => {
     setLoading(true);
     setError(null);
     setSuccess(false);
     try {
-      // Optionally get user info from authClient (if needed on client)
-      // const user = await authClient.getSession();
       const payload = {
         title: formData.title,
         content: formData.content,
         tags: formData.tags.split(',').map((t) => t.trim()).filter(Boolean),
-        isInternal: formData.isFounderStory || false,
+        isInternal: formData.isFounderStory,
         // Additional metadata fields
         author: formData.author,
         role: formData.role,
@@ -66,44 +104,62 @@ export default function BlogSubmitPage() {
         founderUrl: formData.founderUrl,
         isFounderStory: formData.isFounderStory,
       };
-      const res = await fetch("/api/user-blogs", {
-        method: "POST",
+      
+      const res = await fetch(`/api/user-blogs/${params.id}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+      
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.message || "Could not save blog");
+        throw new Error(j.message || "Could not update blog");
       }
+      
       setSuccess(true);
-      setActiveStep(0);
-      setFormData({
-        title: "",
-        author: "",
-        role: "",
-        tags: "",
-        authorBio: "",
-        content: "",
-        isFounderStory: false,
-        founderUrl: "",
-        founderDomainCheck: { status: "unknown", message: "" },
-      });
+      setTimeout(() => {
+        router.push("/dashboard/blogs");
+      }, 2000);
     } catch (err: any) {
       setError(err.message || "Unknown error");
     } finally {
       setLoading(false);
     }
   };
-  
-  
+
+  if (fetching) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error && !fetching) {
+    return (
+      <Container maxWidth="md" sx={{ py: 8 }}>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+        <Button variant="contained" onClick={() => router.push("/dashboard/blogs")}>
+          Back to Blogs
+        </Button>
+      </Container>
+    );
+  }
+
   return (
     <Box component="main" sx={{ bgcolor: "background.default", py: 8 }}>
       <Container maxWidth="md">
         <Typography variant="h4" align="center" gutterBottom>
-          Submit Your Blog
+          Edit Your Blog
         </Typography>
         {error && <Typography color="error" align="center">{error}</Typography>}
-        {success && <Typography color="success.main" align="center">Blog submitted successfully!</Typography>}
+        {success && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            Blog updated successfully! Redirecting to blogs page...
+          </Alert>
+        )}
         <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 6 }}>
           {steps.map((label) => (
             <Step key={label}>
@@ -143,10 +199,10 @@ export default function BlogSubmitPage() {
             onClick={activeStep === steps.length - 1 ? handleSubmit : handleNext}
             disabled={loading}
           >
-            {loading ? "Submitting..." : activeStep === steps.length - 1 ? "Submit" : "Next"}
+            {loading ? "Updating..." : activeStep === steps.length - 1 ? "Update Blog" : "Next"}
           </Button>
         </Box>
       </Container>
     </Box>
   );
-}
+} 

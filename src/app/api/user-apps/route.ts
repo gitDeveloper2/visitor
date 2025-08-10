@@ -8,11 +8,27 @@ export async function POST(request: Request) {
     if (!session?.user) {
       return NextResponse.json({ message: 'Unauthenticated User' }, { status: 401 });
     }
-    const { name, description, tags, isInternal } = await request.json();
+    
+    const { 
+      name, 
+      description, 
+      tags, 
+      isInternal,
+      // Additional fields for better app data
+      website,
+      github,
+      category,
+      techStack,
+      pricing,
+      features
+    } = await request.json();
+    
     if (!name || !description) {
       return NextResponse.json({ message: 'Missing required fields.' }, { status: 400 });
     }
+    
     const { db } = await connectToDatabase();
+    
     const newApp = {
       name,
       description,
@@ -21,10 +37,21 @@ export async function POST(request: Request) {
       authorName: session.user.name,
       authorEmail: session.user.email,
       isInternal: !!isInternal,
+      // Additional metadata
+      website: website || '',
+      github: github || '',
+      category: category || 'Other',
+      techStack: techStack || [],
+      pricing: pricing || 'Free',
+      features: features || [],
+      // Display metadata
+      views: 0,
+      likes: 0,
       status: 'pending',
       createdAt: new Date(),
       updatedAt: new Date(),
     };
+    
     const result = await db.collection('userapps').insertOne(newApp);
     return NextResponse.json(
       { message: 'App submitted successfully.', app: { _id: result.insertedId, ...newApp } },
