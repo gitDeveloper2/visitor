@@ -80,8 +80,12 @@ export default function PremiumAppListing({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          productId: "PREMIUM_VARIANT_ID", // Replace with your actual variant ID
-          // You can also send custom data if your backend accepts it
+          variantId: VARIANT_IDS.PREMIUM_APP_LISTING,
+          custom: {
+            app_id: appId,
+            app_name: appName,
+            subscription_type: "premium_app_listing",
+          },
         }),
       });
   

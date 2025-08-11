@@ -10,6 +10,7 @@ import {
   Typography,
   Container,
   Paper,
+  Alert,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { getShadow, getGlassStyles } from "../../../../../utils/themeUtils";
@@ -17,6 +18,7 @@ import StepMetadata from "./StepMetadata";
 import StepEditor from "./StepEditor";
 import StepReview from "./StepReview";
 import { useState } from "react";
+import PremiumBlogSubscription from "../../../../../components/premium/PremiumBlogSubscription";
 import { authClient } from '../../../auth-client';
 
 const steps = ["Blog Info", "Write Blog", "Review & Submit"];
@@ -51,6 +53,14 @@ export default function BlogSubmitPage() {
     setLoading(true);
     setError(null);
     setSuccess(false);
+    
+    // Frontend validation: Block non-Founder Story submissions without premium
+    if (!formData.isFounderStory) {
+      setError('Premium subscription required for non-Founder Story blogs. Please check the "Founder Story" option or subscribe to premium.');
+      setLoading(false);
+      return;
+    }
+    
     try {
       // Optionally get user info from authClient (if needed on client)
       // const user = await authClient.getSession();
@@ -127,7 +137,49 @@ export default function BlogSubmitPage() {
             <StepEditor formData={formData} setFormData={handleFormDataChange} />
           )}
           {activeStep === 2 && (
-            <StepReview metadata={formData} content={formData.content} />
+            <>
+              <StepReview metadata={formData} content={formData.content} />
+              {!formData.isFounderStory && (
+                <Box mt={4}>
+                  <Alert severity="warning" sx={{ mb: 3 }}>
+                    <Typography variant="h6" gutterBottom>
+                      ⚠️ Premium Blog Access Required
+                    </Typography>
+                    <Typography variant="body2" gutterBottom>
+                      Publishing non-Founder Story submissions requires an active Premium Blog subscription.
+                    </Typography>
+                    <Typography variant="body2" fontWeight="bold">
+                      To submit this blog, either:
+                    </Typography>
+                    <Box component="ul" sx={{ mt: 1, pl: 2 }}>
+                      <li>Check "This submission is a Founder Story" in step 1, OR</li>
+                      <li>Subscribe to Premium Blog Access below</li>
+                    </Box>
+                  </Alert>
+                  
+                  <Box sx={{ mb: 3, textAlign: 'center' }}>
+                    <Button 
+                      variant="outlined" 
+                      onClick={() => setActiveStep(0)}
+                      sx={{ mr: 2 }}
+                    >
+                      ← Go Back to Step 1 (Change Founder Story Setting)
+                    </Button>
+                  </Box>
+                  
+                  <PremiumBlogSubscription />
+                </Box>
+              )}
+              {formData.isFounderStory && (
+                <Box mt={4}>
+                  <Alert severity="success">
+                    <Typography variant="body2">
+                      ✅ Founder Story detected! This submission will be free and doesn't require premium access.
+                    </Typography>
+                  </Alert>
+                </Box>
+              )}
+            </>
           )}
         </Paper>
         <Box mt={4} display="flex" justifyContent="space-between">
@@ -141,9 +193,15 @@ export default function BlogSubmitPage() {
           <Button
             variant="contained"
             onClick={activeStep === steps.length - 1 ? handleSubmit : handleNext}
-            disabled={loading}
+            disabled={loading || (activeStep === steps.length - 1 && !formData.isFounderStory)}
+            sx={{
+              backgroundColor: activeStep === steps.length - 1 && !formData.isFounderStory ? 'grey.400' : undefined
+            }}
           >
-            {loading ? "Submitting..." : activeStep === steps.length - 1 ? "Submit" : "Next"}
+            {loading ? "Submitting..." : 
+             activeStep === steps.length - 1 ? 
+               (formData.isFounderStory ? "Submit Blog" : "Founder Story Required") : 
+               "Next"}
           </Button>
         </Box>
       </Container>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/features/shared/utils/auth';
 import { connectToDatabase } from '@lib/mongodb';
+import { getCheckoutUrl, VARIANT_IDS } from '@lib/lemonsqueezy';
 
 export async function POST(request: Request) {
   try {
@@ -28,7 +29,8 @@ export async function POST(request: Request) {
       // New fields for better presentation
       tagline,
       fullDescription,
-      authorBio
+      authorBio,
+      premiumPlan
     } = requestBody;
     
     if (!name || !description) {
@@ -98,13 +100,41 @@ export async function POST(request: Request) {
       status: 'pending',
       createdAt: new Date(),
       updatedAt: new Date(),
+      // Premium status
+      premiumPlan: premiumPlan || null,
+      isPremium: premiumPlan === 'premium',
     };
     
     console.log('💾 Inserting new app:', newApp);
     
     const result = await db.collection('userapps').insertOne(newApp);
+    
+    // If premium was selected, generate checkout URL
+    let checkoutUrl = null;
+    if (premiumPlan === 'premium') {
+      try {
+        checkoutUrl = getCheckoutUrl(VARIANT_IDS.PREMIUM_APP_LISTING, {
+          email: session.user.email,
+          name: session.user.name,
+          custom: {
+            app_id: result.insertedId.toString(),
+            app_name: name,
+            subscription_type: "premium_app_listing",
+          },
+        });
+      } catch (error) {
+        console.error('Error generating checkout URL:', error);
+      }
+    }
+    
     return NextResponse.json(
-      { message: 'App submitted successfully.', app: { _id: result.insertedId, ...newApp } },
+      { 
+        message: 'App submitted successfully.', 
+        app: { _id: result.insertedId, ...newApp },
+        premiumPlan,
+        checkoutUrl,
+        requiresPayment: premiumPlan === 'premium'
+      },
       { status: 201 }
     );
   } catch (error) {

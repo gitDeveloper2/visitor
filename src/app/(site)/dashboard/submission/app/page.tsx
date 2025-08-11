@@ -18,8 +18,11 @@ import {
   Chip,
   IconButton,
   Paper,
+  Card,
+  CardContent,
+  Divider,
 } from "@mui/material";
-import { Add as AddIcon, Delete as DeleteIcon, KeyboardArrowUp as UpIcon, KeyboardArrowDown as DownIcon } from "@mui/icons-material";
+import { Add as AddIcon, Delete as DeleteIcon, KeyboardArrowUp as UpIcon, KeyboardArrowDown as DownIcon, Star, Check } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 
 export default function SubmitAppPage() {
@@ -30,6 +33,7 @@ export default function SubmitAppPage() {
   const [newFeature, setNewFeature] = useState("");
   const [newTag, setNewTag] = useState("");
   const [newTech, setNewTech] = useState("");
+  const [selectedPremiumPlan, setSelectedPremiumPlan] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     name: "",
@@ -135,6 +139,7 @@ export default function SubmitAppPage() {
         pricing: form.pricing,
         features: form.features,
         isInternal: form.isInternal,
+        premiumPlan: selectedPremiumPlan, // Include premium plan selection
       };
       const res = await fetch("/api/user-apps", {
         method: "POST",
@@ -145,6 +150,15 @@ export default function SubmitAppPage() {
         const j = await res.json().catch(() => ({}));
         throw new Error(j.message || "Could not save app");
       }
+      
+      const result = await res.json();
+      
+      // If premium was selected and checkout URL is provided, redirect to payment
+      if (result.requiresPayment && result.checkoutUrl) {
+        window.location.href = result.checkoutUrl;
+        return;
+      }
+      
       setSuccess(true);
       setForm({ 
         name: "", 
@@ -158,6 +172,7 @@ export default function SubmitAppPage() {
         features: [],
         isInternal: false
       });
+      setSelectedPremiumPlan(null);
     } catch (err: any) {
       setError(err.message || "Unknown error");
     } finally {
@@ -174,8 +189,22 @@ export default function SubmitAppPage() {
 
   const pricingOptions = ["Free", "Freemium", "Paid", "Enterprise", "Contact Sales"];
 
+  const premiumFeatures = [
+    'Verified badge and premium placement',
+    'Priority review process (24-48 hours)',
+    'Enhanced app analytics and insights',
+    'Featured in premium app showcase',
+    'Priority customer support',
+    'Marketing promotion opportunities',
+    'Lifetime premium status (no expiration)',
+  ];
+
+  const handlePremiumSelection = (plan: string | null) => {
+    setSelectedPremiumPlan(plan);
+  };
+
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom fontWeight={600}>
           Submit Your App
@@ -272,7 +301,7 @@ export default function SubmitAppPage() {
               <Typography variant="subtitle1" fontWeight={600} mb={2} color="text.secondary">
                 Tags
               </Typography>
-              <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+              <Box sx={{ display: 'flex', gap: 2, mb: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
                 <TextField
                   label="Add a tag"
                   fullWidth
@@ -286,7 +315,7 @@ export default function SubmitAppPage() {
                   variant="outlined"
                   onClick={addTag}
                   disabled={!newTag.trim()}
-                  sx={{ minWidth: 100 }}
+                  sx={{ minWidth: { xs: '100%', sm: 100 } }}
                 >
                   Add
                 </Button>
@@ -308,7 +337,7 @@ export default function SubmitAppPage() {
               <Typography variant="subtitle1" fontWeight={600} mb={2} color="text.secondary">
                 Tech Stack
               </Typography>
-              <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+              <Box sx={{ display: 'flex', gap: 2, mb: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
                 <TextField
                   label="Add technology"
                   fullWidth
@@ -322,7 +351,7 @@ export default function SubmitAppPage() {
                   variant="outlined"
                   onClick={addTech}
                   disabled={!newTech.trim()}
-                  sx={{ minWidth: 100 }}
+                  sx={{ minWidth: { xs: '100%', sm: 100 } }}
                 >
                   Add
                 </Button>
@@ -383,7 +412,7 @@ export default function SubmitAppPage() {
               <Typography variant="subtitle1" fontWeight={600} mb={2} color="text.secondary">
                 Key Features
               </Typography>
-              <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+              <Box sx={{ display: 'flex', gap: 2, mb: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
                 <TextField
                   label="Add a feature"
                   fullWidth
@@ -397,7 +426,7 @@ export default function SubmitAppPage() {
                   variant="outlined"
                   onClick={addFeature}
                   disabled={!newFeature.trim()}
-                  sx={{ minWidth: 100 }}
+                  sx={{ minWidth: { xs: '100%', sm: 100 } }}
                 >
                   Add
                 </Button>
@@ -465,6 +494,156 @@ export default function SubmitAppPage() {
             }
             label="Internal Tool (Only visible to your organization)"
           />
+        </Paper>
+
+        {/* Premium Upgrade Option */}
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom fontWeight={600} sx={{ mb: 2 }}>
+            Premium Upgrade (Optional)
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Boost your app's visibility with premium features. This is completely optional.
+          </Typography>
+          
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <Card 
+                sx={{ 
+                  height: '100%',
+                  border: selectedPremiumPlan === 'premium' ? `2px solid ${theme.palette.primary.main}` : `1px solid ${theme.palette.divider}`,
+                  backgroundColor: selectedPremiumPlan === 'premium' ? `${theme.palette.primary.main}08` : 'transparent',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': {
+                    borderColor: theme.palette.primary.main,
+                    backgroundColor: `${theme.palette.primary.main}04`,
+                  }
+                }}
+                onClick={() => handlePremiumSelection(selectedPremiumPlan === 'premium' ? null : 'premium')}
+              >
+                <CardContent sx={{ p: 3, textAlign: 'center' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                    {selectedPremiumPlan === 'premium' && (
+                      <Check 
+                        size={24} 
+                        color={theme.palette.primary.main} 
+                        sx={{ mr: 1 }}
+                      />
+                    )}
+                    <Star size={32} color={theme.palette.primary.main} />
+                  </Box>
+                  <Typography variant="h6" fontWeight={600} gutterBottom>
+                    Premium Listing
+                  </Typography>
+                  <Typography variant="h4" fontWeight={800} color="primary" gutterBottom>
+                    $19
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    One-time payment • Lifetime benefits
+                  </Typography>
+                  
+                  <Divider sx={{ my: 2 }} />
+                  
+                  <Box sx={{ textAlign: 'left' }}>
+                    {premiumFeatures.slice(0, 4).map((feature, index) => (
+                      <Box key={index} display="flex" alignItems="center" mb={1}>
+                        <Check 
+                          size={16} 
+                          color={theme.palette.success.main} 
+                          sx={{ mr: 1 }}
+                        />
+                        <Typography variant="body2" fontSize="0.875rem">
+                          {feature}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+            
+            <Grid item xs={12} md={6}>
+              <Card 
+                sx={{ 
+                  height: '100%',
+                  border: selectedPremiumPlan === 'free' ? `2px solid ${theme.palette.success.main}` : `1px solid ${theme.palette.divider}`,
+                  backgroundColor: selectedPremiumPlan === 'free' ? `${theme.palette.success.main}08` : 'transparent',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': {
+                    borderColor: theme.palette.success.main,
+                    backgroundColor: `${theme.palette.success.main}04`,
+                  }
+                }}
+                onClick={() => handlePremiumSelection(selectedPremiumPlan === 'free' ? null : 'free')}
+              >
+                <CardContent sx={{ p: 3, textAlign: 'center' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                    {selectedPremiumPlan === 'free' && (
+                      <Check 
+                        size={24} 
+                        color={theme.palette.success.main} 
+                        sx={{ mr: 1 }}
+                      />
+                    )}
+                    <Typography variant="h4" color="success.main">🚀</Typography>
+                  </Box>
+                  <Typography variant="h6" fontWeight={600} gutterBottom>
+                    Free Listing
+                  </Typography>
+                  <Typography variant="h4" fontWeight={800} color="success.main" gutterBottom>
+                    $0
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Standard listing • No additional cost
+                  </Typography>
+                  
+                  <Divider sx={{ my: 2 }} />
+                  
+                  <Box sx={{ textAlign: 'left' }}>
+                    <Box display="flex" alignItems="center" mb={1}>
+                      <Check 
+                        size={16} 
+                        color={theme.palette.success.main} 
+                        sx={{ mr: 1 }}
+                      />
+                      <Typography variant="body2" fontSize="0.875rem">
+                        Standard app listing
+                      </Typography>
+                    </Box>
+                    <Box display="flex" alignItems="center" mb={1}>
+                      <Check 
+                        size={16} 
+                        color={theme.palette.success.main} 
+                        sx={{ mr: 1 }}
+                      />
+                      <Typography variant="body2" fontSize="0.875rem">
+                        Community review process
+                      </Typography>
+                    </Box>
+                    <Box display="flex" alignItems="center" mb={1}>
+                      <Check 
+                        size={16} 
+                        color={theme.palette.success.main} 
+                        sx={{ mr: 1 }}
+                      />
+                      <Typography variant="body2" fontSize="0.875rem">
+                        Basic analytics
+                      </Typography>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+          
+          {selectedPremiumPlan === 'premium' && (
+            <Box sx={{ mt: 3, p: 2, backgroundColor: `${theme.palette.primary.main}08`, borderRadius: 2, border: `1px solid ${theme.palette.primary.main}20` }}>
+              <Typography variant="body2" color="primary" fontWeight={500}>
+                💡 Premium selected! You'll be redirected to payment after submission.
+              </Typography>
+            </Box>
+          )}
         </Paper>
 
         <Button

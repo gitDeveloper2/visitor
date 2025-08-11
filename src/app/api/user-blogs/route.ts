@@ -29,6 +29,47 @@ export async function POST(request: Request) {
 
     const { db } = await connectToDatabase();
 
+    // If not a Founder Story, require an active premium blog subscription
+    if (!isFounderStory) {
+      console.log('🔒 Checking premium requirement for non-Founder Story blog');
+      console.log('👤 User ID:', session.user.id);
+      console.log('📧 User Email:', session.user.email);
+      
+      // Check if the collection exists
+      const collections = await db.listCollections().toArray();
+      const collectionNames = collections.map(col => col.name);
+      console.log('📚 Available collections:', collectionNames);
+      
+      if (!collectionNames.includes('blog_premium_access')) {
+        console.log('⚠️ blog_premium_access collection not found - creating it');
+        await db.createCollection('blog_premium_access');
+      }
+      
+      // Check what's in the collection
+      const allSubs = await db.collection('blog_premium_access').find({}).toArray();
+      console.log('📊 All subscriptions in collection:', allSubs);
+      
+      const activeSub = await db.collection('blog_premium_access').findOne({
+        userId: session.user.id,
+        status: 'active',
+        expiresAt: { $gt: new Date() },
+      });
+      
+      console.log('💳 Active subscription found:', activeSub);
+      
+      if (!activeSub) {
+        console.log('❌ No active premium subscription found - blocking submission');
+        return NextResponse.json(
+          { message: 'Premium subscription required to submit non-Founder Story blogs.' },
+          { status: 402 }
+        );
+      }
+      
+      console.log('✅ Premium subscription validated - allowing submission');
+    } else {
+      console.log('🚀 Founder Story detected - no premium required');
+    }
+
     // Generate a unique slug for the blog
     const existingSlugs = await db
       .collection('userblogs')
