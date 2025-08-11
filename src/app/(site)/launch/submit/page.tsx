@@ -25,6 +25,7 @@ import { BadgeCheck, DollarSign, UploadCloud, Github, Globe, User, Code, Star, A
 import { KeyboardArrowUp as UpIcon, KeyboardArrowDown as DownIcon, Delete as DeleteIcon } from "@mui/icons-material";
 import { getGlassStyles, getShadow, typographyVariants, commonStyles } from "../../../../utils/themeUtils";
 import { useState, useEffect } from "react";
+import PremiumAppListing from '../../../../components/premium/PremiumAppListing';
 
 // App categories for selection
 const categories = [
@@ -724,33 +725,32 @@ export default function SubmitAppPage() {
 
               {/* Premium Section */}
               <Grid item xs={12}>
-                <Box
-                  sx={{
-                    p: 3,
-                    borderRadius: "1rem",
-                    ...getGlassStyles(theme),
-                    border: `1px solid ${theme.palette.warning.main}`,
-                    boxShadow: getShadow(theme, "elegant"),
-                  }}
-                >
-                  <Box display="flex" alignItems="center" gap={2} mb={1}>
-                    <DollarSign size={20} color={theme.palette.warning.main} />
-                    <Typography variant="h6" fontWeight={700}>
-                      Upgrade to Premium – <Box component="span" color="warning.main">$19</Box>
-                    </Typography>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Get a verified badge, priority placement, analytics insights, and faster review process for your app.
-                  </Typography>
-                  <Button
-                    sx={{ mt: 2, borderRadius: "999px" }}
-                    variant="outlined"
-                    color="warning"
-                    startIcon={<BadgeCheck />}
-                  >
-                    Upgrade to Premium
-                  </Button>
-                </Box>
+                                 <Box
+                   sx={{
+                     p: 3,
+                     borderRadius: "1rem",
+                     ...getGlassStyles(theme),
+                     border: `1px solid ${theme.palette.warning.main}`,
+                     boxShadow: getShadow(theme, "elegant"),
+                   }}
+                 >
+                   <Box display="flex" alignItems="center" gap={2} mb={1}>
+                     <DollarSign size={20} color={theme.palette.warning.main} />
+                                        <Typography variant="h6" fontWeight={700}>
+                     Upgrade to Premium – <Box component="span" color="warning.main">$19</Box>
+                   </Typography>
+                   <Typography variant="body2" color="text.secondary">
+                     Get a verified badge, priority placement, analytics insights, and faster review process for your app.
+                   </Typography>
+                   <Button
+                     sx={{ mt: 2, borderRadius: "999px" }}
+                     variant="outlined"
+                     color="warning"
+                     startIcon={<BadgeCheck />}
+                   >
+                     Upgrade to Premium
+                   </Button>
+                 </Box>
               </Grid>
 
               {/* Review Process */}

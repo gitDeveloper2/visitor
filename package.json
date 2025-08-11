@@ -19,6 +19,7 @@
     "@emotion/styled": "^11.14.0",
     "@fontsource/roboto": "^5.0.13",
     "@hookform/resolvers": "^3.9.1",
+    "@lemonsqueezy/lemonsqueezy.js": "^1.2.5",
     "@mui/icons-material": "^5.15.20",
     "@mui/material": "^5.16.9",
     "@mui/material-nextjs": "^5.16.4",
