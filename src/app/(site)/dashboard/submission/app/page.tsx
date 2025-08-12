@@ -24,16 +24,35 @@ import {
 } from "@mui/material";
 import { Add as AddIcon, Delete as DeleteIcon, KeyboardArrowUp as UpIcon, KeyboardArrowDown as DownIcon, Star, Check } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
+import { useSearchParams } from 'next/navigation';
 
 export default function SubmitAppPage() {
   const theme = useTheme();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [newFeature, setNewFeature] = useState("");
   const [newTag, setNewTag] = useState("");
   const [newTech, setNewTech] = useState("");
   const [selectedPremiumPlan, setSelectedPremiumPlan] = useState<string | null>(null);
+
+  // Check for payment success on component mount
+  React.useEffect(() => {
+    const paymentSuccessParam = searchParams.get('payment_success');
+    const appId = searchParams.get('app_id');
+    
+    if (paymentSuccessParam === 'true' && appId) {
+      setPaymentSuccess(true);
+      setSuccess(true);
+      // Clear the URL parameters
+      const url = new URL(window.location.href);
+      url.searchParams.delete('payment_success');
+      url.searchParams.delete('app_id');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [searchParams]);
 
   const [form, setForm] = useState({
     name: "",
@@ -153,11 +172,37 @@ export default function SubmitAppPage() {
       
       const result = await res.json();
       
-      
-      // If premium was selected and checkout URL is provided, redirect to payment
-      if (result.requiresPayment && result.checkoutUrl) {
-        window.location.href = result.checkoutUrl;
-        return;
+      // If premium was selected, redirect to checkout
+      if (selectedPremiumPlan === 'premium' && result.app?._id) {
+        try {
+          const checkoutRes = await fetch("/api/lemonsqueezy/checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              variantId: process.env.NEXT_PUBLIC_LEMON_SQUEEZY_APP_LISTING_VARIANT_ID,
+              custom: {
+                subscription_type: "premium_app_listing",
+                app_id: result.app._id,
+                app_name: form.name,
+                return_url: `${window.location.origin}/dashboard/submission/app?payment_success=true&app_id=${result.app._id}`,
+              },
+            }),
+          });
+
+          if (checkoutRes.ok) {
+            const { checkoutUrl } = await checkoutRes.json();
+            window.location.href = checkoutUrl;
+            return;
+          } else {
+            const errorData = await checkoutRes.json().catch(() => ({}));
+            throw new Error(`Failed to create checkout: ${errorData.error || 'Unknown error'}`);
+          }
+        } catch (checkoutError: any) {
+          console.error('Checkout error:', checkoutError);
+          setError(`Payment setup failed: ${checkoutError.message}. Your app was saved but premium features are not active.`);
+          setSuccess(true);
+          return;
+        }
       }
       
       setSuccess(true);
@@ -236,7 +281,10 @@ export default function SubmitAppPage() {
 
       {success && (
         <Alert severity="success" sx={{ mb: 3 }}>
-          App submitted successfully! We'll review it and get back to you soon.
+          {paymentSuccess 
+            ? "🎉 Payment successful! Your app has been submitted with premium features activated. We'll review it and get back to you soon."
+            : "App submitted successfully! We'll review it and get back to you soon."
+          }
         </Alert>
       )}
 

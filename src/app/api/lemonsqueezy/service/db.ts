@@ -110,6 +110,24 @@ export async function updateUserProStatus(db: Db, userIdOrEmail: string, pro: bo
   return db.collection('user').updateOne(query, { $set: { pro } });
 }
 
+/**
+ * Updates app premium access status in the userapps collection.
+ */
+export async function updateAppPremiumStatus(db: Db, appId: string, premiumStatus: string, userId: string) {
+  const appObjectId = new ObjectId(appId);
+  return db.collection('userapps').updateOne(
+    { _id: appObjectId, authorId: userId },
+    { 
+      $set: { 
+        isPremium: premiumStatus === 'active',
+        premiumStatus,
+        [`premium${premiumStatus.charAt(0).toUpperCase() + premiumStatus.slice(1)}At`]: new Date(),
+        premiumUserId: userId
+      } 
+    }
+  );
+}
+
 
 /**
  * Retrieves a user by email.
@@ -138,8 +156,8 @@ export async function getSubscriptionRecord(db: Db, subscriptionId: string) {
  * Determines the product type based on environment variables.
  */
 export function getProductType(productId: string): OrderType | null {
-  if (productId === process.env.NEXT_LEMON_SQUEEZY_PREMIUM_BLOG_PRODUCT_ID) return 'blog';
-  if (productId === process.env.NEXT_LEMON_SQUEEZY_PREMIUM_APP_PRODUCT_ID) return 'app';
+  if (productId === process.env.NEXT_PUBLIC_LEMON_SQUEEZY_PREMIUM_BLOG_PRODUCT_ID) return 'blog';
+  if (productId === process.env.NEXT_PUBLIC_LEMON_SQUEEZY_PREMIUM_APP_PRODUCT_ID) return 'app';
   return null;
 }
 

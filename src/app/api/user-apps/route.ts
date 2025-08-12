@@ -109,30 +109,11 @@ export async function POST(request: Request) {
     
     const result = await db.collection('userapps').insertOne(newApp);
     
-    // If premium was selected, generate checkout URL
-    let checkoutUrl = null;
-    if (premiumPlan === 'premium') {
-      try {
-        checkoutUrl = getCheckoutUrl(VARIANT_IDS.PREMIUM_APP_LISTING, {
-          email: session.user.email,
-          name: session.user.name,
-          custom: {
-            app_id: result.insertedId.toString(),
-            app_name: name,
-            subscription_type: "premium_app_listing",
-          },
-        });
-      } catch (error) {
-        console.error('Error generating checkout URL:', error);
-      }
-    }
-    
     return NextResponse.json(
       { 
         message: 'App submitted successfully.', 
         app: { _id: result.insertedId, ...newApp },
         premiumPlan,
-        checkoutUrl,
         requiresPayment: premiumPlan === 'premium'
       },
       { status: 201 }

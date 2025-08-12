@@ -13,6 +13,7 @@ import {
   upsertSubscriptionAccess,
   updateSubscriptionStatus,
   updateUserProStatus,
+  updateAppPremiumStatus,
 } from './db';
 
 // ===== TYPES & INTERFACES =====
@@ -790,18 +791,12 @@ async function handleResourceOrderCreated(
         webhookLogger.info('blog_draft_premium_ready', { draftId: resourceid, userId });
       }
     } else if (productType === 'app') {
-      // Mark app as premium
-      await db.collection('apps').updateOne(
-        { _id: resourceid },
-        { 
-          $set: { 
-            premiumStatus: 'active',
-            premiumActivatedAt: new Date(),
-            premiumUserId: userId
-          } 
-        }
-      );
-      webhookLogger.info('app_premium_activated', { appId: resourceid, userId });
+      // Mark app as premium in userapps collection
+      const appObjectId = ObjectId.isValid(resourceid) ? new ObjectId(resourceid) : null;
+      if (appObjectId) {
+        await updateAppPremiumStatus(db, resourceid, 'active', userId);
+        webhookLogger.info('app_premium_activated', { appId: resourceid, userId });
+      }
     }
   } catch (error) {
     webhookLogger.error('resource_order_created_failed', error);
@@ -831,16 +826,12 @@ async function handleResourceOrderRefunded(
         );
       }
     } else if (productType === 'app') {
-      // Mark app as premium-revoked
-      await db.collection('apps').updateOne(
-        { _id: resourceid },
-        { 
-          $set: { 
-            premiumStatus: 'revoked',
-            premiumRevokedAt: new Date()
-          } 
-        }
-      );
+      // Mark app as premium-revoked in userapps collection
+      const appObjectId = ObjectId.isValid(resourceid) ? new ObjectId(resourceid) : null;
+      if (appObjectId) {
+        await updateAppPremiumStatus(db, resourceid, 'revoked', userId);
+        webhookLogger.info('app_premium_revoked', { appId: resourceid, userId });
+      }
     }
   } catch (error) {
     webhookLogger.error('resource_order_refunded_failed', error);
