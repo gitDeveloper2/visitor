@@ -153,6 +153,7 @@ export default function SubmitAppPage() {
       
       const result = await res.json();
       
+      
       // If premium was selected and checkout URL is provided, redirect to payment
       if (result.requiresPayment && result.checkoutUrl) {
         window.location.href = result.checkoutUrl;

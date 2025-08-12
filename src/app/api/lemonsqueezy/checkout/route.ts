@@ -1,7 +1,10 @@
+import { getSession } from "@/features/shared/utils/auth";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
-  try {
+  const {user:{id:user_id}}=await getSession()
+
+    try {
     console.log("Checkout API called");
 
     const bodyText = await req.text();
@@ -13,20 +16,19 @@ export async function POST(req: Request) {
       console.log("Parsed JSON body:", jsonBody);
     } catch (parseErr) {
       console.error("Failed to parse JSON body:", parseErr);
-      return NextResponse.json(
-        { error: "Invalid JSON body" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
     }
 
-    const { variantId, customData } = jsonBody;
+    const { variantId, email, name, custom } = jsonBody;
+console.log("name",name)
+console.log("email",email)
+console.log("variantid",variantId)
+
+console.log("custom",custom)
 
     if (!variantId) {
       console.error("variantId missing in request body");
-      return NextResponse.json(
-        { error: "Missing variantId" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing variantId" }, { status: 400 });
     }
 
     const LEMON_SQUEEZY_API_KEY = process.env.LEMON_SQUEEZY_API_KEY;
@@ -40,7 +42,46 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log("Sending request to Lemon Squeezy API");
+    // Default return URL (overridden by custom.return_url if present)
+    let returnUrl =
+      `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard/submission/blog`;
+
+    // Build custom payload — EVERYTHING will go inside here
+    const customPayload: Record<string, string> = {
+      user_id,
+      // name: String(name ?? ""),
+    };
+
+    if (custom && typeof custom === "object") {
+      for (const [k, v] of Object.entries(custom)) {
+        if (k === "return_url") {
+          returnUrl = String(v ?? returnUrl);
+        }
+        customPayload[k] =
+          v !== null && typeof v === "object" ? JSON.stringify(v) : String(v ?? "");
+      }
+    }
+
+    // Add success_url inside custom
+    customPayload.success_url = returnUrl;
+
+    const body = {
+      data: {
+        type: "checkouts",
+        attributes: {
+          checkout_data: {
+            custom: customPayload,
+          },
+        },
+        relationships: {
+          store: { data: { type: "stores", id: LEMON_SQUEEZY_STORE_ID } },
+          variant: { data: { type: "variants", id: variantId } },
+        },
+      },
+    };
+
+    console.log("Outgoing Lemon Squeezy payload:", JSON.stringify(body));
+
     const res = await fetch("https://api.lemonsqueezy.com/v1/checkouts", {
       method: "POST",
       headers: {
@@ -48,22 +89,7 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-      body: JSON.stringify({
-        data: {
-          type: "checkouts",
-          attributes: {
-            checkout_data: customData || {},
-          },
-          relationships: {
-            store: {
-              data: { type: "stores", id: LEMON_SQUEEZY_STORE_ID },
-            },
-            variant: {
-              data: { type: "variants", id: variantId },
-            },
-          },
-        },
-      }),
+      body: JSON.stringify(body),
     });
 
     const data = await res.json();
@@ -83,7 +109,6 @@ export async function POST(req: Request) {
       { checkoutUrl: data.data.attributes.url },
       { status: 200 }
     );
-    
   } catch (err) {
     console.error("Checkout API unexpected error:", err);
     return NextResponse.json(

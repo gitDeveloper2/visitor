@@ -21,6 +21,7 @@ interface PremiumBlogSubscriptionProps {
   userEmail?: string;
   userName?: string;
   isPremium?: boolean;
+  onSubscribe?: (variantId: string) => void;
 }
 
 const plans = [
@@ -58,7 +59,8 @@ const plans = [
 export default function PremiumBlogSubscription({ 
   userEmail, 
   userName, 
-  isPremium = false 
+  isPremium = false,
+  onSubscribe
 }: PremiumBlogSubscriptionProps) {
   const theme = useTheme();
   const [loading, setLoading] = useState<string | null>(null);
@@ -87,26 +89,31 @@ export default function PremiumBlogSubscription({
     setLoading(variantId);
   
     try {
-      const res = await fetch("/api/lemonsqueezy/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          variantId, // send which plan they picked
-          email: userEmail,
-          name: userName,
-          custom: {
-            subscription_type: "premium_blog",
-            // optionally user_id if you have it
-          },
-        }),
-      });
-  
-      if (!res.ok) {
-        throw new Error(`Checkout creation failed: ${res.statusText}`);
+      if (onSubscribe) {
+        // Use the parent component's subscription handler
+        await onSubscribe(variantId);
+      } else {
+        // Fallback to the original implementation
+        const res = await fetch("/api/lemonsqueezy/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            variantId,
+            email: userEmail,
+            name: userName,
+            custom: {
+              subscription_type: "premium_blog",
+            },
+          }),
+        });
+    
+        if (!res.ok) {
+          throw new Error(`Checkout creation failed: ${res.statusText}`);
+        }
+    
+        const { checkoutUrl } = await res.json();
+        window.location.href = checkoutUrl;
       }
-  
-      const { checkoutUrl } = await res.json();
-      window.location.href = checkoutUrl;
     } catch (error) {
       console.error("Error creating checkout:", error);
       setLoading(null);

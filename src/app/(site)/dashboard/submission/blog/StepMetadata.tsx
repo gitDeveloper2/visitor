@@ -116,7 +116,11 @@ export default function StepMetadata({ formData, setFormData }: StepMetadataProp
             control={
               <Checkbox
                 checked={Boolean(formData.isFounderStory)}
-                onChange={(e) => setFormData({ isFounderStory: e.target.checked, founderUrl: "", founderDomainCheck: { status: "unknown" } })}
+                onChange={(e) => setFormData({ 
+                  isFounderStory: e.target.checked, 
+                  founderUrl: e.target.checked ? formData.founderUrl : "", 
+                  founderDomainCheck: { status: "unknown" } 
+                })}
               />
             }
             label="This submission is a Founder Story (link to a blog post on your site)"
