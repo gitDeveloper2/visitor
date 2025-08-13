@@ -23,9 +23,9 @@ import {
 import { useTheme } from "@mui/material/styles";
 import { BadgeCheck, DollarSign, UploadCloud, Github, Globe, User, Code, Star, ArrowUp, ArrowDown, X } from "lucide-react";
 import { KeyboardArrowUp as UpIcon, KeyboardArrowDown as DownIcon, Delete as DeleteIcon } from "@mui/icons-material";
-import { getGlassStyles, getShadow, typographyVariants, commonStyles } from "../../../../utils/themeUtils";
+import { getGlassStyles, getShadow, typographyVariants, commonStyles } from "@/utils/themeUtils";
 import { useState, useEffect } from "react";
-import PremiumAppListing from '../../../../components/premium/PremiumAppListing';
+import PremiumAppListing from '@/components/premium/PremiumAppListing';
 
 // App categories for selection
 const categories = [

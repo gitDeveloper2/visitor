@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/features/shared/utils/auth';
-import { connectToDatabase } from '@lib/mongodb';
-import { AppPremiumListing } from '@models/PremiumAccess';
-import { lemonSqueezyClient } from '@lib/lemonsqueezy';
+import { connectToDatabase } from '@/lib/mongodb';
+import { AppPremiumListing } from '@/models/PremiumAccess';
+import { lemonSqueezyClient } from '@/lib/lemonsqueezy';
 
 export async function POST(request: NextRequest) {
   try {

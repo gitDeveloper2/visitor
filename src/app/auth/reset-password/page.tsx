@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { authClient } from "../../../../auth-client";
+import { authClient } from "../../../auth-client";
 import {
   Alert,
   Box,
