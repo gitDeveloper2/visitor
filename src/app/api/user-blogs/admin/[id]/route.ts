@@ -85,6 +85,7 @@ export async function PATCH(
       title,
       content,
       tags: tags || [],
+      isFounderStory: isFounderStory || false,
       isInternal: isInternal || isFounderStory || false,
       // Additional fields from form
       author: author || session.user.name,

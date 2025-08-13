@@ -69,6 +69,7 @@ export async function POST(request: Request) {
       role: role || 'Author',
       authorBio: authorBio || '',
       founderUrl: founderUrl || '',
+      isFounderStory: isFounderStory || false,
       isInternal: isInternal || isFounderStory || false,
       // Metadata for display
       readTime: Math.ceil(content.replace(/<[^>]*>/g, '').split(' ').length / 200), // ~200 words per minute

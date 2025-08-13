@@ -9,9 +9,19 @@ import {
   Typography,
   CircularProgress,
   Alert,
+  Paper,
+  Container,
+  IconButton,
+  Tooltip,
+  Grid,
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { useEffect, useState } from "react";
+import { getShadow, getGlassStyles, typographyVariants, commonStyles } from "../../../../../utils/themeUtils";
+import { useTheme } from "@mui/material/styles";
+import { Edit, Visibility, CheckCircle, Cancel, Schedule } from "@mui/icons-material";
+import Link from "next/link";
+import Badge from "@/app/components/badges/Badge";
 
 interface BlogPost {
   _id: string;
@@ -21,27 +31,52 @@ interface BlogPost {
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
   updatedAt: string;
+  isFounderStory?: boolean;
+  tags?: string[];
+  content?: string;
 }
 
-// Status chips
-const getStatusChip = (status: string) => {
-  const colors = {
-    pending: "warning",
-    approved: "success",
-    rejected: "error",
+// Status chips with improved styling
+const getStatusChip = (status: string, theme: any) => {
+  const statusConfig = {
+    pending: {
+      color: 'warning' as const,
+      icon: <Schedule fontSize="small" />,
+      label: 'Pending Review'
+    },
+    approved: {
+      color: 'success' as const,
+      icon: <CheckCircle fontSize="small" />,
+      label: 'Approved'
+    },
+    rejected: {
+      color: 'error' as const,
+      icon: <Cancel fontSize="small" />,
+      label: 'Rejected'
+    }
   };
+
+  const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
 
   return (
     <Chip
-      label={status.charAt(0).toUpperCase() + status.slice(1)}
-      color={colors[status as keyof typeof colors] as any}
-      variant="outlined"
+      icon={config.icon}
+      label={config.label}
+      color={config.color}
       size="small"
+      variant="filled"
+      sx={{
+        fontWeight: 600,
+        '& .MuiChip-icon': {
+          color: 'inherit'
+        }
+      }}
     />
   );
 };
 
 export default function BlogTable() {
+  const theme = useTheme();
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -89,83 +124,134 @@ export default function BlogTable() {
   const columns: GridColDef[] = [
     {
       field: "title",
-      headerName: "Blog Title",
-      flex: 1,
+      headerName: "Title",
+      flex: 2,
+      minWidth: 300,
       renderCell: (params) => (
-        <Typography fontWeight={600}>{params.row.title}</Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%' }}>
+          <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+            {params.value}
+          </Typography>
+          {params.row.isFounderStory && (
+            <Badge variant="founder" label="Founder Story" />
+          )}
+        </Box>
+      ),
+    },
+    {
+      field: "authorName",
+      headerName: "Author",
+      flex: 1,
+      minWidth: 150,
+      renderCell: (params) => (
+        <Box>
+          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+            {params.value}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {params.row.authorEmail}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      field: "tags",
+      headerName: "Tags",
+      flex: 1,
+      minWidth: 200,
+      renderCell: (params) => (
+        <Stack direction="row" spacing={0.5} flexWrap="wrap">
+          {(params.value || []).slice(0, 3).map((tag: string, index: number) => (
+            <Chip
+              key={index}
+              label={tag}
+              size="small"
+              variant="outlined"
+              sx={{ fontSize: '0.7rem', height: 20 }}
+            />
+          ))}
+          {(params.value || []).length > 3 && (
+            <Chip
+              label={`+${(params.value || []).length - 3}`}
+              size="small"
+              variant="outlined"
+              sx={{ fontSize: '0.7rem', height: 20 }}
+            />
+          )}
+        </Stack>
       ),
     },
     {
       field: "status",
       headerName: "Status",
-      width: 120,
-      renderCell: (params) => getStatusChip(params.row.status),
-    },
-    {
-      field: "authorName",
-      headerName: "Author",
-      width: 200,
+      flex: 1,
+      minWidth: 150,
+      renderCell: (params) => getStatusChip(params.value, theme),
     },
     {
       field: "createdAt",
-      headerName: "Submitted On",
-      width: 140,
-      valueGetter: (value, row) => {
-        if (!value) return '';
-        return new Date(value as string).toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric'
-        });
-      },
+      headerName: "Submitted",
+      flex: 1,
+      minWidth: 120,
+      renderCell: (params) => (
+        <Typography variant="body2" color="text.secondary">
+          {new Date(params.value).toLocaleDateString()}
+        </Typography>
+      ),
     },
-    
     {
       field: "actions",
       headerName: "Actions",
-      width: 220,
+      flex: 1,
+      minWidth: 200,
       sortable: false,
       renderCell: (params) => (
         <Stack direction="row" spacing={1}>
+          <Tooltip title="View Blog">
+            <IconButton
+              component={Link}
+              href={`/blogs/${params.row.slug || params.row._id}`}
+              size="small"
+              color="primary"
+            >
+              <Visibility />
+            </IconButton>
+          </Tooltip>
+          
           {params.row.status === 'pending' && (
             <>
-              <Button 
-                size="small" 
-                variant="outlined" 
-                color="success"
-                onClick={() => handleStatusUpdate(params.row._id, 'approved')}
-              >
-                Approve
-              </Button>
-              <Button 
-                size="small" 
-                variant="outlined" 
-                color="error"
-                onClick={() => handleStatusUpdate(params.row._id, 'rejected')}
-              >
-                Reject
-              </Button>
+              <Tooltip title="Approve Blog">
+                <IconButton
+                  onClick={() => handleStatusUpdate(params.row._id, 'approved')}
+                  size="small"
+                  color="success"
+                >
+                  <CheckCircle />
+                </IconButton>
+              </Tooltip>
+              
+              <Tooltip title="Reject Blog">
+                <IconButton
+                  onClick={() => handleStatusUpdate(params.row._id, 'rejected')}
+                  size="small"
+                  color="error"
+                >
+                  <Cancel />
+                </IconButton>
+              </Tooltip>
             </>
           )}
-          {params.row.status === 'approved' && (
-            <Button 
-              size="small" 
-              variant="outlined" 
-              color="error"
-              onClick={() => handleStatusUpdate(params.row._id, 'rejected')}
-            >
-              Reject
-            </Button>
-          )}
+          
           {params.row.status === 'rejected' && (
-            <Button 
-              size="small" 
-              variant="outlined" 
-              color="success"
-              onClick={() => handleStatusUpdate(params.row._id, 'approved')}
-            >
-              Approve
-            </Button>
+            <Tooltip title="Re-review Blog">
+              <IconButton
+                onClick={() => handleStatusUpdate(params.row._id, 'pending')}
+                size="small"
+                color="warning"
+              >
+                <Schedule />
+              </IconButton>
+            </Tooltip>
           )}
         </Stack>
       ),
@@ -174,7 +260,7 @@ export default function BlogTable() {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
         <CircularProgress />
       </Box>
     );
@@ -182,29 +268,144 @@ export default function BlogTable() {
 
   if (error) {
     return (
-      <Alert severity="error" sx={{ mb: 2 }}>
-        {error}
-      </Alert>
+      <Box sx={{ py: 4 }}>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+        <Button variant="contained" onClick={() => window.location.reload()}>
+          Retry
+        </Button>
+      </Box>
     );
   }
 
   return (
-    <Box sx={{ height: 500, width: "100%" }}>
-      <DataGrid
-        rows={blogs}
-        columns={columns}
-        getRowId={(row) => row._id}
-        initialState={{ pagination: { paginationModel: { pageSize: 5, page: 0 } } }}
-        pageSizeOptions={[5, 10, 25]}
-        disableRowSelectionOnClick
-        sx={{
-          border: "none",
-          "& .MuiDataGrid-columnHeaders": {
-            backgroundColor: "background.default",
-            fontWeight: "bold",
-          },
-        }}
-      />
+    <Box sx={{ py: 4 }}>
+      <Container maxWidth="xl">
+        {/* Header Section */}
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h4" sx={typographyVariants.sectionTitle} gutterBottom>
+            Admin{" "}
+            <Box component="span" sx={commonStyles.textGradient(theme)}>
+              Blog Management
+            </Box>
+          </Typography>
+          <Typography variant="h6" color="text.secondary">
+            Review and manage user blog submissions
+          </Typography>
+        </Box>
+
+        {/* Stats Summary */}
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper
+              sx={{
+                p: 3,
+                borderRadius: 3,
+                textAlign: 'center',
+                ...getGlassStyles(theme),
+                boxShadow: getShadow(theme, "elegant"),
+              }}
+            >
+              <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.primary.main }}>
+                {blogs.length}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Total Submissions
+              </Typography>
+            </Paper>
+          </Grid>
+          
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper
+              sx={{
+                p: 3,
+                borderRadius: 3,
+                textAlign: 'center',
+                ...getGlassStyles(theme),
+                boxShadow: getShadow(theme, "elegant"),
+              }}
+            >
+              <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.warning.main }}>
+                {blogs.filter(b => b.status === 'pending').length}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Pending Review
+              </Typography>
+            </Paper>
+          </Grid>
+          
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper
+              sx={{
+                p: 3,
+                borderRadius: 3,
+                textAlign: 'center',
+                ...getGlassStyles(theme),
+                boxShadow: getShadow(theme, "elegant"),
+              }}
+            >
+              <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.success.main }}>
+                {blogs.filter(b => b.status === 'approved').length}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Approved
+              </Typography>
+            </Paper>
+          </Grid>
+          
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper
+              sx={{
+                p: 3,
+                borderRadius: 3,
+                textAlign: 'center',
+                ...getGlassStyles(theme),
+                boxShadow: getShadow(theme, "elegant"),
+              }}
+            >
+              <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.error.main }}>
+                {blogs.filter(b => b.status === 'rejected').length}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Rejected
+              </Typography>
+            </Paper>
+          </Grid>
+        </Grid>
+
+        {/* Blog Table */}
+        <Paper
+          sx={{
+            borderRadius: 3,
+            overflow: 'hidden',
+            boxShadow: getShadow(theme, "elegant"),
+          }}
+        >
+          <DataGrid
+            rows={blogs}
+            columns={columns}
+            pageSize={10}
+            rowsPerPageOptions={[10, 25, 50]}
+            disableSelectionOnClick
+            autoHeight
+            getRowId={(row) => row._id}
+            sx={{
+              border: 'none',
+              '& .MuiDataGrid-cell': {
+                borderBottom: `1px solid ${theme.palette.divider}`,
+              },
+              '& .MuiDataGrid-columnHeaders': {
+                backgroundColor: theme.palette.background.paper,
+                borderBottom: `2px solid ${theme.palette.divider}`,
+              },
+              '& .MuiDataGrid-row:hover': {
+                backgroundColor: theme.palette.action.hover,
+              },
+            }}
+          />
+        </Paper>
+      </Container>
     </Box>
   );
 }
