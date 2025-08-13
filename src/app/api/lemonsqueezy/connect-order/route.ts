@@ -72,22 +72,30 @@ export async function POST(request: NextRequest) {
       // Premium app listings don't expire
     });
     
-    // Update app with premium status
+    // 🛡️ SECURITY FIX: Do NOT set premium status here
+    // Premium status should ONLY be set by webhook verification
+    // This prevents direct premium activation bypassing security
+    
+    // Instead, mark the app as ready for premium activation
     await db.collection('userapps').updateOne(
       { _id: appId },
       { 
         $set: { 
-          isPremium: true,
           premiumOrderId: orderId,
-          premiumExpiresAt: null // Never expires
-        }
+          premiumReadyForActivation: true, // 🛡️ Mark as ready, not active
+          premiumReadyAt: new Date(),
+          premiumStatus: 'pending_webhook', // 🛡️ Status pending webhook verification
+          // 🛡️ isPremium remains false until webhook verification
+        } 
       }
     );
     
     return NextResponse.json({ 
       success: true, 
-      message: 'Premium listing activated successfully',
-      premiumListing 
+      message: 'Premium listing created successfully. Premium status will be activated after webhook verification.',
+      premiumListing,
+      // 🛡️ Clear messaging about security
+      note: 'Premium status activation requires webhook verification for security'
     });
     
   } catch (error) {

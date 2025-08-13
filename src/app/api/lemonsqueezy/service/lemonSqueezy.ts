@@ -106,7 +106,7 @@ export async function handleLemonWebhook(payload: LemonEventPayload): Promise<We
 
 async function routeWebhookEvent(payload: LemonEventPayload, db: Db): Promise<WebhookResult> {
   const { event_name, data, userId, resourceid } = payload;
-
+console.log("routing kreation")
   try {
     switch (event_name) {
       // Order Events
@@ -177,9 +177,10 @@ async function handleOrderCreated(
   resourceid?: string
 ): Promise<WebhookResult> {
   try {
+    console.log("order kreation")
     const productId = orderData.attributes?.first_order_item?.product_id;
     const productType = getProductType(productId?.toString());
-
+console.log("produt id",productType)
     if (!productType) {
       webhookLogger.warn('order_created_invalid_product', { productId, userId });
       return {

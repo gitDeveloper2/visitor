@@ -29,6 +29,7 @@ import { InfoOutlined } from "@mui/icons-material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import Badge from "@components/badges/Badge";
 import { useEffect, useState } from "react";
+import PremiumAppManager from "./PremiumAppManager";
 
 interface AppItem {
   _id: string;
@@ -40,6 +41,13 @@ interface AppItem {
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
   updatedAt: string;
+  // Add premium fields
+  isPremium?: boolean;
+  premiumStatus?: string;
+  premiumPlan?: string;
+  // Add stats fields
+  views?: number;
+  likes?: number;
 }
 
 export default function ManageAppsPage() {
@@ -47,6 +55,7 @@ export default function ManageAppsPage() {
   const [apps, setApps] = useState<AppItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const [popoverAnchor, setPopoverAnchor] = React.useState<HTMLElement | null>(null);
   const openInfoPopover = (e: React.MouseEvent<HTMLElement>) => {
     setPopoverAnchor(e.currentTarget);
@@ -59,25 +68,75 @@ export default function ManageAppsPage() {
   
   // modal state
   const [open, setOpen] = React.useState(false);
-  const [activeApp, setActiveApp] = React.useState<AppItem | null>(null);
-  const [pageUrl, setPageUrl] = React.useState<string>("");
-  const [snack, setSnack] = React.useState<{ open: boolean; message?: string; severity?: "success" | "info" | "error" }>({ open: false });
+  const [activeApp, setActiveApp] = useState<AppItem | null>(null);
+  const [pageUrl, setPageUrl] = useState<string>("");
+  const [snack, setSnack] = useState<{ open: boolean; message?: string; severity?: "success" | "info" | "error" }>({ open: false });
+
+  // Calculate statistics
+  const totalApps = apps.length;
+  const premiumApps = apps.filter(app => app.isPremium).length;
+  const approvedApps = apps.filter(app => app.status === 'approved').length;
+  const pendingApps = apps.filter(app => app.status === 'pending').length;
+
+  const fetchApps = async () => {
+    console.log('🔄 Starting to fetch apps...');
+    setLoading(true);
+    setError(null);
+    
+    // Add timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      console.log('⏰ Fetch timeout reached');
+      setError('Request timeout - please try again');
+      setLoading(false);
+    }, 10000); // 10 second timeout
+    
+    try {
+      console.log('📡 Making API call to /api/user-apps...');
+      
+      // Create AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId2 = setTimeout(() => controller.abort(), 10000);
+      
+      const res = await fetch("/api/user-apps", {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId2);
+      console.log('📡 API response status:', res.status);
+      console.log('📡 API response ok:', res.ok);
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('❌ API error response:', errorText);
+        throw new Error(`Failed to fetch apps: ${res.status} ${errorText}`);
+      }
+      
+      const data = await res.json();
+      console.log('📦 API response data:', data);
+      console.log('📦 Apps array:', data.apps);
+      
+      setApps(data.apps || []);
+      console.log('✅ Apps state updated successfully');
+    } catch (err: any) {
+      console.error('❌ Error in fetchApps:', err);
+      if (err.name === 'AbortError') {
+        setError('Request timeout - please try again');
+      } else {
+        setError(err.message || "Unknown error");
+      }
+    } finally {
+      clearTimeout(timeoutId);
+      console.log('🏁 Setting loading to false');
+      setLoading(false);
+    }
+  };
+
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+    fetchApps();
+  };
 
   useEffect(() => {
-    async function fetchApps() {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch("/api/user-apps");
-        if (!res.ok) throw new Error("Failed to fetch apps");
-        const data = await res.json();
-        setApps(data.apps || []);
-      } catch (err: any) {
-        setError(err.message || "Unknown error");
-      } finally {
-        setLoading(false);
-      }
-    }
     fetchApps();
   }, []);
 
@@ -136,7 +195,7 @@ export default function ManageAppsPage() {
     border: typeof window !== "undefined" && getComputedStyle(document.documentElement).getPropertyValue("--glass-border")
       ? `1px solid var(--glass-border)`
       : `1px solid ${theme.palette.divider}`,
-    boxShadow: getShadow(theme, "elevated"),
+    boxShadow: getShadow(theme, "elegant"),
     color: "text.primary",
     // keep it visually solid — small blur in content only, not see-through
     backdropFilter: "none",
@@ -144,17 +203,92 @@ export default function ManageAppsPage() {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-        <CircularProgress />
+      <Box sx={{ textAlign: 'center', py: 4 }}>
+        <CircularProgress size={60} sx={{ mb: 2 }} />
+        <Typography variant="h6" gutterBottom>
+          Loading Apps...
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          This may take a few moments. If it takes longer than 10 seconds, the request will timeout.
+        </Typography>
+        
+        {/* Show retry count if we've tried before */}
+        {retryCount > 0 && (
+          <Typography variant="caption" color="text.secondary">
+            Retry attempt: {retryCount}
+          </Typography>
+        )}
+        
+        {/* Manual retry option */}
+        <Box sx={{ mt: 3 }}>
+          <Button 
+            variant="outlined" 
+            onClick={handleRetry}
+            disabled={loading}
+          >
+            Cancel & Retry
+          </Button>
+        </Box>
       </Box>
     );
   }
 
   if (error) {
     return (
-      <Alert severity="error" sx={{ mb: 4 }}>
-        {error}
-      </Alert>
+      <Box sx={{ textAlign: 'center', py: 4 }}>
+        <Alert severity="error" sx={{ mb: 3, maxWidth: 600, mx: 'auto' }}>
+          <Typography variant="h6" gutterBottom>
+            Failed to Load Apps
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            {error}
+          </Typography>
+          <Button 
+            variant="contained" 
+            onClick={handleRetry}
+            startIcon={<CircularProgress size={16} />}
+            disabled={loading}
+          >
+            {loading ? 'Retrying...' : 'Retry'}
+          </Button>
+        </Alert>
+        
+        {/* Show basic content even if API fails */}
+        <Box sx={{ mt: 4 }}>
+          <Typography variant="h5" gutterBottom>
+            Manage Submitted Apps
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Unable to load apps at the moment. Please try again or contact support if the issue persists.
+          </Typography>
+          
+          {/* Basic action buttons */}
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Button variant="outlined" onClick={handleRetry}>
+              Refresh Apps
+            </Button>
+            <Button 
+              variant="outlined" 
+              onClick={async () => {
+                try {
+                  const res = await fetch('/api/user-apps/test');
+                  const data = await res.json();
+                  console.log('🧪 Health check result:', data);
+                  alert(`Health check: ${data.status}\n${data.message}`);
+                } catch (err) {
+                  console.error('Health check failed:', err);
+                  alert('Health check failed. Check console for details.');
+                }
+              }}
+            >
+              Test API Connection
+            </Button>
+            <Button variant="contained" href="/dashboard/submission/app">
+              Submit New App
+            </Button>
+          </Box>
+        </Box>
+      </Box>
     );
   }
 
@@ -163,6 +297,84 @@ export default function ManageAppsPage() {
       <Typography variant="h5" gutterBottom>
         Manage Submitted Apps
       </Typography>
+
+      {/* Statistics Cards */}
+      <Box sx={{ mb: 4 }}>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'primary.light', color: 'white' }}>
+              <Typography variant="h4" fontWeight="bold">{totalApps}</Typography>
+              <Typography variant="body2">Total Apps</Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'warning.light', color: 'warning.dark' }}>
+              <Typography variant="h4" fontWeight="bold">{premiumApps}</Typography>
+              <Typography variant="body2">Premium Apps</Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'success.light', color: 'success.dark' }}>
+              <Typography variant="h4" fontWeight="bold">{approvedApps}</Typography>
+              <Typography variant="body2">Approved</Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'info.light', color: 'info.dark' }}>
+              <Typography variant="h4" fontWeight="bold">{pendingApps}</Typography>
+              <Typography variant="body2">Pending</Typography>
+            </Paper>
+          </Grid>
+        </Grid>
+      </Box>
+
+      {/* Premium App Manager */}
+      <Box sx={{ mb: 4 }}>
+        <PremiumAppManager 
+          apps={apps as any} // Type assertion to avoid interface mismatch
+          onUpdatePremiumStatus={async (appId: string, status: string) => {
+            try {
+              const res = await fetch(`/api/user-apps/${appId}`, {
+                method: 'PATCH',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ premiumStatus: status }),
+              });
+
+              if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.message || 'Failed to update premium status');
+              }
+
+              // Refresh apps after update
+              const refreshRes = await fetch("/api/user-apps");
+              if (refreshRes.ok) {
+                const data = await refreshRes.json();
+                setApps(data.apps || []);
+              }
+
+              setSnack({ 
+                open: true, 
+                message: "Premium status updated successfully", 
+                severity: "success" 
+              });
+            } catch (err: any) {
+              setSnack({ 
+                open: true, 
+                message: err.message || "Failed to update premium status", 
+                severity: "error" 
+              });
+              throw err;
+            }
+          }}
+        />
+      </Box>
+
+      <Typography variant="h6" gutterBottom>
+        All Submitted Apps
+      </Typography>
+
       <Grid container spacing={3} mt={2}>
         {apps.map((app) => (
           <Grid item xs={12} md={6} key={app._id}>
@@ -173,10 +385,20 @@ export default function ManageAppsPage() {
                 boxShadow: getShadow(theme, "elegant"),
                 position: "relative", // allow absolute badge
                 overflow: "visible",
+                // Add premium styling
+                ...(app.isPremium && {
+                  border: `2px solid ${theme.palette.warning.main}`,
+                  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.warning.light}10 100%)`
+                })
               }}
             >
               <Typography variant="h6" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 {app.name}
+                {app.isPremium && (
+                  <Tooltip title="Premium App - Featured on launch page">
+                    <CheckCircleIcon color="warning" />
+                  </Tooltip>
+                )}
               </Typography>
 
               <Typography
@@ -204,6 +426,24 @@ export default function ManageAppsPage() {
                 }
                 sx={{ mt: 1 }}
               />
+
+              {/* Premium Status Badge */}
+              {app.isPremium && (
+                <Chip
+                  label="Premium"
+                  color="warning"
+                  variant="outlined"
+                  icon={<CheckCircleIcon />}
+                  sx={{ mt: 1, ml: 1 }}
+                />
+              )}
+
+              {/* Premium Plan Info */}
+              {app.premiumPlan && (
+                <Typography variant="caption" color="text.secondary" display="block" mt={1}>
+                  Plan: {app.premiumPlan}
+                </Typography>
+              )}
 
               <Box mt={2}>
                 <Button size="small" variant="outlined" onClick={() => openSubmitModal(app)}>

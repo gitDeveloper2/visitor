@@ -80,6 +80,7 @@ export default function AppsMainPage() {
   const theme = useTheme();
 
   const [apps, setApps] = useState([]);
+  const [featuredApps, setFeaturedApps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedFilter, setSelectedFilter] = useState("All");
@@ -114,9 +115,23 @@ export default function AppsMainPage() {
       }
     }
 
+    async function fetchFeaturedApps() {
+      try {
+        const res = await fetch('/api/user-apps/featured');
+        if (res.ok) {
+          const data = await res.json();
+          setFeaturedApps(data.apps || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch featured apps:", err);
+      }
+    }
+
     fetchApps();
+    fetchFeaturedApps();
   }, [selectedFilter]);
 
+  // Update the filtered apps to include premium status in search
   const filteredApps = apps.filter(
     (app) =>
       app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -126,7 +141,10 @@ export default function AppsMainPage() {
       )) ||
       (app.techStack && Array.isArray(app.techStack) && app.techStack.some((tech) =>
         tech.toLowerCase().includes(searchQuery.toLowerCase())
-      ))
+      )) ||
+      // Also search by premium status
+      (searchQuery.toLowerCase().includes('premium') && app.isPremium) ||
+      (searchQuery.toLowerCase().includes('free') && !app.isPremium)
   );
 
   const renderBadges = (badges: string[]) => {
@@ -190,6 +208,11 @@ export default function AppsMainPage() {
         height: "100%",
         background: theme.palette.background.paper,
         boxShadow: getShadow(theme, "elegant"),
+        // Add special styling for premium apps
+        ...(app.isPremium && {
+          border: `2px solid ${theme.palette.warning.main}`,
+          background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.warning.light}10 100%)`
+        })
       }}
     >
       <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
@@ -202,6 +225,16 @@ export default function AppsMainPage() {
             by {app.authorName || app.author}
           </Typography>
         </Box>
+        {/* Premium Badge */}
+        {app.isPremium && (
+          <Chip
+            label="Premium"
+            color="warning"
+            size="small"
+            icon={<DollarSign size={16} />}
+            sx={{ fontWeight: 600 }}
+          />
+        )}
       </Box>
 
       <Typography
@@ -244,15 +277,16 @@ export default function AppsMainPage() {
 
       {/* Pricing and Stats */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, mt: 'auto' }}>
-        {app.pricing && (
-          <Chip
-            icon={<DollarSign size={16} />}
-            label={app.pricing}
-            size="small"
-            color={app.pricing === 'Free' ? 'success' : 'primary'}
-            variant="outlined"
-          />
-        )}
+        {/* Pricing Chip */}
+        <Chip
+          icon={<DollarSign size={16} />}
+          label={app.isPremium ? 'Premium' : (app.pricing || 'Free')}
+          size="small"
+          color={app.isPremium ? 'warning' : (app.pricing === 'Free' ? 'success' : 'primary')}
+          variant="outlined"
+        />
+        
+        {/* Stats */}
         {app.views && (
           <Typography variant="caption" color="text.secondary">
             {app.views} views
@@ -307,7 +341,14 @@ export default function AppsMainPage() {
   </Button>
 </Box>
 
-      {renderBadges(app.badges || [])}
+      {/* Premium Plan Info */}
+      {app.premiumPlan && (
+        <Box sx={{ mt: 2, p: 1.5, bgcolor: 'warning.light', borderRadius: 1 }}>
+          <Typography variant="caption" color="warning.dark" fontWeight={600}>
+            Premium Plan: {app.premiumPlan}
+          </Typography>
+        </Box>
+      )}
     </Paper>
   );
 
@@ -407,11 +448,19 @@ export default function AppsMainPage() {
             Apps
           </Typography>
           <Grid container spacing={4}>
-            {featuredApps.map((app) => (
-              <Grid item xs={12} sm={6} md={4} key={app.id}>
-                {renderAppCard(app)}
+            {featuredApps.length > 0 ? (
+              featuredApps.map((app) => (
+                <Grid item xs={12} sm={6} md={4} key={app._id}>
+                  {renderAppCard(app)}
+                </Grid>
+              ))
+            ) : (
+              <Grid item xs={12}>
+                <Typography variant="body2" color="text.secondary" textAlign="center">
+                  No featured apps available at the moment.
+                </Typography>
               </Grid>
-            ))}
+            )}
           </Grid>
         </Box>
 

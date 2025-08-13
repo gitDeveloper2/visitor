@@ -156,8 +156,9 @@ export async function getSubscriptionRecord(db: Db, subscriptionId: string) {
  * Determines the product type based on environment variables.
  */
 export function getProductType(productId: string): OrderType | null {
-  if (productId === process.env.NEXT_PUBLIC_LEMON_SQUEEZY_PREMIUM_BLOG_PRODUCT_ID) return 'blog';
-  if (productId === process.env.NEXT_PUBLIC_LEMON_SQUEEZY_PREMIUM_APP_PRODUCT_ID) return 'app';
+  console.log("productid",productId)
+  if (productId === process.env.NEXT_LEMON_SQUEEZY_PREMIUM_BLOG_PRODUCT_ID) return 'blog';
+  if (productId === process.env.NEXT_LEMON_SQUEEZY_PREMIUM_APP_PRODUCT_ID) return 'app';
   return null;
 }
 
