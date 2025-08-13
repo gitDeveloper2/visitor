@@ -15,7 +15,7 @@ export type FounderDomainStatus = "unknown" | "checking" | "ok" | "taken" | "inv
 
 export type FounderDomainCheck = {
   status: FounderDomainStatus;
-  message?: string;
+  message: string;
 };
 
 

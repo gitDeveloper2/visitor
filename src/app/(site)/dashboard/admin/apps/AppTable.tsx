@@ -211,7 +211,8 @@ export default function AppTable() {
         rows={apps}
         columns={columns}
         getRowId={(row) => row._id}
-        pageSize={5}
+        initialState={{ pagination: { paginationModel: { pageSize: 5, page: 0 } } }}
+        pageSizeOptions={[5, 10, 25]}
         disableRowSelectionOnClick
         sx={{
           border: "none",

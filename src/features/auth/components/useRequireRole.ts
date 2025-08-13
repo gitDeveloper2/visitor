@@ -3,7 +3,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { authClient } from '../../../../auth-client';
+import { authClient } from '@/app/auth-client';
 
 export function useRequireRole(requiredRole: string) {
   const router = useRouter();

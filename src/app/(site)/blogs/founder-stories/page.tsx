@@ -16,7 +16,7 @@ import { useTheme } from "@mui/material/styles";
 import { Search, Clock, ThumbsUp } from "lucide-react";
 import Badge from "@components/badges/Badge";
 import { getGlassStyles, getShadow, typographyVariants, commonStyles } from "../../../../utils/themeUtils";
-import { FounderStoryCard } from "../page";
+import FounderStoryCard from "../page";
 
 // Mock data
 const founderStories = [

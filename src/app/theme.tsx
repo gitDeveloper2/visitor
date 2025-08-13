@@ -342,6 +342,9 @@ export const createAppTheme = (mode: "light" | "dark") => {
 // Default theme (dark mode)
 export const theme = createAppTheme("dark");
 
+// Backwards-compat export expected by some pages
+export const blogTheme = theme;
+
 // Type declarations for custom theme properties
 declare module '@mui/material/styles' {
   interface Theme {

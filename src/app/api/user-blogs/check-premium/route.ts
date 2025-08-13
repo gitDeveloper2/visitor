@@ -30,3 +30,6 @@ export async function GET() {
     );
   }
 } 
+
+// This route relies on authenticated context; force dynamic rendering.
+export const dynamic = 'force-dynamic';

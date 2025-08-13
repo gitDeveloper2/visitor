@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
 import {
   Box,
   Button,
@@ -26,7 +26,7 @@ import { Add as AddIcon, Delete as DeleteIcon, KeyboardArrowUp as UpIcon, Keyboa
 import { useTheme } from "@mui/material/styles";
 import { useSearchParams } from 'next/navigation';
 
-export default function SubmitAppPage() {
+function SubmitAppPageContent() {
   const theme = useTheme();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -573,13 +573,13 @@ export default function SubmitAppPage() {
                 <CardContent sx={{ p: 3, textAlign: 'center' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
                     {selectedPremiumPlan === 'premium' && (
-                      <Check 
-                        size={24} 
-                        color={theme.palette.primary.main} 
-                        sx={{ mr: 1 }}
-                      />
+                      <Box sx={{ mr: 1, color: 'primary.main', display: 'inline-flex' }}>
+                        <Check size={24} />
+                      </Box>
                     )}
-                    <Star size={32} color={theme.palette.primary.main} />
+                    <Box sx={{ color: 'primary.main', display: 'inline-flex' }}>
+                      <Star size={32} />
+                    </Box>
                   </Box>
                   <Typography variant="h6" fontWeight={600} gutterBottom>
                     Premium Listing
@@ -596,11 +596,9 @@ export default function SubmitAppPage() {
                   <Box sx={{ textAlign: 'left' }}>
                     {premiumFeatures.slice(0, 4).map((feature, index) => (
                       <Box key={index} display="flex" alignItems="center" mb={1}>
-                        <Check 
-                          size={16} 
-                          color={theme.palette.success.main} 
-                          sx={{ mr: 1 }}
-                        />
+                        <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
+                          <Check size={16} />
+                        </Box>
                         <Typography variant="body2" fontSize="0.875rem">
                           {feature}
                         </Typography>
@@ -629,11 +627,9 @@ export default function SubmitAppPage() {
                 <CardContent sx={{ p: 3, textAlign: 'center' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
                     {selectedPremiumPlan === 'free' && (
-                      <Check 
-                        size={24} 
-                        color={theme.palette.success.main} 
-                        sx={{ mr: 1 }}
-                      />
+                      <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
+                        <Check size={24} />
+                      </Box>
                     )}
                     <Typography variant="h4" color="success.main">🚀</Typography>
                   </Box>
@@ -651,31 +647,25 @@ export default function SubmitAppPage() {
                   
                   <Box sx={{ textAlign: 'left' }}>
                     <Box display="flex" alignItems="center" mb={1}>
-                      <Check 
-                        size={16} 
-                        color={theme.palette.success.main} 
-                        sx={{ mr: 1 }}
-                      />
+                      <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
+                        <Check size={16} />
+                      </Box>
                       <Typography variant="body2" fontSize="0.875rem">
                         Standard app listing
                       </Typography>
                     </Box>
                     <Box display="flex" alignItems="center" mb={1}>
-                      <Check 
-                        size={16} 
-                        color={theme.palette.success.main} 
-                        sx={{ mr: 1 }}
-                      />
+                      <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
+                        <Check size={16} />
+                      </Box>
                       <Typography variant="body2" fontSize="0.875rem">
                         Community review process
                       </Typography>
                     </Box>
                     <Box display="flex" alignItems="center" mb={1}>
-                      <Check 
-                        size={16} 
-                        color={theme.palette.success.main} 
-                        sx={{ mr: 1 }}
-                      />
+                      <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
+                        <Check size={16} />
+                      </Box>
                       <Typography variant="body2" fontSize="0.875rem">
                         Basic analytics
                       </Typography>
@@ -706,5 +696,13 @@ export default function SubmitAppPage() {
         </Button>
       </Box>
     </Container>
+  );
+}
+
+export default function SubmitAppPage() {
+  return (
+    <Suspense fallback={<div />}>
+      <SubmitAppPageContent />
+    </Suspense>
   );
 }

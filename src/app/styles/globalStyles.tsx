@@ -6,7 +6,7 @@ import { Global, css } from '@emotion/react';
 import { Theme } from '@mui/material/styles';
 import React from 'react';
 // import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { solarizedlight, solarizeddark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+// import { solarizedlight, solarizeddark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import customTheme from './customSyntaxTheme';
 
 const GlobalStyles: React.FC = () => {

@@ -25,3 +25,6 @@ export async function GET() {
     return NextResponse.json({ message: 'Failed to fetch drafts.', error: (error as Error)?.toString() }, { status: 500 });
   }
 }
+
+// This route reads authenticated request context; ensure it's always dynamic
+export const dynamic = 'force-dynamic';

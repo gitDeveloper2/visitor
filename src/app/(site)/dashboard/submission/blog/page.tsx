@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import {
   Box,
   Stepper,
@@ -24,7 +24,7 @@ import { useSearchParams } from 'next/navigation';
 
 const steps = ["Blog Info", "Write Blog", "Review & Submit"];
 
-export default function BlogSubmitPage() {
+function BlogSubmitPageContent() {
   const theme = useTheme();
   const searchParams = useSearchParams();
   const [activeStep, setActiveStep] = React.useState(0);
@@ -392,5 +392,13 @@ export default function BlogSubmitPage() {
         </Box>
       </Container>
     </Box>
+  );
+}
+
+export default function BlogSubmitPage() {
+  return (
+    <Suspense fallback={<div />}>
+      <BlogSubmitPageContent />
+    </Suspense>
   );
 }

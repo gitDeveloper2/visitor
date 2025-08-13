@@ -1,4 +1,4 @@
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+// Local custom theme definition; no external syntax highlighter dependency required
 
 // Define a custom theme with more vibrant colors
 const customTheme = {

@@ -97,7 +97,7 @@ export default function HowItWorksPage() {
         <Typography
           variant="h3"
           component="h1"
-          sx={{ ...typographyVariants.MainTitle, textAlign: 'center', mb: 10, ...commonStyles.textGradient(theme) }}
+          sx={{ ...typographyVariants.heroTitle, textAlign: 'center', mb: 10, ...commonStyles.textGradient(theme) }}
         >
           How It Works
         </Typography>

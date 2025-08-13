@@ -8,6 +8,7 @@
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",
+    "baseUrl": ".",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
@@ -18,13 +19,17 @@
       }
     ],
     "paths": {
+      "@/*": ["./src/*"],
       "@components/*": ["./src/app/components/*"],
+      "@/components/*": ["./src/components/*"],
       "@pages/*": ["./src/app/pages/*"],
       "@/features/*": ["./src/features/*"],
       "@styles/*": ["./src/app/styles/*"],
       "@utils/*": ["./src/app/utils/*"],
       "@data/*": ["./src/app/data/*"],
-      "@lib/*": ["./src/lib/*"]
+      "@lib/*": ["./src/lib/*"],
+      "@/lib/*": ["./src/lib/*"],
+      "@/models/*": ["./src/models/*"]
     },
     "strictNullChecks": false,
     "noImplicitAny": false,

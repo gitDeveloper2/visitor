@@ -334,7 +334,7 @@ type FounderStoryCardProps = {
   showBadge?: boolean; // <- optional badge toggle
 };
 
-export function FounderStoryCard({
+function FounderStoryCard({
   author,
   title,
   excerpt,
