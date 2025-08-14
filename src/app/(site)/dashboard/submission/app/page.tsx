@@ -117,7 +117,8 @@ function SubmitAppPageContent() {
         console.log('Setting form data:', newFormData);
         setForm(newFormData);
         
-        setSelectedPremiumPlan(appData.premiumPlan || null);
+        // Don't set premium plan for published apps - they're already paid for
+        setSelectedPremiumPlan(null);
         setIsEditing(true);
         setEditingAppId(appId);
         hasLoadedDataRef.current = true;
@@ -152,6 +153,9 @@ function SubmitAppPageContent() {
     } else if (appId) {
       // Load published app data for editing
       loadPublishedAppData(appId);
+    } else if (draftId) {
+      // Load draft data for editing (without payment success)
+      loadDraftData(draftId);
     }
     
     hasLoadedDataRef.current = true;
@@ -297,15 +301,53 @@ function SubmitAppPageContent() {
     setSuccess(false);
     
     try {
-      // If premium was selected, save as draft first
+      // Determine if we're editing a draft vs a published app
+      const isEditingDraft = isEditing && editingAppId && searchParams.get('draftId') === editingAppId;
+      const isEditingPublishedApp = isEditing && editingAppId && searchParams.get('appId') === editingAppId;
+      
+      // For published apps, we never go through premium flow since they're already paid
+      // For drafts, premium selection can trigger payment/submission flow
       if (selectedPremiumPlan === 'premium') {
-        const draftId = await saveDraft();
-        
-        if (!draftId) {
-          throw new Error('Failed to save draft. Please try again.');
+        // If we are editing a draft that may already be premium-ready, submit it directly
+        if (isEditingDraft) {
+          try {
+            const draftRes = await fetch(`/api/user-apps/draft/${editingAppId}`);
+            if (!draftRes.ok) {
+              throw new Error('Failed to load draft details.');
+            }
+            const draftData = await draftRes.json();
+            if (draftData?.premiumReady) {
+              // Submit draft to apps (pending review)
+              const submitRes = await fetch(`/api/user-apps/draft/${editingAppId}/submit`, {
+                method: 'POST',
+              });
+              if (!submitRes.ok) {
+                const j = await submitRes.json().catch(() => ({}));
+                throw new Error(j.message || 'Failed to submit draft.');
+              }
+              setSuccess(true);
+              setIsEditing(false);
+              setEditingAppId(null);
+              setSelectedPremiumPlan(null);
+              return;
+            }
+          } catch (e: any) {
+            console.error('Draft submit check failed:', e);
+            // fall through to checkout flow
+          }
         }
 
-        // Create checkout with draft ID
+        // Not premium-ready yet → ensure we have a draft ID and create checkout
+        let draftId: string | null = null;
+        if (isEditingDraft) {
+          draftId = editingAppId;
+        } else {
+          draftId = await saveDraft();
+          if (!draftId) {
+            throw new Error('Failed to save draft. Please try again.');
+          }
+        }
+
         try {
           const checkoutRes = await fetch("/api/lemonsqueezy/checkout", {
             method: "POST",
@@ -351,18 +393,46 @@ function SubmitAppPageContent() {
           premiumPlan: selectedPremiumPlan,
         };
 
-        const url = isEditing ? `/api/user-apps/${editingAppId}` : "/api/user-apps";
-        const method = isEditing ? "PUT" : "POST";
+        // For published apps, always update directly (no payment needed)
+        // For drafts, submit to apps collection
+        let url: string;
+        let method: string;
+        
+        if (isEditingPublishedApp) {
+          // Editing a published app - just update it
+          url = `/api/user-apps/${editingAppId}`;
+          method = "PUT";
+        } else if (isEditingDraft) {
+          // Editing a draft - submit it to apps
+          const submitRes = await fetch(`/api/user-apps/draft/${editingAppId}/submit`, {
+            method: 'POST',
+          });
+          if (!submitRes.ok) {
+            const j = await submitRes.json().catch(() => ({}));
+            throw new Error(j.message || 'Failed to submit draft.');
+          }
+          setSuccess(true);
+          setIsEditing(false);
+          setEditingAppId(null);
+          return;
+        } else {
+          // New app - create it
+          url = "/api/user-apps";
+          method = "POST";
+        }
 
-        const res = await fetch(url, {
-          method,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
+        // Only make the fetch call for published app updates and new apps
+        if (url && method) {
+          const res = await fetch(url, {
+            method,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
 
-        if (!res.ok) {
-          const j = await res.json().catch(() => ({}));
-          throw new Error(j.message || `Could not ${isEditing ? 'update' : 'save'} app`);
+          if (!res.ok) {
+            const j = await res.json().catch(() => ({}));
+            throw new Error(j.message || `Could not ${isEditing ? 'update' : 'save'} app`);
+          }
         }
         
         setSuccess(true);
@@ -719,14 +789,15 @@ function SubmitAppPageContent() {
           />
         </Paper>
 
-        {/* Premium Upgrade Option */}
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom fontWeight={600} sx={{ mb: 2 }}>
-            Premium Upgrade (Optional)
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Boost your app's visibility with premium features. This is completely optional.
-          </Typography>
+        {/* Premium Upgrade Option - Only show for new apps or drafts, not published apps */}
+        {(!isEditing || (isEditing && searchParams.get('draftId') === editingAppId)) && (
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom fontWeight={600} sx={{ mb: 2 }}>
+              Premium Upgrade (Optional)
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Boost your app's visibility with premium features. This is completely optional.
+            </Typography>
           
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
@@ -858,6 +929,7 @@ function SubmitAppPageContent() {
             </Box>
           )}
         </Paper>
+        )}
 
         <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
           {isEditing && (
