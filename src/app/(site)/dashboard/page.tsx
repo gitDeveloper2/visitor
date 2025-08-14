@@ -7,7 +7,7 @@ import Link from "next/link";
 
 // Dummy counts – replace with real data later
 const stats = {
-  apps: { total: 24, pending: 5, approved: 15, rejected: 4 },
+  apps: { total: 24, pending: 5, approved: 15, rejected: 4, verification: { pending: 8, verified: 12, failed: 3 } },
   blogs: { total: 12, pending: 3, approved: 7, rejected: 2 },
 };
 
@@ -49,11 +49,24 @@ const StatCard = ({
         <Chip label={`Pending: ${pending}`} color="warning" variant="outlined" />
         <Chip label={`Approved: ${approved}`} color="success" variant="outlined" />
         <Chip label={`Rejected: ${rejected}`} color="error" variant="outlined" />
+        {title === "Apps" && (
+          <>
+            <Chip label={`Verification Pending: ${stats.apps.verification.pending}`} color="info" variant="outlined" />
+            <Chip label={`Verified: ${stats.apps.verification.verified}`} color="success" variant="outlined" />
+          </>
+        )}
       </Stack>
 
-      <Button component={Link} href={manageLink} variant="contained" size="small">
-        Manage {title}
-      </Button>
+      <Stack direction="row" spacing={1}>
+        <Button component={Link} href={manageLink} variant="contained" size="small">
+          Manage {title}
+        </Button>
+        {title === "Apps" && (
+          <Button component={Link} href="/dashboard/admin/verification" variant="outlined" size="small">
+            Verification
+          </Button>
+        )}
+      </Stack>
     </Paper>
   );
 };

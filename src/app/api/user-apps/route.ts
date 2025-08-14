@@ -73,6 +73,11 @@ export async function POST(request: Request) {
     const processedTechStack = Array.isArray(techStack) ? techStack : [];
     const processedFeatures = Array.isArray(features) ? features : [];
     
+    // Determine if verification is required (free apps only)
+    const isFreeApp = pricing === 'Free' || pricing === 'free' || !pricing;
+    const requiresVerification = isFreeApp;
+    const verificationStatus = requiresVerification ? 'pending' : 'not_required';
+
     const newApp = {
       name,
       description,
@@ -107,6 +112,10 @@ export async function POST(request: Request) {
       isPremium: false, // 🛡️ SECURITY: Always false during creation
       premiumStatus: 'pending', // 🛡️ SECURITY: Pending until payment verified
       premiumRequestedAt: premiumPlan === 'premium' ? new Date() : null, // 🛡️ Track when premium was requested
+      // Verification fields for free apps
+      requiresVerification,
+      verificationStatus,
+      verificationAttempts: 0,
     };
     
     console.log('💾 Inserting new app:', newApp);
@@ -175,6 +184,8 @@ export async function GET(request: Request) {
     const approved = url.searchParams.get('approved');
     const featured = url.searchParams.get('featured');
     const pricing = url.searchParams.get('pricing');
+    const verificationStatus = url.searchParams.get('verificationStatus');
+    const requiresVerification = url.searchParams.get('requiresVerification');
 
     // Log incoming query params
     console.log("🔍 Query Params:", {
@@ -185,7 +196,9 @@ export async function GET(request: Request) {
       tag,
       approved,
       featured,
-      pricing
+      pricing,
+      verificationStatus,
+      requiresVerification
     });
 
     const filter: any = {};
@@ -194,6 +207,8 @@ export async function GET(request: Request) {
     if (authorId) filter.authorId = authorId;
     if (tag) filter.tags = { $in: [tag] };
     if (approved === 'true') filter.status = 'approved';
+    if (verificationStatus) filter.verificationStatus = verificationStatus;
+    if (requiresVerification === 'true') filter.requiresVerification = true;
     
     // Handle featured apps (premium apps) - ONLY if they have valid payment records
     if (featured === 'true') {

@@ -50,6 +50,7 @@ import {
   CalendarToday as Calendar,
   Book as BookOpen,
 } from '@mui/icons-material';
+import { generateVerificationBadgeHtml } from "@/components/badges/VerificationBadge";
 
 interface AppItem {
   _id: string;
@@ -100,7 +101,7 @@ export default function ManageAppsPage() {
   const [drafts, setDrafts] = useState<AppDraft[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
+
   const [activeTab, setActiveTab] = useState(0);
   const [popoverAnchor, setPopoverAnchor] = React.useState<HTMLElement | null>(null);
   const openInfoPopover = (e: React.MouseEvent<HTMLElement>) => {
@@ -129,25 +130,10 @@ export default function ManageAppsPage() {
     setLoading(true);
     setError(null);
     
-    // Add timeout to prevent infinite loading
-    const timeoutId = setTimeout(() => {
-      console.log('⏰ Fetch timeout reached');
-      setError('Request timeout - please try again');
-      setLoading(false);
-    }, 10000); // 10 second timeout
-    
     try {
       console.log('📡 Making API call to /api/user-apps...');
       
-      // Create AbortController for timeout
-      const controller = new AbortController();
-      const timeoutId2 = setTimeout(() => controller.abort(), 10000);
-      
-      const res = await fetch("/api/user-apps", {
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId2);
+      const res = await fetch("/api/user-apps");
       console.log('📡 API response status:', res.status);
       console.log('📡 API response ok:', res.ok);
       
@@ -165,13 +151,8 @@ export default function ManageAppsPage() {
       console.log('✅ Apps state updated successfully');
     } catch (err: any) {
       console.error('❌ Error in fetchApps:', err);
-      if (err.name === 'AbortError') {
-        setError('Request timeout - please try again');
-      } else {
-        setError(err.message || "Unknown error");
-      }
+      setError(err.message || "Unknown error");
     } finally {
-      clearTimeout(timeoutId);
       console.log('🏁 Setting loading to false');
       setLoading(false);
     }
@@ -192,7 +173,6 @@ export default function ManageAppsPage() {
   };
 
   const handleRetry = () => {
-    setRetryCount(prev => prev + 1);
     fetchApps();
   };
 
@@ -205,8 +185,18 @@ export default function ManageAppsPage() {
     fetchDrafts();
   }, []);
 
-  // open modal to submit verification (user cannot verify themselves)
+  // open modal to submit verification for free apps
   const openSubmitModal = (app: AppItem) => {
+    // Only allow verification for free apps that require it
+    if (app.pricing !== 'Free' && app.pricing !== 'free') {
+      setSnack({ 
+        open: true, 
+        message: "Verification is only required for free apps", 
+        severity: "info" 
+      });
+      return;
+    }
+    
     setActiveApp(app);
     setPageUrl("");
     setOpen(true);
@@ -230,27 +220,41 @@ export default function ManageAppsPage() {
     }
   };
 
-  // Submit for verification (front-end only) — no direct verify allowed
+  // Submit for verification
   const submitForVerification = async () => {
     if (!activeApp) return;
 
-    // Prepare payload for your future API:
-    const payload = {
-      appId: activeApp._id,
-      pageUrl: pageUrl,
-      requestedAt: new Date().toISOString(),
-    };
+    try {
+      const response = await fetch(`/api/user-apps/${activeApp._id}/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ verificationUrl: pageUrl }),
+      });
 
-    console.log('📤 Submitting for verification:', payload);
-    
-    // For now, just show success message
-    setSnack({ 
-      open: true, 
-      message: "Verification request submitted successfully! We'll review your submission.", 
-      severity: "success" 
-    });
-    
-    closeModal();
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to submit verification');
+      }
+
+      const result = await response.json();
+      
+      setSnack({ 
+        open: true, 
+        message: "Verification request submitted successfully! We'll check your website within 24 hours.", 
+        severity: "success" 
+      });
+      
+      // Refresh apps to show updated status
+      fetchApps();
+      closeModal();
+      
+    } catch (error: any) {
+      setSnack({ 
+        open: true, 
+        message: error.message || "Failed to submit verification request", 
+        severity: "error" 
+      });
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -318,27 +322,6 @@ export default function ManageAppsPage() {
         <Typography variant="h6" gutterBottom>
           Loading Apps...
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          This may take a few moments. If it takes longer than 10 seconds, the request will timeout.
-        </Typography>
-        
-        {/* Show retry count if we've tried before */}
-        {retryCount > 0 && (
-          <Typography variant="caption" color="text.secondary">
-            Retry attempt: {retryCount}
-          </Typography>
-        )}
-        
-        {/* Manual retry option */}
-        <Box sx={{ mt: 3 }}>
-          <Button 
-            variant="outlined" 
-            onClick={handleRetry}
-            disabled={loading}
-          >
-            Cancel & Retry
-          </Button>
-        </Box>
       </Box>
     );
   }
@@ -356,48 +339,11 @@ export default function ManageAppsPage() {
           <Button 
             variant="contained" 
             onClick={handleRetry}
-            startIcon={<CircularProgress size={16} />}
             disabled={loading}
           >
-            {loading ? 'Retrying...' : 'Retry'}
+            Retry
           </Button>
         </Alert>
-        
-        {/* Show basic content even if API fails */}
-        <Box sx={{ mt: 4 }}>
-          <Typography variant="h5" gutterBottom>
-            Manage Submitted Apps
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Unable to load apps at the moment. Please try again or contact support if the issue persists.
-          </Typography>
-          
-          {/* Basic action buttons */}
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Button variant="outlined" onClick={handleRetry}>
-              Refresh Apps
-            </Button>
-            <Button 
-              variant="outlined" 
-              onClick={async () => {
-                try {
-                  const res = await fetch('/api/user-apps/test');
-                  const data = await res.json();
-                  console.log('🧪 Health check result:', data);
-                  alert(`Health check: ${data.status}\n${data.message}`);
-                } catch (err) {
-                  console.error('Health check failed:', err);
-                  alert('Health check failed. Check console for details.');
-                }
-              }}
-            >
-              Test API Connection
-            </Button>
-            <Button variant="contained" href="/dashboard/submission/app">
-              Submit New App
-            </Button>
-          </Box>
-        </Box>
       </Box>
     );
   }
@@ -597,6 +543,16 @@ export default function ManageAppsPage() {
                               size="small"
                               variant="outlined"
                             />
+                            {/* Verification status for free apps */}
+                            {app.pricing === 'Free' && app.verificationStatus && (
+                              <Chip
+                                label={app.verificationStatus === 'verified' ? 'Verified' : app.verificationStatus === 'pending' ? 'Pending Verification' : 'Verification Failed'}
+                                color={app.verificationStatus === 'verified' ? 'success' : app.verificationStatus === 'pending' ? 'warning' : 'error'}
+                                size="small"
+                                variant="outlined"
+                                icon={app.verificationStatus === 'verified' ? <CheckCircle fontSize="small" /> : undefined}
+                              />
+                            )}
                           </Box>
                         </Box>
 
@@ -673,6 +629,18 @@ export default function ManageAppsPage() {
                                 </IconButton>
                               </Tooltip>
                             )}
+                            {/* Verification button for free apps */}
+                            {app.pricing === 'Free' && app.verificationStatus !== 'verified' && (
+                              <Tooltip title="Submit for Verification">
+                                <IconButton
+                                  onClick={() => openSubmitModal(app)}
+                                  size="small"
+                                  color="info"
+                                >
+                                  <CheckCircle />
+                                </IconButton>
+                              </Tooltip>
+                            )}
                             {app.isPremium && (
                               <Tooltip title="Manage Premium">
                                 <IconButton
@@ -687,7 +655,7 @@ export default function ManageAppsPage() {
                             <Tooltip title="View App">
                               <IconButton
                                 component={Link}
-                                href={`/apps/${app._id}`}
+                                href={`/launch/${app.slug}`}
                                 size="small"
                                 color="primary"
                               >
@@ -715,7 +683,7 @@ export default function ManageAppsPage() {
                 // Refresh drafts after deletion
                 fetchDrafts();
               }}
-              refreshTrigger={retryCount}
+              refreshTrigger={0}
             />
           )}
         </Box>
@@ -741,10 +709,10 @@ export default function ManageAppsPage() {
 
           <Alert severity="info" sx={{ mb: 2 }}>
             <Typography variant="body2">
-              <strong>Required:</strong> Add this HTML snippet to your page:
+              <strong>Required:</strong> Add this verification badge to your page:
             </Typography>
             <Box sx={{ mt: 1, p: 1, bgcolor: 'grey.100', borderRadius: 1, fontFamily: 'monospace', fontSize: '0.8rem' }}>
-              {activeApp ? `<a href="https://your-site.com/apps/${activeApp._id}">View ${activeApp.name} on OurSite</a>` : 'Loading...'}
+              {activeApp ? generateVerificationBadgeHtml(activeApp.name, `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/launch/${activeApp.slug}`, 'default', 'light') : 'Loading...'}
             </Box>
           </Alert>
           

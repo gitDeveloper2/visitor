@@ -31,6 +31,14 @@ interface IApp {
   };
   // Verification
   isVerified?: boolean;
+  // New verification fields for free apps
+  verificationStatus?: 'pending' | 'verified' | 'failed' | 'not_required';
+  verificationUrl?: string;
+  verificationSubmittedAt?: Date;
+  verificationCheckedAt?: Date;
+  verificationAttempts?: number;
+  verificationBadgeHtml?: string;
+  requiresVerification?: boolean; // true for free apps
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -69,12 +77,25 @@ const appSchema = new Schema<IAppDocument>(
     },
     // Verification
     isVerified: { type: Boolean, default: false },
+    // New verification fields for free apps
+    verificationStatus: { 
+      type: String, 
+      enum: ['pending', 'verified', 'failed', 'not_required'], 
+      default: 'not_required' 
+    },
+    verificationUrl: { type: String },
+    verificationSubmittedAt: { type: Date },
+    verificationCheckedAt: { type: Date },
+    verificationAttempts: { type: Number, default: 0 },
+    verificationBadgeHtml: { type: String },
+    requiresVerification: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
 
 // Create compound index for better query performance
 appSchema.index({ slug: 1, status: 1 });
+appSchema.index({ verificationStatus: 1, requiresVerification: 1 });
 
 const App = models.App || model<IAppDocument>('App', appSchema);
 

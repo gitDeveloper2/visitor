@@ -48,6 +48,7 @@ import { useRef } from "react";
       links: [
         { label: "Admin Apps", href: "/dashboard/admin/apps" },
         { label: "Admin Blogs", href: "/dashboard/admin/blogs" },
+        { label: "Verification Management", href: "/dashboard/admin/verification" },
       ],
     },
   ];
