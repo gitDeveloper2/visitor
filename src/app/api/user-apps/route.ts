@@ -146,6 +146,15 @@ export async function GET(request: Request) {
   try {
     console.log("🚀 User apps API called");
     
+    // Get session to ensure user is authenticated
+    const session = await getSession();
+    if (!session?.user) {
+      console.warn("❌ No authenticated user found");
+      return NextResponse.json({ message: 'Unauthenticated User' }, { status: 401 });
+    }
+    
+    console.log("👤 Authenticated user:", { id: session.user.id, name: session.user.name, email: session.user.email });
+    
     // Add timeout protection
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('Database connection timeout')), 15000);
@@ -156,6 +165,7 @@ export async function GET(request: Request) {
     const { db } = await Promise.race([dbPromise, timeoutPromise]);
     
     console.log("💾 Connected DB:", db.databaseName);
+    console.log("🔗 Database connection string:", process.env.MONGODB_URI?.split('@')[1] || 'hidden');
     
     // Test if we can actually query the database
     try {
@@ -203,8 +213,12 @@ export async function GET(request: Request) {
 
     const filter: any = {};
     
+    // CRITICAL: Always filter by the current user's ID for security
+    filter.authorId = session.user.id;
+    console.log("🔒 Filtering apps for user:", session.user.id);
+    
     if (status) filter.status = status;
-    if (authorId) filter.authorId = authorId;
+    if (authorId) filter.authorId = authorId; // This will override the above, but should be the same user
     if (tag) filter.tags = { $in: [tag] };
     if (approved === 'true') filter.status = 'approved';
     if (verificationStatus) filter.verificationStatus = verificationStatus;
@@ -247,6 +261,12 @@ export async function GET(request: Request) {
       .toArray();
 
     console.log(`📦 Retrieved ${apps.length} apps before payment verification`);
+    console.log("🔍 Apps verification status:", apps.map(app => ({
+      name: app.name,
+      verificationStatus: app.verificationStatus,
+      verificationScore: app.verificationScore,
+      authorId: app.authorId
+    })));
 
     // CRITICAL: Verify premium status against actual payment records
     if (featured === 'true' || pricing === 'Premium') {
@@ -277,7 +297,7 @@ export async function GET(request: Request) {
     const totalCount = await db.collection('userapps').countDocuments(filter);
     console.log(`📊 Total Count: ${totalCount}`);
 
-    return NextResponse.json({ 
+    const response = NextResponse.json({ 
       apps,
       pagination: {
         page,
@@ -286,6 +306,13 @@ export async function GET(request: Request) {
         totalPages: Math.ceil(totalCount / limit)
       }
     }, { status: 200 });
+    
+    // Add cache control headers to prevent caching
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    
+    return response;
 
   } catch (error: any) {
     console.error("❌ Error fetching apps:", error);

@@ -1,7 +1,12 @@
 {
     "version": 2,
     "name": "basic-utils-next-js",
-    "scope": "justin-s-projects-f2beb211"
- 
-  }
+    "scope": "justin-s-projects-f2beb211",
+    "crons": [
+        {
+            "path": "/api/cron/verify-apps",
+            "schedule": "0 */6 * * *"
+        }
+    ]
+}
   

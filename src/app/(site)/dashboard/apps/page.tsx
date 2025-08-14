@@ -49,6 +49,7 @@ import {
   CreditCard,
   CalendarToday as Calendar,
   Book as BookOpen,
+  Refresh,
 } from '@mui/icons-material';
 import { generateVerificationBadgeHtml } from "@/components/badges/VerificationBadge";
 
@@ -62,13 +63,19 @@ interface AppItem {
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
   updatedAt: string;
+  slug?: string;
   // Add premium fields
   isPremium?: boolean;
   premiumStatus?: string;
   premiumPlan?: string;
+  pricing?: string;
   // Add stats fields
   views?: number;
   likes?: number;
+  // Add verification fields
+  verificationStatus?: 'verified' | 'pending' | 'needs_review' | 'failed';
+  verificationScore?: number;
+  verificationAttempts?: number;
 }
 
 interface AppDraft {
@@ -101,6 +108,7 @@ export default function ManageAppsPage() {
   const [drafts, setDrafts] = useState<AppDraft[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [activeTab, setActiveTab] = useState(0);
   const [popoverAnchor, setPopoverAnchor] = React.useState<HTMLElement | null>(null);
@@ -125,15 +133,27 @@ export default function ManageAppsPage() {
   const approvedApps = apps.filter(app => app.status === 'approved').length;
   const pendingApps = apps.filter(app => app.status === 'pending').length;
 
-  const fetchApps = async () => {
+  const fetchApps = async (showLoading = true) => {
     console.log('🔄 Starting to fetch apps...');
-    setLoading(true);
+    if (showLoading) {
+      setLoading(true);
+    }
+    setRefreshing(true);
     setError(null);
     
     try {
       console.log('📡 Making API call to /api/user-apps...');
       
-      const res = await fetch("/api/user-apps");
+      // Add cache-busting parameter to ensure fresh data
+      const timestamp = new Date().getTime();
+      const res = await fetch(`/api/user-apps?_t=${timestamp}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
       console.log('📡 API response status:', res.status);
       console.log('📡 API response ok:', res.ok);
       
@@ -147,14 +167,56 @@ export default function ManageAppsPage() {
       console.log('📦 API response data:', data);
       console.log('📦 Apps array:', data.apps);
       
-      setApps(data.apps || []);
+      // Check for verification status changes
+      const newApps = data.apps || [];
+      const verificationStatusChanges = [];
+      
+      for (const newApp of newApps) {
+        const oldApp = apps.find(app => app._id === newApp._id);
+        if (oldApp && oldApp.verificationStatus !== newApp.verificationStatus) {
+          verificationStatusChanges.push({
+            name: newApp.name,
+            oldStatus: oldApp.verificationStatus,
+            newStatus: newApp.verificationStatus
+          });
+        }
+      }
+      
+      // Show notification for verification status changes
+      if (verificationStatusChanges.length > 0 && !showLoading) {
+        const changesText = verificationStatusChanges.map(change => 
+          `${change.name}: ${change.oldStatus} → ${change.newStatus}`
+        ).join(', ');
+        
+        setSnack({
+          open: true,
+          message: `Verification status updated: ${changesText}`,
+          severity: 'success'
+        });
+      }
+      
+      setApps(newApps);
       console.log('✅ Apps state updated successfully');
+      
+      // Log verification status for debugging
+      const appsWithVerification = data.apps?.filter((app: any) => app.verificationStatus) || [];
+      if (appsWithVerification.length > 0) {
+        console.log('🔍 Apps with verification status:', appsWithVerification.map((app: any) => ({
+          name: app.name,
+          verificationStatus: app.verificationStatus,
+          verificationScore: app.verificationScore,
+          verificationAttempts: app.verificationAttempts
+        })));
+      }
     } catch (err: any) {
       console.error('❌ Error in fetchApps:', err);
       setError(err.message || "Unknown error");
     } finally {
       console.log('🏁 Setting loading to false');
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
+      setRefreshing(false);
     }
   };
 
@@ -180,10 +242,14 @@ export default function ManageAppsPage() {
     setActiveTab(newValue);
   };
 
+
+
   useEffect(() => {
     fetchApps();
     fetchDrafts();
   }, []);
+
+
 
   // open modal to submit verification for free apps
   const openSubmitModal = (app: AppItem) => {
@@ -350,9 +416,45 @@ export default function ManageAppsPage() {
 
   return (
     <Box>
-      <Typography variant="h5" gutterBottom>
-        Manage Submitted Apps
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h5">
+          Manage Submitted Apps
+        </Typography>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Button
+            variant="outlined"
+            startIcon={refreshing ? <CircularProgress size={16} /> : <Refresh />}
+            onClick={() => fetchApps(true)}
+            disabled={refreshing}
+            size="small"
+          >
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={async () => {
+              if (apps.length > 0) {
+                const app = apps[0];
+                try {
+                  const res = await fetch(`/api/debug/verification-status?appId=${app._id}`);
+                  const data = await res.json();
+                  console.log('🔍 Debug verification status:', data);
+                  setSnack({
+                    open: true,
+                    message: `Debug: ${app.name} - Status: ${data.app?.verificationStatus || 'unknown'}`,
+                    severity: 'info'
+                  });
+                } catch (err) {
+                  console.error('Debug error:', err);
+                }
+              }
+            }}
+          >
+            Debug
+          </Button>
+        </Stack>
+      </Box>
 
       {/* Statistics Cards */}
       <Box sx={{ mb: 4 }}>
@@ -363,7 +465,7 @@ export default function ManageAppsPage() {
                 p: 3,
                 borderRadius: 3,
                 textAlign: 'center',
-                ...getShadow(theme, "elegant"),
+                boxShadow: getShadow(theme, "elegant"),
               }}
             >
               <BookOpen sx={{ color: theme.palette.primary.main }} />
@@ -382,7 +484,7 @@ export default function ManageAppsPage() {
                 p: 3,
                 borderRadius: 3,
                 textAlign: 'center',
-                ...getShadow(theme, "elegant"),
+                boxShadow: getShadow(theme, "elegant"),
               }}
             >
               <CheckCircle sx={{ color: theme.palette.success.main }} />
@@ -434,6 +536,29 @@ export default function ManageAppsPage() {
           </Grid>
         </Grid>
       </Box>
+
+      {/* Verification Status Notice */}
+      {apps.some(app => app.pricing === 'Free' && app.verificationStatus) && (
+        <Alert 
+          severity="info" 
+          sx={{ mb: 3 }}
+          action={
+            <Button 
+              color="inherit" 
+              size="small" 
+              onClick={fetchApps}
+              disabled={loading}
+            >
+              Refresh Now
+            </Button>
+          }
+        >
+          <Typography variant="body2">
+            <strong>Verification Status:</strong> If you've recently submitted an app for verification or an admin has updated your verification status, 
+            click the Refresh button above to see the latest updates.
+          </Typography>
+        </Alert>
+      )}
 
 
 
@@ -545,13 +670,67 @@ export default function ManageAppsPage() {
                             />
                             {/* Verification status for free apps */}
                             {app.pricing === 'Free' && app.verificationStatus && (
-                              <Chip
-                                label={app.verificationStatus === 'verified' ? 'Verified' : app.verificationStatus === 'pending' ? 'Pending Verification' : 'Verification Failed'}
-                                color={app.verificationStatus === 'verified' ? 'success' : app.verificationStatus === 'pending' ? 'warning' : 'error'}
-                                size="small"
-                                variant="outlined"
-                                icon={app.verificationStatus === 'verified' ? <CheckCircle fontSize="small" /> : undefined}
-                              />
+                              <Box sx={{ mb: 1 }}>
+                                <Stack direction="row" spacing={1} alignItems="center">
+                                  <Tooltip title={
+                                    app.verificationStatus === 'verified' 
+                                      ? 'This app has been verified and displays a verification badge'
+                                      : app.verificationStatus === 'pending'
+                                        ? 'Verification is pending - admin will review your website'
+                                        : app.verificationStatus === 'needs_review'
+                                          ? 'Verification needs admin review - check your website setup'
+                                          : 'Verification failed - check your website and try again'
+                                  }>
+                                    <Chip
+                                      label={
+                                        app.verificationStatus === 'verified' 
+                                          ? 'Verified' 
+                                          : app.verificationStatus === 'pending' 
+                                            ? 'Pending Verification' 
+                                            : app.verificationStatus === 'needs_review'
+                                              ? 'Needs Review'
+                                              : 'Verification Failed'
+                                      }
+                                      color={
+                                        app.verificationStatus === 'verified' 
+                                          ? 'success' 
+                                          : app.verificationStatus === 'pending' 
+                                            ? 'warning' 
+                                            : app.verificationStatus === 'needs_review'
+                                              ? 'info'
+                                              : 'error'
+                                      }
+                                      size="small"
+                                      variant="outlined"
+                                      icon={app.verificationStatus === 'verified' ? <CheckCircle fontSize="small" /> : undefined}
+                                    />
+                                  </Tooltip>
+                                {/* Show verification score if available */}
+                                {app.verificationScore && app.verificationStatus !== 'verified' && (
+                                  <Chip
+                                    label={`${app.verificationScore}/100`}
+                                    color={
+                                      app.verificationScore >= 90 ? 'success' :
+                                      app.verificationScore >= 70 ? 'warning' :
+                                      app.verificationScore >= 50 ? 'info' : 'error'
+                                    }
+                                    size="small"
+                                    variant="filled"
+                                    sx={{ fontSize: '0.7rem', height: '20px' }}
+                                  />
+                                )}
+                                {/* Show verification attempts if multiple */}
+                                {app.verificationAttempts && app.verificationAttempts > 1 && (
+                                  <Chip
+                                    label={`${app.verificationAttempts} attempts`}
+                                    color="default"
+                                    size="small"
+                                    variant="outlined"
+                                    sx={{ fontSize: '0.7rem', height: '20px' }}
+                                  />
+                                )}
+                              </Stack>
+                              </Box>
                             )}
                           </Box>
                         </Box>
@@ -690,7 +869,7 @@ export default function ManageAppsPage() {
       </Paper>
 
       {/* Verification Modal */}
-      <Dialog open={open} onClose={closeModal} maxWidth="sm" fullWidth>
+      <Dialog open={open} onClose={closeModal} maxWidth="md" fullWidth>
         <DialogTitle>Submit for Verification</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -707,6 +886,17 @@ export default function ManageAppsPage() {
             sx={{ mb: 2 }}
           />
 
+          {/* Verification History */}
+          {activeApp && activeApp.verificationStatus && activeApp.verificationStatus !== 'pending' && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              <Typography variant="body2">
+                <strong>Previous Verification:</strong> {activeApp.verificationStatus}
+                {activeApp.verificationScore && ` (Score: ${activeApp.verificationScore}/100)`}
+                {activeApp.verificationAttempts && activeApp.verificationAttempts > 1 && ` - ${activeApp.verificationAttempts} attempts`}
+              </Typography>
+            </Alert>
+          )}
+
           <Alert severity="info" sx={{ mb: 2 }}>
             <Typography variant="body2">
               <strong>Required:</strong> Add this verification badge to your page:
@@ -714,6 +904,34 @@ export default function ManageAppsPage() {
             <Box sx={{ mt: 1, p: 1, bgcolor: 'grey.100', borderRadius: 1, fontFamily: 'monospace', fontSize: '0.8rem' }}>
               {activeApp ? generateVerificationBadgeHtml(activeApp.name, `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/launch/${activeApp.slug}`, 'default', 'light') : 'Loading...'}
             </Box>
+          </Alert>
+
+          {/* Verification Scoring Guide */}
+          <Alert severity="success" sx={{ mb: 2 }}>
+            <Typography variant="body2">
+              <strong>Verification Scoring System:</strong>
+            </Typography>
+            <Box sx={{ mt: 1, fontSize: '0.8rem' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                <span>• Link to BasicUtils (40 points)</span>
+                <span>✅ Required</span>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                <span>• Verification text/badge (30 points)</span>
+                <span>✅ Required</span>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                <span>• Dofollow link (20 points)</span>
+                <span>💡 SEO bonus</span>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>• Accessibility (10 points)</span>
+                <span>💡 Quality bonus</span>
+              </Box>
+            </Box>
+            <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
+              <strong>90+ points:</strong> Auto-verified • <strong>70-89 points:</strong> Auto-verified with warning • <strong>50-69 points:</strong> Admin review • <strong>&lt;50 points:</strong> Failed
+            </Typography>
           </Alert>
           
           <Box sx={{ display: 'flex', gap: 1 }}>
