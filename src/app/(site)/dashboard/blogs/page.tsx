@@ -30,8 +30,11 @@ import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useRouter } from "next/navigation";
-import { Calendar, Clock, Eye, ThumbsUp, Plus, BookOpen, TrendingUp } from "lucide-react";
+import { Calendar, Clock, Eye, ThumbsUp, Plus, BookOpen, TrendingUp, AlertTriangle } from "lucide-react";
+import { CreditCard } from "lucide-react";
 import Badge from "@components/badges/Badge";
+import { VARIANT_IDS } from "@/lib/lemonsqueezy";
+
 
 
 export default function ManageBlogsPage() {
@@ -42,6 +45,7 @@ export default function ManageBlogsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState(0);
+  const [selectedDraftForPayment, setSelectedDraftForPayment] = useState<any>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -447,7 +451,9 @@ export default function ManageBlogsPage() {
                           flexDirection: 'column',
                           borderRadius: 3,
                           boxShadow: getShadow(theme, "elegant"),
-                          border: draft.premiumReady ? `2px solid ${theme.palette.success.main}` : 'none',
+                          border: draft.premiumReady ? `2px solid ${theme.palette.success.main}` : 
+                                   draft.isExpired ? `2px solid ${theme.palette.error.main}` :
+                                   draft.remainingDays === 0 ? `2px solid ${theme.palette.warning.main}` : 'none',
                           transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
                           "&:hover": {
                             transform: "translateY(-2px)",
@@ -473,6 +479,24 @@ export default function ManageBlogsPage() {
                               {draft.isFounderStory && (
                                 <Badge variant="founder" label="Founder" />
                               )}
+                              {draft.isExpired && (
+                                <Chip
+                                  label="Expired"
+                                  color="error"
+                                  size="small"
+                                  variant="filled"
+                                  icon={<AlertTriangle size={12} />}
+                                />
+                              )}
+                              {!draft.isExpired && draft.remainingDays === 0 && (
+                                <Chip
+                                  label="Expires Soon"
+                                  color="warning"
+                                  size="small"
+                                  variant="filled"
+                                  icon={<Clock size={12} />}
+                                />
+                              )}
                             </Box>
                           </Box>
 
@@ -485,12 +509,46 @@ export default function ManageBlogsPage() {
                           </Typography>
 
                           <Stack direction="row" spacing={1} mb={2} flexWrap="wrap">
-                          {Array.isArray(draft.tags) &&
-  draft.tags.map((tag: string, i: number) => (
-    <Chip key={i} size="small" label={tag} variant="outlined" />
-))}
-
+                            {Array.isArray(draft.tags) &&
+                              draft.tags.map((tag: string, i: number) => (
+                                <Chip key={i} size="small" label={tag} variant="outlined" />
+                              ))}
                           </Stack>
+
+                          {/* Countdown Timer */}
+                          {!draft.isExpired && (
+                            <Box sx={{ mb: 2, p: 1.5, bgcolor: 'background.default', borderRadius: 1, border: '1px solid', borderColor: draft.remainingDays === 0 ? 'warning.main' : 'divider' }}>
+                              <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
+                                <Clock size={14} />
+                                <Typography variant="caption" color="text.secondary">
+                                  Expires in:
+                                </Typography>
+                                
+                                {draft.remainingDays > 0 && (
+                                  <Chip 
+                                    label={`${draft.remainingDays}d`} 
+                                    size="small" 
+                                    color={draft.remainingDays === 0 ? "warning" : "default"}
+                                    variant="outlined"
+                                  />
+                                )}
+                                
+                                <Chip 
+                                  label={`${Math.floor((new Date(draft.expiryDate).getTime() - new Date().getTime()) / (1000 * 60 * 60)) % 24}h`} 
+                                  size="small" 
+                                  color={draft.remainingDays === 0 ? "warning" : "default"}
+                                  variant="outlined"
+                                />
+                                
+                                <Chip 
+                                  label={`${Math.floor((new Date(draft.expiryDate).getTime() - new Date().getTime()) / (1000 * 60)) % 60}m`} 
+                                  size="small" 
+                                  color={draft.remainingDays === 0 ? "warning" : "default"}
+                                  variant="outlined"
+                                />
+                              </Stack>
+                            </Box>
+                          )}
 
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, color: 'text.secondary', fontSize: '0.75rem' }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -500,12 +558,12 @@ export default function ManageBlogsPage() {
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                               <Clock size={14} />
                               {draft.readTime ||
-  Math.ceil(
-    (draft.content?.replace(/<[^>]*>/g, '') || '')
-      .split(' ')
-      .length / 200
-  )
-} min read
+                                Math.ceil(
+                                  (draft.content?.replace(/<[^>]*>/g, '') || '')
+                                    .split(' ')
+                                    .length / 200
+                                )
+                              } min read
                             </Box>
                           </Box>
                         </CardContent>
@@ -519,16 +577,31 @@ export default function ManageBlogsPage() {
                             </Typography>
                             
                             <Stack direction="row" spacing={1}>
-                              <Tooltip title="Continue Editing">
-                                <IconButton
-                                  component={Link}
-                                  href={`/dashboard/submission/blog?draft=${draft._id}`}
-                                  size="small"
-                                  color="primary"
-                                >
-                                  <EditIcon />
-                                </IconButton>
-                              </Tooltip>
+                              {!draft.isExpired && (
+                                <Tooltip title="Continue Editing">
+                                  <IconButton
+                                    component={Link}
+                                    href={`/dashboard/submission/blog?draft=${draft._id}`}
+                                    size="small"
+                                    color="primary"
+                                  >
+                                    <EditIcon />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                              
+                              {!draft.premiumReady && !draft.isExpired && (
+                                <Tooltip title="Retry Payment">
+                                  <IconButton
+                                    onClick={() => setSelectedDraftForPayment(draft)}
+                                    size="small"
+                                    color="warning"
+                                  >
+                                    <CreditCard size={16} />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                              
                               <Tooltip title="Delete Draft">
                                 <IconButton
                                   onClick={() => handleDeleteDraft(draft._id)}
@@ -549,6 +622,181 @@ export default function ManageBlogsPage() {
             )}
           </Box>
         </Paper>
+
+        {/* Payment Retry Modal */}
+        {selectedDraftForPayment && (
+          <Box
+            sx={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              bgcolor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 1300,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              p: 2
+            }}
+            onClick={() => setSelectedDraftForPayment(null)}
+          >
+            <Paper
+              sx={{
+                maxWidth: 600,
+                width: '100%',
+                maxHeight: '90vh',
+                overflow: 'auto',
+                p: 3
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6">Retry Payment for Draft</Typography>
+                <IconButton onClick={() => setSelectedDraftForPayment(null)}>
+                  <DeleteIcon />
+                </IconButton>
+              </Box>
+              
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Complete your premium subscription to publish "{selectedDraftForPayment.title}"
+              </Typography>
+
+              {/* Countdown Timer */}
+              <Box sx={{ mb: 3, p: 2, bgcolor: 'background.default', borderRadius: 1, border: '1px solid', borderColor: selectedDraftForPayment.remainingDays === 0 ? 'warning.main' : 'divider' }}>
+                <Stack direction="row" spacing={2} alignItems="center" justifyContent="center">
+                  <Clock size={16} />
+                  <Typography variant="body2" color="text.secondary">
+                    Draft expires in:
+                  </Typography>
+                  
+                  {selectedDraftForPayment.remainingDays > 0 && (
+                    <Chip 
+                      label={`${selectedDraftForPayment.remainingDays}d`} 
+                      size="small" 
+                      color={selectedDraftForPayment.remainingDays === 0 ? "warning" : "default"}
+                      variant="outlined"
+                    />
+                  )}
+                  
+                  <Chip 
+                    label={`${Math.floor((new Date(selectedDraftForPayment.expiryDate).getTime() - new Date().getTime()) / (1000 * 60 * 60)) % 24}h`} 
+                    size="small" 
+                    color={selectedDraftForPayment.remainingDays === 0 ? "warning" : "default"}
+                    variant="outlined"
+                  />
+                  
+                  <Chip 
+                    label={`${Math.floor((new Date(selectedDraftForPayment.expiryDate).getTime() - new Date().getTime()) / (1000 * 60)) % 60}m`} 
+                    size="small" 
+                    color={selectedDraftForPayment.remainingDays === 0 ? "warning" : "default"}
+                    variant="outlined"
+                  />
+                </Stack>
+              </Box>
+
+              {/* Payment Options */}
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="h6" gutterBottom>Choose Your Plan</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Select a premium plan to continue with your blog submission.
+                </Typography>
+                
+                {/* Simple payment options */}
+                <Stack spacing={2}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    fullWidth
+                                         onClick={async () => {
+                       try {
+                         console.log('🚀 Starting monthly premium payment for draft:', selectedDraftForPayment._id);
+                         console.log('📋 Using variant ID:', VARIANT_IDS.PREMIUM_BLOG_MONTHLY);
+                         
+                         const res = await fetch(`/api/user-blogs/draft/${selectedDraftForPayment._id}/retry-payment`, {
+                           method: 'POST',
+                           headers: { 'Content-Type': 'application/json' },
+                           body: JSON.stringify({ variantId: VARIANT_IDS.PREMIUM_BLOG_MONTHLY }),
+                         });
+                         
+                         console.log('📡 Payment retry response status:', res.status);
+                         
+                         if (res.ok) {
+                           const responseData = await res.json();
+                           console.log('✅ Payment retry successful:', responseData);
+                           
+                           if (responseData.checkoutUrl) {
+                             window.location.href = responseData.checkoutUrl;
+                           } else {
+                             throw new Error('Checkout URL not found in response');
+                           }
+                         } else {
+                           const errorData = await res.json().catch(() => ({}));
+                           console.error('❌ Payment retry failed:', errorData);
+                           throw new Error(`Failed to create checkout: ${errorData.message || 'Unknown error'}`);
+                         }
+                                                } catch (error: any) {
+                           console.error('Payment error:', error);
+                           alert(`Failed to start payment: ${error.message || 'Unknown error'}`);
+                         }
+                     }}
+                    startIcon={<CreditCard size={16} />}
+                  >
+                    Monthly Premium ($9.99/month)
+                  </Button>
+                  
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    fullWidth
+                                         onClick={async () => {
+                       try {
+                         console.log('🚀 Starting yearly premium payment for draft:', selectedDraftForPayment._id);
+                         console.log('📋 Using variant ID:', VARIANT_IDS.PREMIUM_BLOG_YEARLY);
+                         
+                         const res = await fetch(`/api/user-blogs/draft/${selectedDraftForPayment._id}/retry-payment`, {
+                           method: 'POST',
+                           headers: { 'Content-Type': 'application/json' },
+                           body: JSON.stringify({ variantId: VARIANT_IDS.PREMIUM_BLOG_YEARLY }),
+                         });
+                         
+                         console.log('📡 Payment retry response status:', res.status);
+                         
+                         if (res.ok) {
+                           const responseData = await res.json();
+                           console.log('✅ Payment retry successful:', responseData);
+                           
+                           if (responseData.checkoutUrl) {
+                             window.location.href = responseData.checkoutUrl;
+                           } else {
+                             throw new Error('Checkout URL not found in response');
+                           }
+                         } else {
+                           const errorData = await res.json().catch(() => ({}));
+                           console.error('❌ Payment retry failed:', errorData);
+                           throw new Error(`Failed to create checkout: ${errorData.message || 'Unknown error'}`);
+                         }
+                                                } catch (error: any) {
+                           console.error('Payment error:', error);
+                           alert(`Failed to start payment: ${error.message || 'Unknown error'}`);
+                         }
+                     }}
+                    startIcon={<CreditCard size={16} />}
+                  >
+                    Yearly Premium ($99/year)
+                  </Button>
+                </Stack>
+              </Box>
+
+              <Alert severity="info">
+                <Typography variant="body2">
+                  💡 <strong>Note:</strong> Drafts are automatically deleted after 7 days. 
+                  No external notifications will be sent.
+                </Typography>
+              </Alert>
+            </Paper>
+          </Box>
+        )}
       </Container>
     </Box>
   );

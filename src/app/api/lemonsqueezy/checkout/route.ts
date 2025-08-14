@@ -2,9 +2,14 @@ import { getSession } from "@/features/shared/utils/auth";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
-  const {user:{id:user_id}}=await getSession()
-
-    try {
+  try {
+    const session = await getSession();
+    
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthenticated User" }, { status: 401 });
+    }
+    
+    const user_id = session.user.id;
     console.log("Checkout API called");
 
     const bodyText = await req.text();
@@ -20,11 +25,7 @@ export async function POST(req: Request) {
     }
 
     const { variantId, email, name, custom } = jsonBody;
-console.log("name",name)
-console.log("email",email)
-console.log("variantid",variantId)
-
-console.log("custom",custom)
+    console.log("📋 Request data:", { name, email, variantId, custom });
 
     if (!variantId) {
       console.error("variantId missing in request body");

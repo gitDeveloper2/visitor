@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useState } from "react";
+import React, { Suspense, useState, useCallback, useRef } from "react";
 import {
   Box,
   Button,
@@ -37,22 +37,9 @@ function SubmitAppPageContent() {
   const [newTag, setNewTag] = useState("");
   const [newTech, setNewTech] = useState("");
   const [selectedPremiumPlan, setSelectedPremiumPlan] = useState<string | null>(null);
-
-  // Check for payment success on component mount
-  React.useEffect(() => {
-    const paymentSuccessParam = searchParams.get('payment_success');
-    const appId = searchParams.get('app_id');
-    
-    if (paymentSuccessParam === 'true' && appId) {
-      setPaymentSuccess(true);
-      setSuccess(true);
-      // Clear the URL parameters
-      const url = new URL(window.location.href);
-      url.searchParams.delete('payment_success');
-      url.searchParams.delete('app_id');
-      window.history.replaceState({}, '', url.toString());
-    }
-  }, [searchParams]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingAppId, setEditingAppId] = useState<string | null>(null);
+  const hasLoadedDataRef = useRef(false);
 
   const [form, setForm] = useState({
     name: "",
@@ -67,8 +54,134 @@ function SubmitAppPageContent() {
     isInternal: false,
   });
 
+  // Load draft data to restore form
+  const loadDraftData = useCallback(async (draftId: string) => {
+    try {
+      const response = await fetch(`/api/user-apps/draft/${draftId}`);
+      if (response.ok) {
+        const draftData = await response.json();
+        
+        console.log('Loading draft data:', draftData);
+        
+        // Restore form with draft data
+        const newFormData = {
+          name: draftData.name || "",
+          description: draftData.description || "",
+          tags: draftData.tags || [],
+          website: draftData.website || "",
+          github: draftData.github || "",
+          category: draftData.category || "",
+          techStack: draftData.techStack || [],
+          pricing: draftData.pricing || "Free",
+          features: draftData.features || [],
+          isInternal: draftData.isInternal || false,
+        };
+        
+        console.log('Setting form data:', newFormData);
+        setForm(newFormData);
+        
+        setSelectedPremiumPlan(draftData.premiumPlan || null);
+        setIsEditing(true);
+        setEditingAppId(draftId);
+        hasLoadedDataRef.current = true;
+      }
+    } catch (error) {
+      console.error('Error loading draft data:', error);
+    }
+  }, []);
+
+  // Load published app data for editing
+  const loadPublishedAppData = useCallback(async (appId: string) => {
+    try {
+      const response = await fetch(`/api/user-apps/${appId}`);
+      if (response.ok) {
+        const data = await response.json();
+        const appData = data.app; // The API returns { app: {...} }
+        
+        console.log('Loading published app data:', appData);
+        
+        // Restore form with published app data
+        const newFormData = {
+          name: appData.name || "",
+          description: appData.description || "",
+          tags: appData.tags || [],
+          website: appData.website || "",
+          github: appData.github || "",
+          category: appData.category || "",
+          techStack: appData.techStack || [],
+          pricing: appData.pricing || "Free",
+          features: appData.features || [],
+          isInternal: appData.isInternal || false,
+        };
+        
+        console.log('Setting form data:', newFormData);
+        setForm(newFormData);
+        
+        setSelectedPremiumPlan(appData.premiumPlan || null);
+        setIsEditing(true);
+        setEditingAppId(appId);
+        hasLoadedDataRef.current = true;
+      }
+    } catch (error) {
+      console.error('Error loading published app data:', error);
+    }
+  }, []);
+
+  // Check for payment success on component mount
+  React.useEffect(() => {
+    if (hasLoadedDataRef.current) return; // Prevent multiple loads
+    
+    const paymentSuccessParam = searchParams.get('payment_success');
+    const draftId = searchParams.get('draftId');
+    const appId = searchParams.get('appId');
+    
+    console.log('URL params:', { paymentSuccessParam, draftId, appId });
+    
+    if (paymentSuccessParam === 'true' && draftId) {
+      setPaymentSuccess(true);
+      setSuccess(true);
+      
+      // Load draft data to restore form
+      loadDraftData(draftId);
+      
+      // Clear the URL parameters
+      const url = new URL(window.location.href);
+      url.searchParams.delete('payment_success');
+      url.searchParams.delete('draftId');
+      window.history.replaceState({}, '', url.toString());
+    } else if (appId) {
+      // Load published app data for editing
+      loadPublishedAppData(appId);
+    }
+    
+    hasLoadedDataRef.current = true;
+  }, [searchParams, loadDraftData, loadPublishedAppData]);
+
+  // Debug: Monitor form changes
+  React.useEffect(() => {
+    console.log('Form state changed:', form);
+  }, [form]);
+
+  // Debug: Monitor editing state changes
+  React.useEffect(() => {
+    console.log('Editing state changed:', { isEditing, editingAppId, hasLoadedData: hasLoadedDataRef.current });
+  }, [isEditing, editingAppId]);
+
+  // Debug: Monitor when form is reset to empty values
+  React.useEffect(() => {
+    if (form.name === "" && form.description === "" && isEditing) {
+      console.log('⚠️ Form was reset to empty values while editing!');
+      console.trace('Stack trace for form reset');
+    }
+  }, [form.name, form.description, isEditing]);
+
   const handleChange = (field: string, value: any) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+    console.log(`Setting ${field} to:`, value);
+    setForm(prev => {
+      const newForm = { ...prev, [field]: value };
+      console.log('New form state:', newForm);
+      return newForm;
+    });
   };
 
   // Feature management functions
@@ -141,11 +254,8 @@ function SubmitAppPageContent() {
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setSuccess(false);
+  // Save app as draft
+  const saveDraft = async (): Promise<string | null> => {
     try {
       const payload = {
         name: form.name,
@@ -158,22 +268,44 @@ function SubmitAppPageContent() {
         pricing: form.pricing,
         features: form.features,
         isInternal: form.isInternal,
-        premiumPlan: selectedPremiumPlan, // Include premium plan selection
+        premiumPlan: selectedPremiumPlan,
       };
-      const res = await fetch("/api/user-apps", {
+
+      const res = await fetch("/api/user-apps/draft", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        throw new Error(j.message || "Could not save app");
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Could not save draft");
       }
-      
+
       const result = await res.json();
-      
-      // If premium was selected, redirect to checkout
-      if (selectedPremiumPlan === 'premium' && result.app?._id) {
+      return result.draftId;
+    } catch (err: any) {
+      console.error('Error saving draft:', err);
+      return null;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+    
+    try {
+      // If premium was selected, save as draft first
+      if (selectedPremiumPlan === 'premium') {
+        const draftId = await saveDraft();
+        
+        if (!draftId) {
+          throw new Error('Failed to save draft. Please try again.');
+        }
+
+        // Create checkout with draft ID
         try {
           const checkoutRes = await fetch("/api/lemonsqueezy/checkout", {
             method: "POST",
@@ -182,9 +314,9 @@ function SubmitAppPageContent() {
               variantId: process.env.NEXT_PUBLIC_LEMON_SQUEEZY_APP_LISTING_VARIANT_ID,
               custom: {
                 subscription_type: "premium_app_listing",
-                app_id: result.app._id,
+                draft_id: draftId,
                 app_name: form.name,
-                return_url: `${window.location.origin}/dashboard/submission/app?payment_success=true&app_id=${result.app._id}`,
+                return_url: `${window.location.origin}/dashboard/submission/app?draftId=${draftId}&payment_success=true`,
               },
             }),
           });
@@ -199,26 +331,63 @@ function SubmitAppPageContent() {
           }
         } catch (checkoutError: any) {
           console.error('Checkout error:', checkoutError);
-          setError(`Payment setup failed: ${checkoutError.message}. Your app was saved but premium features are not active.`);
+          setError(`Payment setup failed: ${checkoutError.message}. Your draft was saved and you can retry payment later.`);
           setSuccess(true);
           return;
         }
+      } else {
+        // Free app - submit directly or update existing
+        const payload = {
+          name: form.name,
+          description: form.description,
+          tags: form.tags,
+          website: form.website,
+          github: form.github,
+          category: form.category,
+          techStack: form.techStack,
+          pricing: form.pricing,
+          features: form.features,
+          isInternal: form.isInternal,
+          premiumPlan: selectedPremiumPlan,
+        };
+
+        const url = isEditing ? `/api/user-apps/${editingAppId}` : "/api/user-apps";
+        const method = isEditing ? "PUT" : "POST";
+
+        const res = await fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}));
+          throw new Error(j.message || `Could not ${isEditing ? 'update' : 'save'} app`);
+        }
+        
+        setSuccess(true);
+        if (!isEditing) {
+          setForm({ 
+            name: "", 
+            description: "", 
+            tags: [],
+            website: "",
+            github: "",
+            category: "",
+            techStack: [],
+            pricing: "Free",
+            features: [],
+            isInternal: false
+          });
+          setSelectedPremiumPlan(null);
+        }
+        
+        // Reset editing state after successful submission
+        if (isEditing) {
+          // Don't reset immediately - let user see the success message
+          // The form will stay in editing mode until they click "New App" or navigate away
+        }
       }
-      
-      setSuccess(true);
-      setForm({ 
-        name: "", 
-        description: "", 
-        tags: [],
-        website: "",
-        github: "",
-        category: "",
-        techStack: [],
-        pricing: "Free",
-        features: [],
-        isInternal: false
-      });
-      setSelectedPremiumPlan(null);
     } catch (err: any) {
       setError(err.message || "Unknown error");
     } finally {
@@ -253,10 +422,13 @@ function SubmitAppPageContent() {
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom fontWeight={600}>
-          Submit Your App
+          {isEditing ? 'Edit Your App' : 'Submit Your App'}
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-          Share your amazing app with the developer community. We'll review it and publish it on our platform.
+          {isEditing 
+            ? 'Update your app information and save your changes.'
+            : 'Share your amazing app with the developer community. We\'ll review it and publish it on our platform.'
+          }
         </Typography>
         
         {/* Progress Steps */}
@@ -281,10 +453,12 @@ function SubmitAppPageContent() {
 
       {success && (
         <Alert severity="success" sx={{ mb: 3 }}>
-          {paymentSuccess 
-            ? "🎉 Payment successful! Your app has been submitted with premium features activated. We'll review it and get back to you soon."
+                  {paymentSuccess 
+          ? "🎉 Payment successful! Your app draft has been restored. You can now complete your submission with premium features activated."
+          : isEditing 
+            ? "App updated successfully! Your changes have been saved."
             : "App submitted successfully! We'll review it and get back to you soon."
-          }
+        }
         </Alert>
       )}
 
@@ -685,15 +859,45 @@ function SubmitAppPageContent() {
           )}
         </Paper>
 
-        <Button
-          type="submit"
-          variant="contained"
-          size="large"
-          disabled={loading || !form.name || !form.description}
-          sx={{ py: 1.5, px: 4, fontSize: '1.1rem' }}
-        >
-          {loading ? "Submitting..." : "Submit App"}
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+          {isEditing && (
+            <Button
+              variant="outlined"
+              size="large"
+              onClick={() => {
+                setIsEditing(false);
+                setEditingAppId(null);
+                setForm({
+                  name: "",
+                  description: "",
+                  tags: [],
+                  website: "",
+                  github: "",
+                  category: "",
+                  techStack: [],
+                  pricing: "Free",
+                  features: [],
+                  isInternal: false,
+                });
+                setSelectedPremiumPlan(null);
+                setSuccess(false);
+                setError(null);
+              }}
+              sx={{ py: 1.5, px: 4, fontSize: '1.1rem' }}
+            >
+              New App
+            </Button>
+          )}
+          <Button
+            type="submit"
+            variant="contained"
+            size="large"
+            disabled={loading || !form.name || !form.description}
+            sx={{ py: 1.5, px: 4, fontSize: '1.1rem' }}
+          >
+            {loading ? (isEditing ? "Updating..." : "Submitting...") : (isEditing ? "Update App" : "Submit App")}
+          </Button>
+        </Box>
       </Box>
     </Container>
   );

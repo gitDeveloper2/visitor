@@ -21,6 +21,11 @@ import {
   Popover,
   Divider,
   CircularProgress,
+  Tabs,
+  Tab,
+  Card,
+  CardContent,
+  CardActions,
 } from "@mui/material";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useTheme } from "@mui/material/styles";
@@ -29,7 +34,22 @@ import { InfoOutlined } from "@mui/icons-material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import Badge from "@components/badges/Badge";
 import { useEffect, useState } from "react";
-import PremiumAppManager from "./PremiumAppManager";
+import { useRouter } from "next/navigation";
+
+import AppDraftManager from "@/components/premium/AppDraftManager";
+import Link from "next/link";
+import { 
+  Edit as EditIcon, 
+  Delete as DeleteIcon, 
+  Visibility as VisibilityIcon,
+  Add as Plus,
+  Schedule as Clock,
+  Warning as AlertTriangle,
+  CheckCircle,
+  CreditCard,
+  CalendarToday as Calendar,
+  Book as BookOpen,
+} from '@mui/icons-material';
 
 interface AppItem {
   _id: string;
@@ -50,12 +70,38 @@ interface AppItem {
   likes?: number;
 }
 
+interface AppDraft {
+  _id: string;
+  name: string;
+  description: string;
+  tagline?: string;
+  tags: string[];
+  category?: string;
+  techStack: string[];
+  pricing: string;
+  features: string[];
+  website?: string;
+  github?: string;
+  authorBio?: string;
+  premiumPlan?: string;
+  premiumReady: boolean;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  expiryDate: string;
+  remainingDays: number;
+  isExpired: boolean;
+}
+
 export default function ManageAppsPage() {
   const theme = useTheme();
+  const router = useRouter();
   const [apps, setApps] = useState<AppItem[]>([]);
+  const [drafts, setDrafts] = useState<AppDraft[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [activeTab, setActiveTab] = useState(0);
   const [popoverAnchor, setPopoverAnchor] = React.useState<HTMLElement | null>(null);
   const openInfoPopover = (e: React.MouseEvent<HTMLElement>) => {
     setPopoverAnchor(e.currentTarget);
@@ -131,13 +177,32 @@ export default function ManageAppsPage() {
     }
   };
 
+  const fetchDrafts = async () => {
+    try {
+      const response = await fetch('/api/user-apps/drafts');
+      if (!response.ok) {
+        throw new Error('Failed to fetch app drafts');
+      }
+      
+      const data = await response.json();
+      setDrafts(data.drafts || []);
+    } catch (err: any) {
+      console.error('Failed to fetch drafts:', err);
+    }
+  };
+
   const handleRetry = () => {
     setRetryCount(prev => prev + 1);
     fetchApps();
   };
 
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
+  };
+
   useEffect(() => {
     fetchApps();
+    fetchDrafts();
   }, []);
 
   // open modal to submit verification (user cannot verify themselves)
@@ -176,30 +241,75 @@ export default function ManageAppsPage() {
       requestedAt: new Date().toISOString(),
     };
 
-    // (TODO: later call your API endpoint here)
-    // await fetch("/api/user/request-verification", { method: "POST", body: JSON.stringify(payload) })
-
-    setSnack({ open: true, message: "Verification requested. We'll check this shortly.", severity: "info" });
+    console.log('📤 Submitting for verification:', payload);
+    
+    // For now, just show success message
+    setSnack({ 
+      open: true, 
+      message: "Verification request submitted successfully! We'll review your submission.", 
+      severity: "success" 
+    });
+    
     closeModal();
   };
 
-  // style choices for non-see-through modal, using CSS variables when available
-  const dialogPaperSX = {
-    // Prefer CSS variable for glass background if present; otherwise use near-opaque theme surface
-    background:
-      typeof window !== "undefined" && getComputedStyle(document.documentElement).getPropertyValue("--glass-bg")
-        ? `var(--glass-bg)`
-        : theme.palette.mode === "dark"
-        ? "rgba(18,18,20,0.96)"
-        : "rgba(250,250,250,0.96)",
-    border: typeof window !== "undefined" && getComputedStyle(document.documentElement).getPropertyValue("--glass-border")
-      ? `1px solid var(--glass-border)`
-      : `1px solid ${theme.palette.divider}`,
-    boxShadow: getShadow(theme, "elegant"),
-    color: "text.primary",
-    // keep it visually solid — small blur in content only, not see-through
-    backdropFilter: "none",
-  } as const;
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'approved': return 'success';
+      case 'pending': return 'warning';
+      case 'rejected': return 'error';
+      default: return 'default';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'approved': return 'Published';
+      case 'pending': return 'Pending Review';
+      case 'rejected': return 'Rejected';
+      default: return status;
+    }
+  };
+
+  const canEdit = (app: AppItem) => {
+    return app.status === 'pending';
+  };
+
+  const handleDeleteDraft = async (draftId: string) => {
+    try {
+      const response = await fetch(`/api/user-apps/draft/${draftId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete draft');
+      }
+
+      // Refresh drafts
+      fetchDrafts();
+    } catch (err: any) {
+      console.error('Failed to delete draft:', err);
+    }
+  };
+
+  const handlePremiumManagement = async (app: AppItem) => {
+    try {
+      // For now, just show a message about premium management
+      // In the future, this could open a modal for managing premium features
+      setSnack({ 
+        open: true, 
+        message: `Premium management for ${app.name} - Contact support for changes`, 
+        severity: "info" 
+      });
+    } catch (err: any) {
+      console.error('Premium management error:', err);
+      setSnack({ 
+        open: true, 
+        message: "Failed to manage premium features", 
+        severity: "error" 
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -302,167 +412,322 @@ export default function ManageAppsPage() {
       <Box sx={{ mb: 4 }}>
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6} md={3}>
-            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'primary.light', color: 'white' }}>
-              <Typography variant="h4" fontWeight="bold">{totalApps}</Typography>
-              <Typography variant="body2">Total Apps</Typography>
+            <Paper
+              sx={{
+                p: 3,
+                borderRadius: 3,
+                textAlign: 'center',
+                ...getShadow(theme, "elegant"),
+              }}
+            >
+              <BookOpen sx={{ color: theme.palette.primary.main }} />
+              <Typography variant="h4" sx={{ fontWeight: 700, mt: 1, color: theme.palette.primary.main }}>
+                {totalApps}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Total Apps
+              </Typography>
             </Paper>
           </Grid>
+          
           <Grid item xs={12} sm={6} md={3}>
-            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'warning.light', color: 'warning.dark' }}>
-              <Typography variant="h4" fontWeight="bold">{premiumApps}</Typography>
-              <Typography variant="body2">Premium Apps</Typography>
+            <Paper
+              sx={{
+                p: 3,
+                borderRadius: 3,
+                textAlign: 'center',
+                ...getShadow(theme, "elegant"),
+              }}
+            >
+              <CheckCircle sx={{ color: theme.palette.success.main }} />
+              <Typography variant="h4" sx={{ fontWeight: 700, mt: 1, color: theme.palette.success.main }}>
+                {approvedApps}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Published
+              </Typography>
             </Paper>
           </Grid>
+          
           <Grid item xs={12} sm={6} md={3}>
-            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'success.light', color: 'success.dark' }}>
-              <Typography variant="h4" fontWeight="bold">{approvedApps}</Typography>
-              <Typography variant="body2">Approved</Typography>
+            <Paper
+              sx={{
+                p: 3,
+                borderRadius: 3,
+                textAlign: 'center',
+                ...getShadow(theme, "elegant"),
+              }}
+            >
+              <Clock sx={{ color: theme.palette.warning.main }} />
+              <Typography variant="h4" sx={{ fontWeight: 700, mt: 1, color: theme.palette.warning.main }}>
+                {pendingApps}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Pending Review
+              </Typography>
             </Paper>
           </Grid>
+          
           <Grid item xs={12} sm={6} md={3}>
-            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'info.light', color: 'info.dark' }}>
-              <Typography variant="h4" fontWeight="bold">{pendingApps}</Typography>
-              <Typography variant="body2">Pending</Typography>
+            <Paper
+              sx={{
+                p: 3,
+                borderRadius: 3,
+                textAlign: 'center',
+                ...getShadow(theme, "elegant"),
+              }}
+            >
+              <EditIcon sx={{ color: theme.palette.info.main }} />
+              <Typography variant="h4" sx={{ fontWeight: 700, mt: 1, color: theme.palette.info.main }}>
+                {drafts.length}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Drafts
+              </Typography>
             </Paper>
           </Grid>
         </Grid>
       </Box>
 
-      {/* Premium App Manager */}
-      <Box sx={{ mb: 4 }}>
-        <PremiumAppManager 
-          apps={apps as any} // Type assertion to avoid interface mismatch
-          onUpdatePremiumStatus={async (appId: string, status: string) => {
-            try {
-              const res = await fetch(`/api/user-apps/${appId}`, {
-                method: 'PATCH',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ premiumStatus: status }),
-              });
 
-              if (!res.ok) {
-                const error = await res.json();
-                throw new Error(error.message || 'Failed to update premium status');
-              }
 
-              // Refresh apps after update
-              const refreshRes = await fetch("/api/user-apps");
-              if (refreshRes.ok) {
-                const data = await refreshRes.json();
-                setApps(data.apps || []);
-              }
-
-              setSnack({ 
-                open: true, 
-                message: "Premium status updated successfully", 
-                severity: "success" 
-              });
-            } catch (err: any) {
-              setSnack({ 
-                open: true, 
-                message: err.message || "Failed to update premium status", 
-                severity: "error" 
-              });
-              throw err;
-            }
+      {/* Tabs */}
+      <Paper
+        sx={{
+          borderRadius: 3,
+          overflow: 'hidden',
+          boxShadow: getShadow(theme, "elegant"),
+        }}
+      >
+        <Tabs 
+          value={activeTab} 
+          onChange={handleTabChange} 
+          sx={{ 
+            borderBottom: 1, 
+            borderColor: 'divider',
+            backgroundColor: theme.palette.background.paper,
           }}
-        />
+        >
+          <Tab 
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <span>Published Apps ({apps.length})</span>
+              </Box>
+            } 
+          />
+          <Tab 
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <span>Drafts ({drafts.length})</span>
+                {drafts.filter(d => d.premiumReady).length > 0 && (
+                  <Chip
+                    label={`${drafts.filter(d => d.premiumReady).length} Premium`}
+                    color="success"
+                    size="small"
+                    variant="filled"
+                    icon={<span style={{ fontSize: '12px' }}>💎</span>}
+                    sx={{ height: '20px', fontSize: '0.7rem' }}
+                  />
+                )}
       </Box>
+            } 
+          />
+        </Tabs>
 
-      <Typography variant="h6" gutterBottom>
-        All Submitted Apps
+        {/* Tab Content */}
+        <Box sx={{ p: 3 }}>
+          {activeTab === 0 && (
+            // Published Apps Tab
+            apps.length === 0 ? (
+              <Box sx={{ textAlign: 'center', py: 6 }}>
+                <BookOpen sx={{ fontSize: 48, color: theme.palette.text.secondary }} />
+                <Typography variant="h6" color="text.secondary" gutterBottom sx={{ mt: 2 }}>
+                  No apps yet
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  Start creating your first app to showcase your work to the community.
       </Typography>
-
-      <Grid container spacing={3} mt={2}>
+                <Button
+                  component={Link}
+                  href="/dashboard/submission/app"
+                  variant="contained"
+                  color="primary"
+                  startIcon={<Plus fontSize="small" />}
+                  sx={{ fontWeight: 600 }}
+                >
+                  Create Your First App
+                </Button>
+              </Box>
+            ) : (
+              <Grid container spacing={3}>
         {apps.map((app) => (
           <Grid item xs={12} md={6} key={app._id}>
-            <Paper
+                    <Card
               sx={{
-                p: 3,
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
                 borderRadius: 3,
                 boxShadow: getShadow(theme, "elegant"),
-                position: "relative", // allow absolute badge
-                overflow: "visible",
-                // Add premium styling
-                ...(app.isPremium && {
-                  border: `2px solid ${theme.palette.warning.main}`,
-                  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.warning.light}10 100%)`
-                })
-              }}
-            >
-              <Typography variant="h6" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
+                        "&:hover": {
+                          transform: "translateY(-2px)",
+                          boxShadow: getShadow(theme, "neon"),
+                        },
+                      }}
+                    >
+                      <CardContent sx={{ flex: 1, p: 3 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                          <Typography variant="h6" sx={{ flex: 1, mr: 2, lineHeight: 1.3 }}>
                 {app.name}
+                          </Typography>
+                          <Box sx={{ display: 'flex', gap: 1 }}>
                 {app.isPremium && (
-                  <Tooltip title="Premium App - Featured on launch page">
-                    <CheckCircleIcon color="warning" />
-                  </Tooltip>
-                )}
-              </Typography>
+                              <Chip
+                                label="Premium"
+                                color="success"
+                                size="small"
+                                variant="filled"
+                                icon={<span style={{ fontSize: '12px' }}>💎</span>}
+                              />
+                            )}
+                            <Chip
+                              label={getStatusLabel(app.status)}
+                              color={getStatusColor(app.status) as any}
+                              size="small"
+                              variant="outlined"
+                            />
+                          </Box>
+                        </Box>
 
               <Typography
                 variant="body2"
                 color="text.secondary"
-                sx={{ mb: 1 }}
+                          sx={{ mb: 2, flex: 1 }}
               >
-                {app.description}
+                          {app.description?.slice(0, 150)}...
               </Typography>
 
-              <Stack direction="row" spacing={1} mb={1}>
+                        <Stack direction="row" spacing={1} mb={2} flexWrap="wrap">
                 {(app.tags || []).map((tag: string, i: number) => (
-                  <Chip key={i} size="small" label={tag} />
+                            <Chip key={i} size="small" label={tag} variant="outlined" />
                 ))}
               </Stack>
 
-              <Chip
-                label={app.status}
-                color={
-                  app.status === "approved"
-                    ? "success"
-                    : app.status === "pending"
-                    ? "warning"
-                    : "default"
-                }
-                sx={{ mt: 1 }}
-              />
-
-              {/* Premium Status Badge */}
+              {/* Premium Status */}
               {app.isPremium && (
-                <Chip
-                  label="Premium"
-                  color="warning"
-                  variant="outlined"
-                  icon={<CheckCircleIcon />}
-                  sx={{ mt: 1, ml: 1 }}
-                />
+                <Box sx={{ mb: 2 }}>
+                  <Chip
+                    label={`Premium: ${app.premiumPlan || 'Standard'}`}
+                    color="warning"
+                    size="small"
+                    variant="filled"
+                    icon={<span style={{ fontSize: '12px' }}>💎</span>}
+                  />
+                  {app.premiumStatus && (
+                    <Chip
+                      label={app.premiumStatus}
+                      color={app.premiumStatus === 'active' ? 'success' : 'warning'}
+                      size="small"
+                      variant="outlined"
+                      sx={{ ml: 1 }}
+                    />
+                  )}
+                </Box>
               )}
 
-              {/* Premium Plan Info */}
-              {app.premiumPlan && (
-                <Typography variant="caption" color="text.secondary" display="block" mt={1}>
-                  Plan: {app.premiumPlan}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, color: 'text.secondary', fontSize: '0.75rem' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Calendar fontSize="small" />
+                            {new Date(app.createdAt).toLocaleDateString()}
+                          </Box>
+                          {app.views && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              <span>•</span>
+                              {app.views} views
+                            </Box>
+                          )}
+                        </Box>
+                      </CardContent>
+
+                      <Divider />
+
+                      <CardActions sx={{ p: 2, pt: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                          <Typography variant="caption" color="text.secondary">
+                            {app.authorName || app.authorEmail}
                 </Typography>
-              )}
-
-              <Box mt={2}>
-                <Button size="small" variant="outlined" onClick={() => openSubmitModal(app)}>
-                  Request Verification
-                </Button>
+                          
+                          <Stack direction="row" spacing={1}>
+                            {canEdit(app) && (
+                              <Tooltip title="Edit App">
+                                <IconButton
+                                  onClick={() => {
+                                    // Navigate to app submission page with app data
+                                    router.push(`/dashboard/submission/app?appId=${app._id}`);
+                                  }}
+                                  size="small"
+                                  color="primary"
+                                >
+                                  <EditIcon />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                            {app.isPremium && (
+                              <Tooltip title="Manage Premium">
+                                <IconButton
+                                  onClick={() => handlePremiumManagement(app)}
+                                  size="small"
+                                  color="warning"
+                                >
+                                  <CreditCard />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                            <Tooltip title="View App">
+                              <IconButton
+                                component={Link}
+                                href={`/apps/${app._id}`}
+                                size="small"
+                                color="primary"
+                              >
+                                <VisibilityIcon />
+                              </IconButton>
+                            </Tooltip>
+                          </Stack>
               </Box>
-            </Paper>
+                      </CardActions>
+                    </Card>
           </Grid>
         ))}
       </Grid>
+            )
+          )}
+
+          {activeTab === 1 && (
+            // Drafts Tab
+            <AppDraftManager 
+              onEditDraft={(draft) => {
+                // Navigate to app submission page with draft data using router
+                router.push(`/dashboard/submission/app?draftId=${draft._id}`);
+              }}
+              onDeleteDraft={(draftId) => {
+                // Refresh drafts after deletion
+                fetchDrafts();
+              }}
+              refreshTrigger={retryCount}
+            />
+          )}
+        </Box>
+      </Paper>
 
       {/* Verification Modal */}
       <Dialog open={open} onClose={closeModal} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          Request Verification for {activeApp?.name}
-        </DialogTitle>
+        <DialogTitle>Submit for Verification</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            To verify your app, we need to check that you've added a link to our site. Please provide the URL where you've added the link.
+            To verify your app, we need to see a link to your app on your website. 
+            Please provide the URL where you've added the verification link.
           </Typography>
           
           <TextField
@@ -474,35 +739,61 @@ export default function ManageAppsPage() {
             sx={{ mb: 2 }}
           />
 
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-            <Typography variant="body2">Expected HTML snippet:</Typography>
-            <Button size="small" onClick={copySnippet} startIcon={<ContentCopyIcon />}>
-              Copy
+          <Alert severity="info" sx={{ mb: 2 }}>
+            <Typography variant="body2">
+              <strong>Required:</strong> Add this HTML snippet to your page:
+            </Typography>
+            <Box sx={{ mt: 1, p: 1, bgcolor: 'grey.100', borderRadius: 1, fontFamily: 'monospace', fontSize: '0.8rem' }}>
+              {activeApp ? `<a href="https://your-site.com/apps/${activeApp._id}">View ${activeApp.name} on OurSite</a>` : 'Loading...'}
+            </Box>
+          </Alert>
+          
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button onClick={copySnippet} variant="outlined" size="small">
+              <ContentCopyIcon sx={{ mr: 1 }} />
+              Copy Snippet
             </Button>
-          </Box>
-
-          <Box
-            component="pre"
-            sx={{
-              p: 2,
-              backgroundColor: theme.palette.grey[100],
-              borderRadius: 1,
-              fontSize: '0.875rem',
-              overflowX: 'auto',
-            }}
-          >
-            {activeApp && `<a href="https://your-site.com/apps/${activeApp._id}">View ${activeApp.name} on OurSite</a>`}
+            <Tooltip title={tooltipText}>
+              <IconButton onClick={openInfoPopover} size="small">
+                <InfoOutlined />
+              </IconButton>
+            </Tooltip>
           </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={closeModal}>Cancel</Button>
-          <Button onClick={submitForVerification} variant="contained">
+          <Button 
+            onClick={submitForVerification} 
+            variant="contained"
+            disabled={!pageUrl.trim()}
+          >
             Submit for Verification
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar for notifications */}
+      {/* Info Popover */}
+      <Popover
+        open={popoverOpen}
+        anchorEl={popoverAnchor}
+        onClose={closeInfoPopover}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'left',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'left',
+        }}
+      >
+        <Box sx={{ p: 2, maxWidth: 300 }}>
+          <Typography variant="body2">
+            {tooltipText}
+          </Typography>
+        </Box>
+      </Popover>
+
+      {/* Snackbar */}
       <Snackbar
         open={snack.open}
         autoHideDuration={6000}

@@ -13,21 +13,26 @@ export async function GET() {
     const { db } = await connectToDatabase();
 
     const drafts = await db
-      .collection('blog_drafts')
+      .collection('app_drafts')
       .find({ userId: session.user.id })
       .sort({ updatedAt: -1 })
       .project({ 
         premiumReady: 1, 
-        title: 1, 
+        name: 1, 
+        description: 1,
+        tagline: 1,
         tags: 1, 
+        category: 1,
+        techStack: 1,
+        pricing: 1,
+        features: 1,
+        website: 1,
+        github: 1,
+        authorBio: 1,
         createdAt: 1, 
         updatedAt: 1,
-        isFounderStory: 1,
-        content: 1,
-        author: 1,
-        role: 1,
-        authorBio: 1,
-        founderUrl: 1
+        premiumPlan: 1,
+        status: 1
       })
       .toArray();
 
@@ -49,10 +54,10 @@ export async function GET() {
 
     return NextResponse.json({ drafts: draftsWithExpiry }, { status: 200 });
   } catch (error) {
-    console.error('Failed to fetch drafts:', error);
-    return NextResponse.json({ message: 'Failed to fetch drafts.', error: (error as Error)?.toString() }, { status: 500 });
+    console.error('Failed to fetch app drafts:', error);
+    return NextResponse.json({ message: 'Failed to fetch app drafts.', error: (error as Error)?.toString() }, { status: 500 });
   }
 }
 
 // This route reads authenticated request context; ensure it's always dynamic
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force-dynamic'; 

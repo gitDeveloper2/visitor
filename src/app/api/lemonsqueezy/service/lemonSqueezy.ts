@@ -792,11 +792,35 @@ async function handleResourceOrderCreated(
         webhookLogger.info('blog_draft_premium_ready', { draftId: resourceid, userId });
       }
     } else if (productType === 'app') {
-      // Mark app as premium in userapps collection
-      const appObjectId = ObjectId.isValid(resourceid) ? new ObjectId(resourceid) : null;
-      if (appObjectId) {
-        await updateAppPremiumStatus(db, resourceid, 'active', userId);
-        webhookLogger.info('app_premium_activated', { appId: resourceid, userId });
+      // Check if this is a draft (in app_drafts collection) or published app (in userapps collection)
+      const resourceObjectId = ObjectId.isValid(resourceid) ? new ObjectId(resourceid) : null;
+      if (resourceObjectId) {
+        // First check if it's a draft
+        const draft = await db.collection('app_drafts').findOne({ _id: resourceObjectId, userId: userId });
+        if (draft) {
+          // Mark app draft as premium-ready
+          await db.collection('app_drafts').updateOne(
+            { _id: resourceObjectId, userId: userId },
+            { 
+              $set: { 
+                premiumReady: true, 
+                premiumReadyAt: new Date(),
+                premiumUserId: userId
+              } 
+            }
+          );
+          webhookLogger.info('app_draft_premium_ready', { draftId: resourceid, userId });
+        } else {
+          // Check if it's a published app
+          const publishedApp = await db.collection('userapps').findOne({ _id: resourceObjectId, authorId: userId });
+          if (publishedApp) {
+            // Mark published app as premium
+            await updateAppPremiumStatus(db, resourceid, 'active', userId);
+            webhookLogger.info('app_premium_activated', { appId: resourceid, userId });
+          } else {
+            webhookLogger.warn('app_resource_not_found', { resourceId: resourceid, userId });
+          }
+        }
       }
     }
   } catch (error) {
@@ -827,11 +851,34 @@ async function handleResourceOrderRefunded(
         );
       }
     } else if (productType === 'app') {
-      // Mark app as premium-revoked in userapps collection
-      const appObjectId = ObjectId.isValid(resourceid) ? new ObjectId(resourceid) : null;
-      if (appObjectId) {
-        await updateAppPremiumStatus(db, resourceid, 'revoked', userId);
-        webhookLogger.info('app_premium_revoked', { appId: resourceid, userId });
+      // Check if this is a draft (in app_drafts collection) or published app (in userapps collection)
+      const resourceObjectId = ObjectId.isValid(resourceid) ? new ObjectId(resourceid) : null;
+      if (resourceObjectId) {
+        // First check if it's a draft
+        const draft = await db.collection('app_drafts').findOne({ _id: resourceObjectId, userId: userId });
+        if (draft) {
+          // Mark app draft as premium-revoked
+          await db.collection('app_drafts').updateOne(
+            { _id: resourceObjectId, userId: userId },
+            { 
+              $set: { 
+                premiumReady: false, 
+                premiumRevokedAt: new Date()
+              } 
+            }
+          );
+          webhookLogger.info('app_draft_premium_revoked', { draftId: resourceid, userId });
+        } else {
+          // Check if it's a published app
+          const publishedApp = await db.collection('userapps').findOne({ _id: resourceObjectId, authorId: userId });
+          if (publishedApp) {
+            // Mark published app as premium-revoked
+            await updateAppPremiumStatus(db, resourceid, 'revoked', userId);
+            webhookLogger.info('app_premium_revoked', { appId: resourceid, userId });
+          } else {
+            webhookLogger.warn('app_resource_not_found', { resourceId: resourceid, userId });
+          }
+        }
       }
     }
   } catch (error) {
@@ -845,20 +892,39 @@ async function handleResourceSubscriptionCreated(
   userId: string
 ): Promise<void> {
   try {
-    // Mark blog draft as premium-ready
-    const draftObjectId = ObjectId.isValid(resourceid) ? new ObjectId(resourceid) : null;
-    if (draftObjectId) {
-      await db.collection('blog_drafts').updateOne(
-        { _id: draftObjectId, userId: userId },
-        { 
-          $set: { 
-            premiumReady: true, 
-            premiumReadyAt: new Date(),
-            premiumUserId: userId
-          } 
+    const resourceObjectId = ObjectId.isValid(resourceid) ? new ObjectId(resourceid) : null;
+    if (resourceObjectId) {
+      // Check if it's a blog draft
+      const blogDraft = await db.collection('blog_drafts').findOne({ _id: resourceObjectId, userId: userId });
+      if (blogDraft) {
+        await db.collection('blog_drafts').updateOne(
+          { _id: resourceObjectId, userId: userId },
+          { 
+            $set: { 
+              premiumReady: true, 
+              premiumReadyAt: new Date(),
+              premiumUserId: userId
+            } 
+          }
+        );
+        webhookLogger.info('blog_draft_premium_ready', { draftId: resourceid, userId });
+      } else {
+        // Check if it's an app draft
+        const appDraft = await db.collection('app_drafts').findOne({ _id: resourceObjectId, userId: userId });
+        if (appDraft) {
+          await db.collection('app_drafts').updateOne(
+            { _id: resourceObjectId, userId: userId },
+            { 
+              $set: { 
+                premiumReady: true, 
+                premiumReadyAt: new Date(),
+                premiumUserId: userId
+              } 
+            }
+          );
+          webhookLogger.info('app_draft_premium_ready', { draftId: resourceid, userId });
         }
-      );
-      webhookLogger.info('blog_draft_premium_ready', { draftId: resourceid, userId });
+      }
     }
   } catch (error) {
     webhookLogger.error('resource_subscription_created_failed', error);
@@ -871,18 +937,37 @@ async function handleResourceSubscriptionCancelled(
   userId: string
 ): Promise<void> {
   try {
-    // Mark blog draft as premium-revoked
-    const draftObjectId = ObjectId.isValid(resourceid) ? new ObjectId(resourceid) : null;
-    if (draftObjectId) {
-      await db.collection('blog_drafts').updateOne(
-        { _id: draftObjectId, userId: userId },
-        { 
-          $set: { 
-            premiumReady: false, 
-            premiumRevokedAt: new Date()
-          } 
+    const resourceObjectId = ObjectId.isValid(resourceid) ? new ObjectId(resourceid) : null;
+    if (resourceObjectId) {
+      // Check if it's a blog draft
+      const blogDraft = await db.collection('blog_drafts').findOne({ _id: resourceObjectId, userId: userId });
+      if (blogDraft) {
+        await db.collection('blog_drafts').updateOne(
+          { _id: resourceObjectId, userId: userId },
+          { 
+            $set: { 
+              premiumReady: false, 
+              premiumRevokedAt: new Date()
+            } 
+          }
+        );
+        webhookLogger.info('blog_draft_premium_revoked', { draftId: resourceid, userId });
+      } else {
+        // Check if it's an app draft
+        const appDraft = await db.collection('app_drafts').findOne({ _id: resourceObjectId, userId: userId });
+        if (appDraft) {
+          await db.collection('app_drafts').updateOne(
+            { _id: resourceObjectId, userId: userId },
+            { 
+              $set: { 
+                premiumReady: false, 
+                premiumRevokedAt: new Date()
+              } 
+            }
+          );
+          webhookLogger.info('app_draft_premium_revoked', { draftId: resourceid, userId });
         }
-      );
+      }
     }
   } catch (error) {
     webhookLogger.error('resource_subscription_cancelled_failed', error);
@@ -895,18 +980,37 @@ async function handleResourceSubscriptionExpired(
   userId: string
 ): Promise<void> {
   try {
-    // Mark blog draft as premium-expired
-    const draftObjectId = ObjectId.isValid(resourceid) ? new ObjectId(resourceid) : null;
-    if (draftObjectId) {
-      await db.collection('blog_drafts').updateOne(
-        { _id: draftObjectId, userId: userId },
-        { 
-          $set: { 
-            premiumReady: false, 
-            premiumExpiredAt: new Date()
-          } 
+    const resourceObjectId = ObjectId.isValid(resourceid) ? new ObjectId(resourceid) : null;
+    if (resourceObjectId) {
+      // Check if it's a blog draft
+      const blogDraft = await db.collection('blog_drafts').findOne({ _id: resourceObjectId, userId: userId });
+      if (blogDraft) {
+        await db.collection('blog_drafts').updateOne(
+          { _id: resourceObjectId, userId: userId },
+          { 
+            $set: { 
+              premiumReady: false, 
+              premiumExpiredAt: new Date()
+            } 
+          }
+        );
+        webhookLogger.info('blog_draft_premium_expired', { draftId: resourceid, userId });
+      } else {
+        // Check if it's an app draft
+        const appDraft = await db.collection('app_drafts').findOne({ _id: resourceObjectId, userId: userId });
+        if (appDraft) {
+          await db.collection('app_drafts').updateOne(
+            { _id: resourceObjectId, userId: userId },
+            { 
+              $set: { 
+                premiumReady: false, 
+                premiumExpiredAt: new Date()
+              } 
+            }
+          );
+          webhookLogger.info('app_draft_premium_expired', { draftId: resourceid, userId });
         }
-      );
+      }
     }
   } catch (error) {
     webhookLogger.error('resource_subscription_expired_failed', error);
@@ -919,18 +1023,37 @@ async function handleResourceSubscriptionPaused(
   userId: string
 ): Promise<void> {
   try {
-    // Mark blog draft as premium-paused
-    const draftObjectId = ObjectId.isValid(resourceid) ? new ObjectId(resourceid) : null;
-    if (draftObjectId) {
-      await db.collection('blog_drafts').updateOne(
-        { _id: draftObjectId, userId: userId },
-        { 
-          $set: { 
-            premiumReady: false, 
-            premiumPausedAt: new Date()
-          } 
+    const resourceObjectId = ObjectId.isValid(resourceid) ? new ObjectId(resourceid) : null;
+    if (resourceObjectId) {
+      // Check if it's a blog draft
+      const blogDraft = await db.collection('blog_drafts').findOne({ _id: resourceObjectId, userId: userId });
+      if (blogDraft) {
+        await db.collection('blog_drafts').updateOne(
+          { _id: resourceObjectId, userId: userId },
+          { 
+            $set: { 
+              premiumReady: false, 
+              premiumPausedAt: new Date()
+            } 
+          }
+        );
+        webhookLogger.info('blog_draft_premium_paused', { draftId: resourceid, userId });
+      } else {
+        // Check if it's an app draft
+        const appDraft = await db.collection('app_drafts').findOne({ _id: resourceObjectId, userId: userId });
+        if (appDraft) {
+          await db.collection('app_drafts').updateOne(
+            { _id: resourceObjectId, userId: userId },
+            { 
+              $set: { 
+                premiumReady: false, 
+                premiumPausedAt: new Date()
+              } 
+            }
+          );
+          webhookLogger.info('app_draft_premium_paused', { draftId: resourceid, userId });
         }
-      );
+      }
     }
   } catch (error) {
     webhookLogger.error('resource_subscription_paused_failed', error);
@@ -943,19 +1066,39 @@ async function handleResourceSubscriptionResumed(
   userId: string
 ): Promise<void> {
   try {
-    // Mark blog draft as premium-resumed
-    const draftObjectId = ObjectId.isValid(resourceid) ? new ObjectId(resourceid) : null;
-    if (draftObjectId) {
-      await db.collection('blog_drafts').updateOne(
-        { _id: draftObjectId, userId: userId },
-        { 
-          $set: { 
-            premiumReady: true, 
-            premiumResumedAt: new Date(),
-            premiumUserId: userId
-          } 
+    const resourceObjectId = ObjectId.isValid(resourceid) ? new ObjectId(resourceid) : null;
+    if (resourceObjectId) {
+      // Check if it's a blog draft
+      const blogDraft = await db.collection('blog_drafts').findOne({ _id: resourceObjectId, userId: userId });
+      if (blogDraft) {
+        await db.collection('blog_drafts').updateOne(
+          { _id: resourceObjectId, userId: userId },
+          { 
+            $set: { 
+              premiumReady: true, 
+              premiumResumedAt: new Date(),
+              premiumUserId: userId
+            } 
+          }
+        );
+        webhookLogger.info('blog_draft_premium_resumed', { draftId: resourceid, userId });
+      } else {
+        // Check if it's an app draft
+        const appDraft = await db.collection('app_drafts').findOne({ _id: resourceObjectId, userId: userId });
+        if (appDraft) {
+          await db.collection('app_drafts').updateOne(
+            { _id: resourceObjectId, userId: userId },
+            { 
+              $set: { 
+                premiumReady: true, 
+                premiumResumedAt: new Date(),
+                premiumUserId: userId
+              } 
+            }
+          );
+          webhookLogger.info('app_draft_premium_resumed', { draftId: resourceid, userId });
         }
-      );
+      }
     }
   } catch (error) {
     webhookLogger.error('resource_subscription_resumed_failed', error);

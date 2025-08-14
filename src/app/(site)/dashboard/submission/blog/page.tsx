@@ -17,8 +17,9 @@ import { getShadow, getGlassStyles } from "../../../../../utils/themeUtils";
 import StepMetadata from "./StepMetadata";
 import StepEditor from "./StepEditor";
 import StepReview from "./StepReview";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import PremiumBlogSubscription from "../../../../../components/premium/PremiumBlogSubscription";
+import { Clock, AlertTriangle } from "lucide-react";
 
 import { useSearchParams } from 'next/navigation';
 
@@ -47,53 +48,46 @@ function BlogSubmitPageContent() {
   const [success, setSuccess] = useState(false);
   const [draftId, setDraftId] = useState<string | null>(null);
   const [isPremiumUser, setIsPremiumUser] = useState(false);
+  const [draftExpiryDate, setDraftExpiryDate] = useState<Date | null>(null);
 
   // Debug: Log form data changes
   useEffect(() => {
     console.log('📋 Form data updated:', formData);
   }, [formData]);
 
-  // Check if user is returning from payment with a draft ID
+  // Check if user is returning from payment with a draft ID or continuing editing
   useEffect(() => {
     const draftIdParam = searchParams.get('draftId');
+    const draftParam = searchParams.get('draft');
     const paymentSuccess = searchParams.get('payment_success');
     
-    console.log('🔍 URL params detected:', { draftIdParam, paymentSuccess });
+    console.log('🔍 URL params detected:', { draftIdParam, draftParam, paymentSuccess });
     
-    if (draftIdParam) {
+    // Use either draftId (from payment return) or draft (from continue editing)
+    const draftId = draftIdParam || draftParam;
+    
+    if (draftId) {
       console.log('📝 Draft ID found in URL, initiating restoration...');
       if (paymentSuccess === 'true') {
         // User returned from successful payment, restore their draft
         console.log('💳 Payment success detected, restoring draft...');
-        restoreDraft(draftIdParam);
+        restoreDraft(draftId);
       } else {
         // User clicked "Continue Writing" on a draft, restore it
         console.log('✏️ Continue Writing detected, restoring draft...');
-        restoreDraft(draftIdParam);
+        restoreDraft(draftId);
       }
     } else {
       console.log('📝 No draft ID in URL');
     }
   }, [searchParams]);
 
-  // Check if user has premium access
+  // Debug: Log when draftId changes
   useEffect(() => {
-    checkPremiumStatus();
-  }, []);
+    console.log('📝 Draft ID updated:', draftId);
+  }, [draftId]);
 
-  const checkPremiumStatus = async () => {
-    try {
-      const res = await fetch('/api/user-blogs/check-premium');
-      if (res.ok) {
-        const { hasPremium } = await res.json();
-        setIsPremiumUser(hasPremium);
-      }
-    } catch (error) {
-      console.error('Error checking premium status:', error);
-    }
-  };
-
-  const restoreDraft = async (draftId: string) => {
+  const restoreDraft = useCallback(async (draftId: string) => {
     try {
       console.log('🔄 Restoring draft with ID:', draftId);
       const res = await fetch(`/api/user-blogs/draft/${draftId}`);
@@ -115,8 +109,17 @@ function BlogSubmitPageContent() {
         };
         
         console.log('📋 Setting form data:', formDataToSet);
+        console.log('📋 Current form data before update:', formData);
         setFormData(formDataToSet);
+        console.log('📋 Form data state updated, new value should be:', formDataToSet);
         setDraftId(draft._id || draftId);
+        
+        // Calculate draft expiry date
+        if (draft.createdAt) {
+          const createdAt = new Date(draft.createdAt);
+          const expiryDate = new Date(createdAt.getTime() + (7 * 24 * 60 * 60 * 1000));
+          setDraftExpiryDate(expiryDate);
+        }
         
         // If draft is premium-ready, user can submit directly
         if (draft.premiumReady) {
@@ -135,6 +138,23 @@ function BlogSubmitPageContent() {
     } catch (error) {
       console.error('❌ Error restoring draft:', error);
       setError('Failed to restore your draft. Please try again.');
+    }
+  }, []);
+
+  // Check if user has premium access
+  useEffect(() => {
+    checkPremiumStatus();
+  }, []);
+
+  const checkPremiumStatus = async () => {
+    try {
+      const res = await fetch('/api/user-blogs/check-premium');
+      if (res.ok) {
+        const { hasPremium } = await res.json();
+        setIsPremiumUser(hasPremium);
+      }
+    } catch (error) {
+      console.error('Error checking premium status:', error);
     }
   };
 
@@ -267,6 +287,71 @@ function BlogSubmitPageContent() {
     }
   };
   
+  // Draft countdown timer component
+  const DraftCountdownTimer = () => {
+    const [remainingTime, setRemainingTime] = useState<{
+      days: number;
+      hours: number;
+      minutes: number;
+      seconds: number;
+    }>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+    useEffect(() => {
+      if (!draftExpiryDate) return;
+
+      const calculateRemainingTime = () => {
+        const now = new Date().getTime();
+        const expiry = draftExpiryDate.getTime();
+        const difference = expiry - now;
+
+        if (difference > 0) {
+          const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+          setRemainingTime({ days, hours, minutes, seconds });
+        } else {
+          setRemainingTime({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        }
+      };
+
+      calculateRemainingTime();
+      const timer = setInterval(calculateRemainingTime, 1000);
+
+      return () => clearInterval(timer);
+    }, [draftExpiryDate]);
+
+    if (!draftExpiryDate) return null;
+
+    const isExpired = remainingTime.days === 0 && remainingTime.hours === 0 && remainingTime.minutes === 0 && remainingTime.seconds === 0;
+    const isExpiringSoon = remainingTime.days === 0 && remainingTime.hours < 24;
+
+    if (isExpired) {
+      return (
+        <Alert severity="error" icon={<AlertTriangle />} sx={{ mb: 2 }}>
+          <Typography variant="body2">
+            ⚠️ This draft has expired and can no longer be used. Please create a new blog submission.
+          </Typography>
+        </Alert>
+      );
+    }
+
+    return (
+      <Alert 
+        severity={isExpiringSoon ? "warning" : "info"} 
+        icon={<Clock />} 
+        sx={{ mb: 2 }}
+      >
+        <Typography variant="body2">
+          ⏰ <strong>Draft expires in:</strong> {remainingTime.days > 0 && `${remainingTime.days}d `}
+          {remainingTime.hours.toString().padStart(2, '0')}h {remainingTime.minutes.toString().padStart(2, '0')}m {remainingTime.seconds.toString().padStart(2, '0')}s
+          {isExpiringSoon && ' - Complete your submission soon!'}
+        </Typography>
+      </Alert>
+    );
+  };
+  
   return (
     <Box component="main" sx={{ bgcolor: "background.default", py: 8 }}>
       <Container maxWidth="md">
@@ -290,6 +375,14 @@ function BlogSubmitPageContent() {
               🧪 Test Restore Draft
             </Button>
           )}
+          
+          {/* Debug: Show current form data */}
+          <Box sx={{ fontSize: '12px', color: 'text.secondary', maxWidth: 200 }}>
+            <div>Title: {formData.title || 'empty'}</div>
+            <div>Author: {formData.author || 'empty'}</div>
+            <div>Content length: {formData.content?.length || 0}</div>
+            <div>Draft ID: {draftId || 'none'}</div>
+          </Box>
         </Box>
         <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 6 }}>
           {steps.map((label) => (
@@ -315,6 +408,9 @@ function BlogSubmitPageContent() {
           )}
           {activeStep === 2 && (
             <>
+              {/* Show countdown timer if editing a draft */}
+              {draftExpiryDate && <DraftCountdownTimer />}
+              
               <StepReview metadata={formData} content={formData.content} />
               {!formData.isFounderStory && !isPremiumUser && (
                 <Box mt={4}>
