@@ -42,12 +42,10 @@ import {
   Cancel as CancelIcon
 } from '@mui/icons-material';
 import { 
-  assignBadgeTextToApp, 
-  assignBadgeClassToApp, 
-  expandBadgeTextPool,
-  getTotalBadgeTexts,
-  isValidBadgeText
-} from '@/utils/badgeAssignmentService';
+  assignBadgeTextToAppClient, 
+  assignBadgeClassToAppClient
+} from '@/utils/badgeAssignmentClient';
+// Removed server-only import to avoid bundling Node modules in client
 
 interface BadgeText {
   id: string;
@@ -97,6 +95,7 @@ export default function BadgeManagementPage() {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' | 'info' });
   const [previewAppId, setPreviewAppId] = useState('test-app-123');
   const [previewBadge, setPreviewBadge] = useState<string>('');
+  const [totalTexts, setTotalTexts] = useState(0);
 
   useEffect(() => {
     loadBadgeData();
@@ -104,30 +103,25 @@ export default function BadgeManagementPage() {
 
   const loadBadgeData = async () => {
     try {
-      const response = await fetch('/api/admin/badge-management');
+      const response = await fetch('/api/admin/badge-management?action=getAllTexts');
       const result = await response.json();
       
       if (result.success) {
-        const textItems: BadgeText[] = result.data.texts.map((item: any) => ({
-          id: item.id,
+        const textItems: BadgeText[] = result.texts.map((item: any) => ({
+          id: item._id || item.id,
           text: item.text,
-          usageCount: Math.floor(Math.random() * 50) + 1, // Mock data for now
-          isActive: true
-        }));
-
-        const classItems: BadgeClass[] = result.data.classes.map((item: any) => ({
-          id: item.id,
-          className: item.className,
-          usageCount: Math.floor(Math.random() * 30) + 1, // Mock data for now
-          isActive: true
+          usageCount: item.usageCount || Math.floor(Math.random() * 50) + 1,
+          isActive: item.isActive !== false
         }));
 
         setBadgeTexts(textItems);
-        setBadgeClasses(classItems);
+        setTotalTexts(textItems.length);
+      } else {
+        setSnackbar({ open: true, message: 'Failed to load badge texts', severity: 'error' });
       }
     } catch (error) {
       console.error('Error loading badge data:', error);
-      setSnackbar({ open: true, message: 'Failed to load badge data', severity: 'error' });
+      setSnackbar({ open: true, message: 'Error loading badge data', severity: 'error' });
     }
   };
 
@@ -151,8 +145,8 @@ export default function BadgeManagementPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            action: 'add-texts',
-            data: { texts: [newBadgeText.trim()] }
+            action: 'addText',
+            data: { text: newBadgeText.trim() }
           })
         });
         
@@ -261,8 +255,8 @@ export default function BadgeManagementPage() {
 
   const generatePreviewBadge = async () => {
     try {
-      const badgeText = await assignBadgeTextToApp(previewAppId);
-      const badgeClass = await assignBadgeClassToApp(previewAppId);
+      const badgeText = await assignBadgeTextToAppClient(previewAppId);
+      const badgeClass = await assignBadgeClassToAppClient(previewAppId);
       
       const previewHtml = `
         <a href="#" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 16px; border-radius: 8px; text-decoration: none; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; font-weight: 500; border: 1px solid; cursor: pointer; background-color: #ffffff; color: #2563eb; border-color: #dbeafe;" class="${badgeClass}" data-app-id="${previewAppId}" data-badge-text="${badgeText}">
@@ -752,7 +746,7 @@ export default function BadgeManagementPage() {
             <Card>
               <CardContent>
                 <Typography variant="h6" color="primary">
-                  {getTotalBadgeTexts()}
+                  {totalTexts}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Total Badge Texts Available

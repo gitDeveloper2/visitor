@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/features/shared/utils/auth';
-import { connectToDatabase } from '@lib/mongodb';
+import { connectToDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
-import { generateVerificationBadgeHtml, generateAntiTrackingBadges, generateSEOOptimizedBadge } from '@/components/badges/VerificationBadge';
+import { generateVerificationBadgeHtmlServer, generateAntiTrackingBadgesServer, generateSEOOptimizedBadgeServer } from '@/utils/badgeGenerationServer';
 import { 
   assignBadgeTextToApp, 
   assignBadgeClassToApp, 
@@ -11,16 +11,34 @@ import {
 } from '@/utils/badgeAssignmentService';
 
 // Enhanced URL validation function
-function validateVerificationUrl(verificationUrl: string, appUrl: string): { isValid: boolean; error?: string } {
+function isPrivateHost(host: string): boolean {
+  return (
+    host === 'localhost' ||
+    /^127\./.test(host) ||
+    /^10\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(host) ||
+    host.endsWith('.local')
+  );
+}
+
+function normalizeHost(host: string): string {
+  return host.toLowerCase().replace(/^www\./, '');
+}
+
+function validateVerificationUrl(verificationUrl: string, appSiteUrl: string): { isValid: boolean; error?: string } {
   try {
     const verificationUrlObj = new URL(verificationUrl);
-    const appUrlObj = new URL(appUrl);
+    const appUrlObj = new URL(appSiteUrl);
     
     // Check 1: Hostname must match or be a subdomain
-    const verificationHost = verificationUrlObj.hostname.toLowerCase();
-    const appHost = appUrlObj.hostname.toLowerCase();
-    
-    if (verificationHost !== appHost && !verificationHost.endsWith('.' + appHost)) {
+    const verificationHost = normalizeHost(verificationUrlObj.hostname);
+    const appHost = normalizeHost(appUrlObj.hostname);
+    if (
+      verificationHost !== appHost &&
+      !verificationHost.endsWith('.' + appHost) &&
+      !appHost.endsWith('.' + verificationHost)
+    ) {
       return {
         isValid: false,
         error: 'Verification URL must be on the same domain or subdomain as your app'
@@ -28,7 +46,7 @@ function validateVerificationUrl(verificationUrl: string, appUrl: string): { isV
     }
     
     // Check 2: Protocol must be HTTPS (security requirement)
-    if (verificationUrlObj.protocol !== 'https:') {
+    if (verificationUrlObj.protocol !== 'https:' && !isPrivateHost(verificationHost)) {
       return {
         isValid: false,
         error: 'Verification URL must use HTTPS for security'
@@ -130,8 +148,14 @@ export async function POST(
     }
 
     // Enhanced URL validation
-    const appUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/launch/${app.slug}`;
-    const urlValidationResult = validateVerificationUrl(verificationUrl, appUrl);
+    const basicUtilsAppUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/launch/${app.slug}`;
+    const appSiteUrl = (app.externalUrl || app.website || '').trim();
+    if (!appSiteUrl) {
+      return NextResponse.json({ 
+        message: 'Your app does not have a website/externalUrl configured. Please add a website to your app first.' 
+      }, { status: 400 });
+    }
+    const urlValidationResult = validateVerificationUrl(verificationUrl, appSiteUrl);
     
     if (!urlValidationResult.isValid) {
       return NextResponse.json({ 
@@ -146,9 +170,9 @@ export async function POST(
     const badgeClassVariations = await getBadgeClassVariations(appId, 3);
 
     // Generate multiple badge variations for anti-tracking with consistent text
-    const defaultBadge = generateVerificationBadgeHtml(app.name, appUrl, appId, 'default', 'light');
-    const antiTrackingBadges = generateAntiTrackingBadges(app.name, appUrl, appId, 3);
-    const seoOptimizedBadge = generateSEOOptimizedBadge(app.name, appUrl, appId);
+    const defaultBadge = await generateVerificationBadgeHtmlServer(app.name, basicUtilsAppUrl, appId, 'default', 'light');
+    const antiTrackingBadges = await generateAntiTrackingBadgesServer(app.name, basicUtilsAppUrl, appId, 3);
+    const seoOptimizedBadge = await generateSEOOptimizedBadgeServer(app.name, basicUtilsAppUrl, appId);
 
     // Update app with verification request and badge assignments
     const updateResult = await db.collection('userapps').updateOne(

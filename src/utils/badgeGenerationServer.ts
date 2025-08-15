@@ -1,187 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Typography, Chip } from '@mui/material';
-import { CheckCircle, Launch } from '@mui/icons-material';
 import { 
-  assignBadgeTextToAppClient, 
-  assignBadgeClassToAppClient, 
-  getBadgeTextVariationsClient, 
-  getBadgeClassVariationsClient 
-} from '@/utils/badgeAssignmentClient';
+  assignBadgeTextToApp, 
+  assignBadgeClassToApp 
+} from './badgeAssignmentService';
 
-interface VerificationBadgeProps {
-  appName: string;
-  appUrl: string;
-  appId: string; // Added appId for deterministic badge assignment
-  variant?: 'default' | 'compact' | 'minimal';
-  theme?: 'light' | 'dark';
-  className?: string;
-}
-
-export default function VerificationBadge({ 
-  appName, 
-  appUrl, 
-  appId,
-  variant = 'default',
-  theme = 'light',
-  className = ''
-}: VerificationBadgeProps) {
-  const [badgeText, setBadgeText] = useState<string>('Verified by BasicUtils');
-  const [badgeClass, setBadgeClass] = useState<string>('verified-badge');
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Get deterministic badge text and class for this app
-  useEffect(() => {
-    const loadBadgeData = async () => {
-             try {
-         const [text, className] = await Promise.all([
-           assignBadgeTextToAppClient(appId),
-           assignBadgeClassToAppClient(appId)
-         ]);
-         setBadgeText(text);
-         setBadgeClass(className);
-       } catch (error) {
-        console.error('Error loading badge data:', error);
-        // Keep default values on error
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadBadgeData();
-  }, [appId]);
-
-  const baseStyles = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 1,
-    padding: variant === 'compact' ? '8px 12px' : '12px 16px',
-    borderRadius: '8px',
-    textDecoration: 'none',
-    transition: 'all 0.2s ease-in-out',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    fontSize: variant === 'minimal' ? '12px' : '14px',
-    fontWeight: 500,
-    border: '1px solid',
-    cursor: 'pointer',
-    '&:hover': {
-      transform: 'translateY(-1px)',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-    }
-  };
-
-  const lightTheme = {
-    backgroundColor: '#ffffff',
-    color: '#2563eb',
-    borderColor: '#dbeafe',
-    '&:hover': {
-      backgroundColor: '#f8fafc',
-      borderColor: '#2563eb',
-    }
-  };
-
-  const darkTheme = {
-    backgroundColor: '#1e293b',
-    color: '#60a5fa',
-    borderColor: '#334155',
-    '&:hover': {
-      backgroundColor: '#334155',
-      borderColor: '#60a5fa',
-    }
-  };
-
-  const styles = {
-    ...baseStyles,
-    ...(theme === 'dark' ? darkTheme : lightTheme)
-  };
-
-  // Show loading state
-  if (isLoading) {
-    return (
-      <div style={{
-        ...styles,
-        opacity: 0.6,
-        pointerEvents: 'none'
-      }}>
-        <CheckCircle style={{ fontSize: '14px' }} />
-        <span>Loading...</span>
-      </div>
-    );
-  }
-
-  if (variant === 'minimal') {
-    return (
-      <a 
-        href={appUrl} 
-        target="_blank" 
-        rel="noopener noreferrer"
-        style={{
-          ...styles,
-          padding: '6px 10px',
-          fontSize: '12px',
-          gap: '6px'
-        }}
-        className={`${badgeClass} ${className}`}
-        data-verification="true"
-        data-app-id={appId}
-        data-badge-text={badgeText}
-      >
-        <CheckCircle style={{ fontSize: '14px' }} />
-        <span>{badgeText}</span>
-      </a>
-    );
-  }
-
-  if (variant === 'compact') {
-    return (
-      <a 
-        href={appUrl} 
-        target="_blank" 
-        rel="noopener noreferrer"
-        style={styles}
-        className={`${badgeClass} ${className}`}
-        data-verification="true"
-        data-app-id={appId}
-        data-badge-text={badgeText}
-      >
-        <CheckCircle style={{ fontSize: '16px' }} />
-        <span>View {appName} on BasicUtils</span>
-        <Launch style={{ fontSize: '14px' }} />
-      </a>
-    );
-  }
-
-  return (
-    <a 
-      href={appUrl} 
-      target="_blank" 
-      rel="noopener noreferrer"
-      style={styles}
-      className={`${badgeClass} ${className}`}
-      data-verification="true"
-      data-app-id={appId}
-      data-badge-text={badgeText}
-    >
-      <CheckCircle style={{ fontSize: '18px' }} />
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-        <span style={{ fontWeight: 600 }}>Verified App</span>
-        <span style={{ fontSize: '12px', opacity: 0.8 }}>View {appName} on BasicUtils</span>
-      </Box>
-      <Launch style={{ fontSize: '16px' }} />
-    </a>
-  );
-}
-
-// HTML string generator for easy copy-paste with deterministic badge assignment
-export async function generateVerificationBadgeHtml(
+// Server-side HTML string generator for easy copy-paste with deterministic badge assignment
+export async function generateVerificationBadgeHtmlServer(
   appName: string, 
   appUrl: string, 
-  appId: string, // Added appId parameter
+  appId: string,
   variant: 'default' | 'compact' | 'minimal' = 'default',
   theme: 'light' | 'dark' = 'light'
 ): Promise<string> {
   // Get deterministic badge text and class for this app
-  const badgeText = await assignBadgeTextToAppClient(appId);
-  const badgeClass = await assignBadgeClassToAppClient(appId);
+  const badgeText = await assignBadgeTextToApp(appId);
+  const badgeClass = await assignBadgeClassToApp(appId);
 
   const baseStyles = `
     display: inline-flex;
@@ -272,10 +104,10 @@ export async function generateVerificationBadgeHtml(
 }
 
 // Generate multiple badge variations for anti-tracking with consistent text
-export async function generateAntiTrackingBadges(
+export async function generateAntiTrackingBadgesServer(
   appName: string, 
   appUrl: string, 
-  appId: string, // Added appId parameter
+  appId: string,
   count: number = 3
 ): Promise<string[]> {
   const badges: string[] = [];
@@ -284,23 +116,23 @@ export async function generateAntiTrackingBadges(
     const variant = i === 0 ? 'default' : i === 1 ? 'compact' : 'minimal';
     const theme = i % 2 === 0 ? 'light' : 'dark';
     
-    badges.push(await generateVerificationBadgeHtml(appName, appUrl, appId, variant, theme));
+    badges.push(await generateVerificationBadgeHtmlServer(appName, appUrl, appId, variant, theme));
   }
   
   return badges;
 }
 
 // Generate SEO-optimized badge with deterministic text
-export async function generateSEOOptimizedBadge(
+export async function generateSEOOptimizedBadgeServer(
   appName: string, 
   appUrl: string, 
-  appId: string, // Added appId parameter
+  appId: string,
   customText?: string,
   includeSchema: boolean = true
 ): Promise<string> {
   // Use deterministic badge text if no custom text provided
-  const badgeText = customText || await assignBadgeTextToAppClient(appId);
-  const badgeClass = await assignBadgeClassToAppClient(appId);
+  const badgeText = customText || await assignBadgeTextToApp(appId);
+  const badgeClass = await assignBadgeClassToApp(appId);
   
   const badgeHtml = `
     <a href="${appUrl}" target="_blank" rel="noopener noreferrer" 
@@ -347,4 +179,4 @@ export async function generateSEOOptimizedBadge(
   }
   
   return badgeHtml;
-}
+} 

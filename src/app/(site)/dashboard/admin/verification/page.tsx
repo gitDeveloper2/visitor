@@ -181,7 +181,7 @@ export default function AdminVerificationPage() {
   const fetchVerificationData = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/verify-apps');
+      const response = await fetch('/api/admin/verify-apps', { credentials: 'include' });
       
       if (!response.ok) {
         throw new Error('Failed to fetch verification data');
@@ -203,6 +203,7 @@ export default function AdminVerificationPage() {
       const response = await fetch('/api/admin/verify-apps', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ action: 'verify-all' }),
       });
 
@@ -232,6 +233,7 @@ export default function AdminVerificationPage() {
       const response = await fetch('/api/admin/migrate-verification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -260,6 +262,7 @@ export default function AdminVerificationPage() {
       const response = await fetch('/api/admin/migrate-verification-attempts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -290,6 +293,7 @@ export default function AdminVerificationPage() {
       const response = await fetch(`/api/admin/verify-apps`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ 
           action: 'manual-verify', 
           appId: manualModal.app._id,
@@ -347,6 +351,7 @@ export default function AdminVerificationPage() {
       const response = await fetch(`/api/admin/verify-apps`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ 
           action: 'admin-override', 
           appId: overrideModal.app._id,

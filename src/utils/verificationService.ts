@@ -67,7 +67,8 @@ export async function verifyAppBadge(appId: string): Promise<VerificationResult>
       };
     }
 
-    const appUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/launch/${app.slug}`;
+    const appSiteUrl = (app.externalUrl || app.website || '').trim();
+    const appUrl = appSiteUrl || `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/launch/${app.slug}`;
     
     // Enhanced URL validation - ensure verification URL is a child of app URL
     const urlValidationResult = validateVerificationUrl(app.verificationUrl, appUrl);
@@ -104,16 +105,35 @@ export async function verifyAppBadge(appId: string): Promise<VerificationResult>
 }
 
 // Enhanced URL validation function
+function isPrivateHost(host: string): boolean {
+  return (
+    host === 'localhost' ||
+    /^127\./.test(host) ||
+    /^10\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(host) ||
+    host.endsWith('.local')
+  );
+}
+
+function normalizeHost(host: string): string {
+  return host.toLowerCase().replace(/^www\./, '');
+}
+
 function validateVerificationUrl(verificationUrl: string, appUrl: string): { isValid: boolean; error?: string } {
   try {
     const verificationUrlObj = new URL(verificationUrl);
     const appUrlObj = new URL(appUrl);
     
     // Check 1: Hostname must match or be a subdomain
-    const verificationHost = verificationUrlObj.hostname.toLowerCase();
-    const appHost = appUrlObj.hostname.toLowerCase();
+    const verificationHost = normalizeHost(verificationUrlObj.hostname);
+    const appHost = normalizeHost(appUrlObj.hostname);
     
-    if (verificationHost !== appHost && !verificationHost.endsWith('.' + appHost)) {
+    if (
+      verificationHost !== appHost &&
+      !verificationHost.endsWith('.' + appHost) &&
+      !appHost.endsWith('.' + verificationHost)
+    ) {
       return {
         isValid: false,
         error: 'Verification URL must be on the same domain or subdomain as your app'
@@ -121,7 +141,7 @@ function validateVerificationUrl(verificationUrl: string, appUrl: string): { isV
     }
     
     // Check 2: Protocol must be HTTPS (security requirement)
-    if (verificationUrlObj.protocol !== 'https:') {
+    if (verificationUrlObj.protocol !== 'https:' && !isPrivateHost(verificationHost)) {
       return {
         isValid: false,
         error: 'Verification URL must use HTTPS for security'

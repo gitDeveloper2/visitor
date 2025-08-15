@@ -6,10 +6,10 @@ import {
   getBadgeClassVariations 
 } from './badgeAssignmentService';
 import { 
-  generateVerificationBadgeHtml, 
-  generateAntiTrackingBadges, 
-  generateSEOOptimizedBadge 
-} from '@/components/badges/VerificationBadge';
+  generateVerificationBadgeHtmlServer, 
+  generateAntiTrackingBadgesServer, 
+  generateSEOOptimizedBadgeServer 
+} from '@/utils/badgeGenerationServer';
 import { connectToDatabase } from '@/lib/mongodb';
 
 /**
@@ -37,9 +37,9 @@ export async function regenerateBadgesForApp(appId: string) {
     const badgeClassVariations = await getBadgeClassVariations(appId, 3);
 
     // Generate new badge HTML with consistent text and class
-    const defaultBadge = generateVerificationBadgeHtml(app.name, appUrl, appId, 'default', 'light');
-    const antiTrackingBadges = generateAntiTrackingBadges(app.name, appUrl, appId, 3);
-    const seoOptimizedBadge = generateSEOOptimizedBadge(app.name, appUrl, appId);
+    const defaultBadge = await generateVerificationBadgeHtmlServer(app.name, appUrl, appId, 'default', 'light');
+    const antiTrackingBadges = await generateAntiTrackingBadgesServer(app.name, appUrl, appId, 3);
+    const seoOptimizedBadge = await generateSEOOptimizedBadgeServer(app.name, appUrl, appId);
 
     // Update the app with new badge HTML
     const updateResult = await db.collection('userapps').updateOne(

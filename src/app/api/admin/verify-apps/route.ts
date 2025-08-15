@@ -1,21 +1,42 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/features/shared/utils/auth';
-import { connectToDatabase } from '@lib/mongodb';
+import { connectToDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { verifyAppBadge, verifyPendingApps } from '../../../../utils/verificationService';
-import { generateVerificationBadgeHtml, generateAntiTrackingBadges, generateSEOOptimizedBadge } from '@/components/badges/VerificationBadge';
+import { generateVerificationBadgeHtmlServer, generateAntiTrackingBadgesServer, generateSEOOptimizedBadgeServer } from '@/utils/badgeGenerationServer';
 
 // Enhanced URL validation function (same as user verification)
+function isPrivateHost(host: string): boolean {
+  return (
+    host === 'localhost' ||
+    /^127\./.test(host) ||
+    /^10\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(host) ||
+    host.endsWith('.local')
+  );
+}
+
+function normalizeHost(host: string): string {
+  return host.toLowerCase().replace(/^www\./, '');
+}
+
 function validateVerificationUrl(verificationUrl: string, appUrl: string): { isValid: boolean; error?: string } {
   try {
     const verificationUrlObj = new URL(verificationUrl);
     const appUrlObj = new URL(appUrl);
     
     // Check 1: Hostname must match or be a subdomain
-    const verificationHost = verificationUrlObj.hostname.toLowerCase();
-    const appHost = appUrlObj.hostname.toLowerCase();
-    
-    if (verificationHost !== appHost && !verificationHost.endsWith('.' + appHost)) {
+    const verificationHost = normalizeHost(verificationUrlObj.hostname);
+    const appHost = normalizeHost(appUrlObj.hostname);
+    console.log("verhost",verificationHost)
+    console.log("apphost",appHost)
+
+    if (
+      verificationHost !== appHost &&
+      !verificationHost.endsWith('.' + appHost) &&
+      !appHost.endsWith('.' + verificationHost)
+    ) {
       return {
         isValid: false,
         error: 'Verification URL must be on the same domain or subdomain as your app'
@@ -23,7 +44,7 @@ function validateVerificationUrl(verificationUrl: string, appUrl: string): { isV
     }
     
     // Check 2: Protocol must be HTTPS (security requirement)
-    if (verificationUrlObj.protocol !== 'https:') {
+    if (verificationUrlObj.protocol !== 'https:' && !isPrivateHost(verificationHost)) {
       return {
         isValid: false,
         error: 'Verification URL must use HTTPS for security'
@@ -128,8 +149,14 @@ export async function POST(request: Request) {
     console.log("💾 Admin POST DB:", db.databaseName);
     console.log("🔗 Admin POST DB connection string:", process.env.MONGODB_URI?.split('@')[1] || 'hidden');
     
-    const requestBody = await request.json();
-    const { appId, action, verificationUrl, overrideStatus, overrideScore, overrideReason } = requestBody;
+    let requestBody: any = {};
+    try {
+      requestBody = await request.json();
+    } catch (_) {
+      requestBody = {};
+    }
+    const { appId, action: rawAction, verificationUrl, overrideStatus, overrideScore, overrideReason } = requestBody;
+    const action = rawAction || 'verify-all';
     console.log('📌 Step 4: Request body:', { appId, action, verificationUrl, overrideStatus, overrideScore, overrideReason });
 
     if (action === 'verify-single' && appId) {
@@ -191,8 +218,11 @@ export async function POST(request: Request) {
       }
 
       // Enhanced URL validation
-      const appUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/launch/${app.slug}`;
-      const urlValidationResult = validateVerificationUrl(verificationUrl, appUrl);
+      const appSiteUrl = (app.externalUrl || app.website || '').trim();
+      if (!appSiteUrl) {
+        return NextResponse.json({ message: 'App has no website/externalUrl configured' }, { status: 400 });
+      }
+      const urlValidationResult = validateVerificationUrl(verificationUrl, appSiteUrl);
       
       if (!urlValidationResult.isValid) {
         return NextResponse.json({ 
@@ -201,9 +231,10 @@ export async function POST(request: Request) {
       }
 
       // Update the app with the new verification URL and enhanced badges
-              const defaultBadge = generateVerificationBadgeHtml(app.name, appUrl, appId, 'default', 'light');
-              const antiTrackingBadges = generateAntiTrackingBadges(app.name, appUrl, appId, 3);
-        const seoOptimizedBadge = generateSEOOptimizedBadge(app.name, appUrl, appId);
+      const basicUtilsAppUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/launch/${app.slug}`;
+      const defaultBadge = await generateVerificationBadgeHtmlServer(app.name, basicUtilsAppUrl, appId, 'default', 'light');
+      const antiTrackingBadges = await generateAntiTrackingBadgesServer(app.name, basicUtilsAppUrl, appId, 3);
+      const seoOptimizedBadge = await generateSEOOptimizedBadgeServer(app.name, basicUtilsAppUrl, appId);
 
       await db.collection('userapps').updateOne(
         { _id: new ObjectId(appId) },

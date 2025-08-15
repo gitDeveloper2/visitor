@@ -1,75 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  getAllBadgeTextsFromDB,
-  getAllBadgeClassesFromDB,
-  addBadgeTextsToDB,
-  addBadgeClassesToDB,
-  removeBadgeTextFromDB,
-  removeBadgeClassFromDB,
-  updateBadgeTextInDB,
-  updateBadgeClassInDB,
-  resetBadgePoolsToDefaults,
-  exportBadgePoolsFromDB,
-  importBadgePoolsToDB,
-  toggleBadgeTextActive,
-  toggleBadgeClassActive
-} from '@/utils/badgeDatabaseService';
+import { getSession } from '@/features/shared/utils/auth';
+import { 
+  getTotalBadgeTexts,
+  isValidBadgeText,
+  getAllBadgeTexts,
+  expandBadgeTextPool,
+  removeBadgeText,
+  updateBadgeText,
+  resetToDefaults,
+  exportBadgePools,
+  importBadgePools
+} from '@/utils/badgeAssignmentService';
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await getSession();
+    if (!session?.user) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
 
     switch (action) {
-      case 'texts':
-        const texts = await getAllBadgeTextsFromDB();
-        return NextResponse.json({
-          success: true,
-          data: texts,
-          message: 'Badge texts retrieved successfully'
-        });
+      case 'getTotalTexts':
+        const totalTexts = await getTotalBadgeTexts();
+        return NextResponse.json({ success: true, totalTexts });
 
-      case 'classes':
-        const classes = await getAllBadgeClassesFromDB();
-        return NextResponse.json({
-          success: true,
-          data: classes,
-          message: 'Badge classes retrieved successfully'
-        });
+      case 'getAllTexts':
+        const texts = await getAllBadgeTexts();
+        return NextResponse.json({ success: true, texts });
 
-      case 'export':
-        const exportDataExport = await exportBadgePoolsFromDB();
-        return NextResponse.json({
-          success: true,
-          data: exportDataExport,
-          message: 'Badge pools exported successfully'
-        });
+      case 'exportPools':
+        const exportData = await exportBadgePools();
+        return NextResponse.json({ success: true, data: exportData });
 
       default:
-        const [allTexts, allClasses, exportDataDefault] = await Promise.all([
-          getAllBadgeTextsFromDB(),
-          getAllBadgeClassesFromDB(),
-          exportBadgePoolsFromDB()
-        ]);
-        
-        return NextResponse.json({
-          success: true,
-          data: {
-            texts: allTexts,
-            classes: allClasses,
-            export: exportDataDefault
-          },
-          message: 'All badge data retrieved successfully'
-        });
+        return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
     }
-
   } catch (error) {
-    console.error('Error retrieving badge data:', error);
+    console.error('Error in badge management GET:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      },
+      { success: false, error: 'Failed to process request' },
       { status: 500 }
     );
   }
@@ -77,238 +49,61 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { action, data } = body;
-
-    switch (action) {
-      case 'add-texts':
-        if (!data.texts || !Array.isArray(data.texts)) {
-          return NextResponse.json(
-            { success: false, error: 'Invalid data: texts array required' },
-            { status: 400 }
-          );
-        }
-
-        const textResults = await addBadgeTextsToDB(data.texts);
-        const allTexts = await getAllBadgeTextsFromDB();
-
-        return NextResponse.json({
-          success: true,
-          message: `Added ${textResults.added.length} new badge texts`,
-          added: textResults.added,
-          errors: textResults.errors,
-          total: allTexts.length
-        });
-
-      case 'add-classes':
-        if (!data.classes || !Array.isArray(data.classes)) {
-          return NextResponse.json(
-            { success: false, error: 'Invalid data: classes array required' },
-            { status: 400 }
-          );
-        }
-
-        const classResults = await addBadgeClassesToDB(data.classes);
-        const allClasses = await getAllBadgeClassesFromDB();
-
-        return NextResponse.json({
-          success: true,
-          message: `Added ${classResults.added.length} new CSS classes`,
-          added: classResults.added,
-          errors: classResults.errors,
-          total: allClasses.length
-        });
-
-      case 'import':
-        if (!data.badgeTexts || !data.badgeClasses) {
-          return NextResponse.json(
-            { success: false, error: 'Invalid data: badgeTexts and badgeClasses required' },
-            { status: 400 }
-          );
-        }
-
-        const importResult = await importBadgePoolsToDB(data);
-
-        return NextResponse.json({
-          success: true,
-          message: 'Badge pools imported successfully',
-          data: importResult
-        });
-
-      default:
-        return NextResponse.json(
-          { success: false, error: 'Invalid action specified' },
-          { status: 400 }
-        );
+    const session = await getSession();
+    if (!session?.user) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-  } catch (error) {
-    console.error('Error adding badge data:', error);
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      },
-      { status: 500 }
-    );
-  }
-}
-
-export async function PUT(request: NextRequest) {
-  try {
     const body = await request.json();
     const { action, data } = body;
 
     switch (action) {
-      case 'update-text':
-        if (!data.oldText || !data.newText) {
-          return NextResponse.json(
-            { success: false, error: 'Invalid data: oldText and newText required' },
-            { status: 400 }
-          );
+      case 'addText':
+        if (!data.text || !isValidBadgeText(data.text)) {
+          return NextResponse.json({ success: false, error: 'Invalid badge text' }, { status: 400 });
         }
+        await expandBadgeTextPool([data.text]);
+        return NextResponse.json({ success: true, message: 'Badge text added successfully' });
 
-        const textUpdated = await updateBadgeTextInDB(data.oldText, data.newText);
-        if (!textUpdated) {
-          return NextResponse.json(
-            { success: false, error: 'Badge text not found or update failed' },
-            { status: 404 }
-          );
-        }
-
-        return NextResponse.json({
-          success: true,
-          message: 'Badge text updated successfully',
-          oldText: data.oldText,
-          newText: data.newText
-        });
-
-      case 'update-class':
-        if (!data.oldClass || !data.newClass) {
-          return NextResponse.json(
-            { success: false, error: 'Invalid data: oldClass and newClass required' },
-            { status: 400 }
-          );
-        }
-
-        const classUpdated = await updateBadgeClassInDB(data.oldClass, data.newClass);
-        if (!classUpdated) {
-          return NextResponse.json(
-            { success: false, error: 'CSS class not found or update failed' },
-            { status: 400 }
-          );
-        }
-
-        return NextResponse.json({
-          success: true,
-          message: 'CSS class updated successfully',
-          oldClass: data.oldClass,
-          newClass: data.newClass
-        });
-
-      default:
-        return NextResponse.json(
-          { success: false, error: 'Invalid action specified' },
-          { status: 400 }
-        );
-    }
-
-  } catch (error) {
-    console.error('Error updating badge data:', error);
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      },
-      { status: 500 }
-    );
-  }
-}
-
-export async function DELETE(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { action, data } = body;
-
-    switch (action) {
-      case 'remove-text':
+      case 'removeText':
         if (!data.text) {
-          return NextResponse.json(
-            { success: false, error: 'Invalid data: text required' },
-            { status: 400 }
-          );
+          return NextResponse.json({ success: false, error: 'Text is required' }, { status: 400 });
         }
+        await removeBadgeText(data.text);
+        return NextResponse.json({ success: true, message: 'Badge text removed successfully' });
 
-        const textRemoved = await removeBadgeTextFromDB(data.text);
-        if (!textRemoved) {
-          return NextResponse.json(
-            { success: false, error: 'Badge text not found' },
-            { status: 404 }
-          );
+      case 'updateText':
+        if (!data.oldText || !data.newText || !isValidBadgeText(data.newText)) {
+          return NextResponse.json({ success: false, error: 'Invalid text data' }, { status: 400 });
         }
+        await updateBadgeText(data.oldText, data.newText);
+        return NextResponse.json({ success: true, message: 'Badge text updated successfully' });
 
-        const remainingTexts = await getAllBadgeTextsFromDB();
-        return NextResponse.json({
-          success: true,
-          message: 'Badge text removed successfully',
-          removedText: data.text,
-          total: remainingTexts.length
-        });
-
-      case 'remove-class':
-        if (!data.className) {
-          return NextResponse.json(
-            { success: false, error: 'Invalid data: className required' },
-            { status: 400 }
-          );
+      case 'expandPool':
+        if (!data.texts || !Array.isArray(data.texts) || data.texts.length === 0) {
+          return NextResponse.json({ success: false, error: 'texts array is required' }, { status: 400 });
         }
+        await expandBadgeTextPool(data.texts);
+        return NextResponse.json({ success: true, message: 'Badge pool expanded successfully' });
 
-        const classRemoved = await removeBadgeClassFromDB(data.className);
-        if (!classRemoved) {
-          return NextResponse.json(
-            { success: false, error: 'CSS class not found' },
-            { status: 404 }
-          );
+      case 'resetToDefaults':
+        await resetToDefaults();
+        return NextResponse.json({ success: true, message: 'Badge pools reset to defaults' });
+
+      case 'importPools':
+        if (!data || !data.badgeTexts || !data.badgeClasses) {
+          return NextResponse.json({ success: false, error: 'Invalid import data' }, { status: 400 });
         }
-
-        const remainingClasses = await getAllBadgeClassesFromDB();
-        return NextResponse.json({
-          success: true,
-          message: 'CSS class removed successfully',
-          removedClass: data.className,
-          total: remainingClasses.length
-        });
-
-      case 'reset':
-        const resetSuccess = await resetBadgePoolsToDefaults();
-        if (!resetSuccess) {
-          return NextResponse.json(
-            { success: false, error: 'Failed to reset badge pools' },
-            { status: 500 }
-          );
-        }
-        
-        const resetData = await exportBadgePoolsFromDB();
-        return NextResponse.json({
-          success: true,
-          message: 'Badge pools reset to defaults successfully',
-          data: resetData
-        });
+        await importBadgePools(data);
+        return NextResponse.json({ success: true, message: 'Badge pools imported successfully' });
 
       default:
-        return NextResponse.json(
-          { success: false, error: 'Invalid action specified' },
-          { status: 400 }
-        );
+        return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
     }
-
   } catch (error) {
-    console.error('Error removing badge data:', error);
+    console.error('Error in badge management POST:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      },
+      { success: false, error: 'Failed to process request' },
       { status: 500 }
     );
   }
