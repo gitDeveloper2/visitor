@@ -1,16 +1,82 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/features/shared/utils/auth';
-import { verifyPendingApps, verifyAppBadge } from '../../../../utils/verificationService';
 import { connectToDatabase } from '@lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { verifyAppBadge, verifyPendingApps } from '../../../../utils/verificationService';
+import { generateVerificationBadgeHtml, generateAntiTrackingBadges, generateSEOOptimizedBadge } from '@/components/badges/VerificationBadge';
+
+// Enhanced URL validation function (same as user verification)
+function validateVerificationUrl(verificationUrl: string, appUrl: string): { isValid: boolean; error?: string } {
+  try {
+    const verificationUrlObj = new URL(verificationUrl);
+    const appUrlObj = new URL(appUrl);
+    
+    // Check 1: Hostname must match or be a subdomain
+    const verificationHost = verificationUrlObj.hostname.toLowerCase();
+    const appHost = appUrlObj.hostname.toLowerCase();
+    
+    if (verificationHost !== appHost && !verificationHost.endsWith('.' + appHost)) {
+      return {
+        isValid: false,
+        error: 'Verification URL must be on the same domain or subdomain as your app'
+      };
+    }
+    
+    // Check 2: Protocol must be HTTPS (security requirement)
+    if (verificationUrlObj.protocol !== 'https:') {
+      return {
+        isValid: false,
+        error: 'Verification URL must use HTTPS for security'
+      };
+    }
+    
+    // Check 3: URL must not be a common spam/redirect domain
+    const suspiciousDomains = [
+      'bit.ly', 'tinyurl.com', 'goo.gl', 't.co', 'is.gd', 'v.gd', 'ow.ly',
+      'buff.ly', 'adf.ly', 'sh.st', 'adfly.me', 'shorte.st', 'sh.st'
+    ];
+    
+    if (suspiciousDomains.some(domain => verificationHost.includes(domain))) {
+      return {
+        isValid: false,
+        error: 'URL shorteners and redirect services are not allowed for verification'
+      };
+    }
+    
+    // Check 4: URL must not be a file (must be a webpage)
+    const fileExtensions = ['.pdf', '.doc', '.docx', '.txt', '.jpg', '.jpeg', '.png', '.gif', '.mp4', '.avi'];
+    if (fileExtensions.some(ext => verificationUrlObj.pathname.toLowerCase().endsWith(ext))) {
+      return {
+        isValid: false,
+        error: 'Verification URL must point to a webpage, not a file'
+      };
+    }
+    
+    // Check 5: URL must not be an API endpoint
+    if (verificationUrlObj.pathname.includes('/api/') || verificationUrlObj.pathname.includes('/admin/')) {
+      return {
+        isValid: false,
+        error: 'Verification URL cannot be an API endpoint or admin page'
+      };
+    }
+    
+    return { isValid: true };
+    
+  } catch (error) {
+    return {
+      isValid: false,
+      error: 'Invalid URL format'
+    };
+  }
+}
 
 // Import types from verificationService
 interface VerificationScore {
-  total: number;
-  linkScore: number;
-  textScore: number;
-  dofollowScore: number;
-  accessibilityScore: number;
+  total: number;        // Max 100 points
+  linkScore: number;    // 0-35 points
+  textScore: number;    // 0-25 points  
+  dofollowScore: number; // 0-20 points
+  accessibilityScore: number; // 0-10 points
   status: 'pending' | 'verified' | 'needs_review' | 'failed';
   details: {
     hasLink: boolean;
@@ -21,6 +87,8 @@ interface VerificationScore {
     linkCount: number;
     textMatches: string[];
     errors: string[];
+    seoScore: number;
+    antiTrackingScore: number;
   };
 }
 
@@ -116,13 +184,36 @@ export async function POST(request: Request) {
         return NextResponse.json({ message: 'Invalid app ID' }, { status: 400 });
       }
 
-      // Update the app with the new verification URL
+      // Get app details for URL validation
+      const app = await db.collection('userapps').findOne({ _id: new ObjectId(appId) });
+      if (!app) {
+        return NextResponse.json({ message: 'App not found' }, { status: 404 });
+      }
+
+      // Enhanced URL validation
+      const appUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/launch/${app.slug}`;
+      const urlValidationResult = validateVerificationUrl(verificationUrl, appUrl);
+      
+      if (!urlValidationResult.isValid) {
+        return NextResponse.json({ 
+          message: urlValidationResult.error || 'Invalid verification URL' 
+        }, { status: 400 });
+      }
+
+      // Update the app with the new verification URL and enhanced badges
+              const defaultBadge = generateVerificationBadgeHtml(app.name, appUrl, appId, 'default', 'light');
+              const antiTrackingBadges = generateAntiTrackingBadges(app.name, appUrl, appId, 3);
+        const seoOptimizedBadge = generateSEOOptimizedBadge(app.name, appUrl, appId);
+
       await db.collection('userapps').updateOne(
         { _id: new ObjectId(appId) },
         { 
           $set: { 
             verificationUrl: verificationUrl,
             verificationSubmittedAt: new Date(),
+            verificationBadgeHtml: defaultBadge,
+            verificationBadgeVariations: antiTrackingBadges,
+            verificationSeoBadge: seoOptimizedBadge,
             updatedAt: new Date()
           }
         }
@@ -132,8 +223,6 @@ export async function POST(request: Request) {
       const result = await verifyAppBadge(appId);
       console.log('✅ Manual verification result:', result);
 
-      const app = await db.collection('userapps').findOne({ _id: new ObjectId(appId) });
-      
       return NextResponse.json({
         message: 'Manual verification completed',
         appId,
@@ -142,7 +231,12 @@ export async function POST(request: Request) {
         result,
         score: result.score,
         status: result.score.status,
-        nextAction: getNextAction(result.score.status, result.attempt)
+        nextAction: getNextAction(result.score.status, result.attempt),
+        badges: {
+          default: defaultBadge,
+          variations: antiTrackingBadges,
+          seo: seoOptimizedBadge
+        }
       });
 
     } else if (action === 'admin-override' && appId) {
@@ -165,12 +259,12 @@ export async function POST(request: Request) {
 
       // Create admin override attempt
       const adminOverrideAttempt: VerificationAttempt = {
-        attempt: 999, // Special number for admin overrides
+        attempt: 999,
         method: 'admin_override',
         score: {
           total: overrideScore || (overrideStatus === 'verified' ? 100 : 0),
-          linkScore: overrideStatus === 'verified' ? 40 : 0,
-          textScore: overrideStatus === 'verified' ? 30 : 0,
+          linkScore: overrideStatus === 'verified' ? 35 : 0,
+          textScore: overrideStatus === 'verified' ? 25 : 0,
           dofollowScore: overrideStatus === 'verified' ? 20 : 0,
           accessibilityScore: overrideStatus === 'verified' ? 10 : 0,
           status: overrideStatus,
@@ -182,7 +276,9 @@ export async function POST(request: Request) {
             isAccessible: overrideStatus === 'verified',
             linkCount: 0,
             textMatches: [],
-            errors: []
+            errors: [],
+            seoScore: overrideStatus === 'verified' ? 5 : 0,
+            antiTrackingScore: overrideStatus === 'verified' ? 5 : 0
           }
         },
         timestamp: new Date(),
@@ -201,7 +297,7 @@ export async function POST(request: Request) {
             lastVerificationAttempt: 999,
             updatedAt: new Date()
           },
-          $push: { verificationAttempts: adminOverrideAttempt as any }
+          $push: { verificationAttempts: adminOverrideAttempt }
         }
       );
       

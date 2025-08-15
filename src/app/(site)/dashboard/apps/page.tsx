@@ -902,36 +902,102 @@ export default function ManageAppsPage() {
               <strong>Required:</strong> Add this verification badge to your page:
             </Typography>
             <Box sx={{ mt: 1, p: 1, bgcolor: 'grey.100', borderRadius: 1, fontFamily: 'monospace', fontSize: '0.8rem' }}>
-              {activeApp ? generateVerificationBadgeHtml(activeApp.name, `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/launch/${activeApp.slug}`, 'default', 'light') : 'Loading...'}
+              {activeApp?.verificationBadgeHtml ? (
+                <div dangerouslySetInnerHTML={{ __html: activeApp.verificationBadgeHtml }} />
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  Badge not generated yet. Click "Verify" to generate your unique badge.
+                </Typography>
+              )}
             </Box>
           </Alert>
 
-          {/* Verification Scoring Guide */}
+          {/* Badge Variations */}
+          <Alert severity="info" sx={{ mb: 2 }}>
+            <Typography variant="body2">
+              <strong>Anti-Tracking Badge Variations:</strong> Choose any of these variations to avoid SEO crawler detection:
+            </Typography>
+            <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {activeApp?.verificationBadgeVariations ? (
+                activeApp.verificationBadgeVariations.map((badgeHtml, index) => (
+                  <Box key={index} sx={{ p: 1, bgcolor: 'grey.50', borderRadius: 1, fontSize: '0.8rem' }}>
+                    <strong>Variation {index + 1}:</strong> 
+                    <div dangerouslySetInnerHTML={{ __html: badgeHtml }} />
+                  </Box>
+                ))
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  Badge variations not generated yet. Click "Verify" to generate your unique badge variations.
+                </Typography>
+              )}
+            </Box>
+            <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'text.secondary' }}>
+              💡 Each variation uses different text and styling to avoid crawler detection while maintaining verification effectiveness.
+            </Typography>
+          </Alert>
+
+          {/* Enhanced Verification Scoring Guide */}
           <Alert severity="success" sx={{ mb: 2 }}>
             <Typography variant="body2">
-              <strong>Verification Scoring System:</strong>
+              <strong>Enhanced Verification Scoring System:</strong>
             </Typography>
             <Box sx={{ mt: 1, fontSize: '0.8rem' }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                <span>• Link to BasicUtils (40 points)</span>
+                <span>• Link to BasicUtils (35 points)</span>
                 <span>✅ Required</span>
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                <span>• Verification text/badge (30 points)</span>
+                <span>• Verification text/badge (25 points)</span>
                 <span>✅ Required</span>
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                 <span>• Dofollow link (20 points)</span>
                 <span>💡 SEO bonus</span>
               </Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                 <span>• Accessibility (10 points)</span>
                 <span>💡 Quality bonus</span>
               </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                <span>• SEO attributes (5 points)</span>
+                <span>💡 Bonus</span>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>• Anti-tracking variations (10 points)</span>
+                <span>💡 Anti-detection bonus</span>
+              </Box>
             </Box>
             <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
-              <strong>90+ points:</strong> Auto-verified • <strong>70-89 points:</strong> Auto-verified with warning • <strong>50-69 points:</strong> Admin review • <strong>&lt;50 points:</strong> Failed
+              <strong>95+ points:</strong> Auto-verified (Excellent) • <strong>80-94 points:</strong> Auto-verified (Good) • <strong>65-79 points:</strong> Admin review • <strong>50-64 points:</strong> Admin review • <strong>&lt;50 points:</strong> Failed
             </Typography>
+          </Alert>
+
+          {/* Badge Assignment Info */}
+          {activeApp?.verificationBadgeText && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              <Typography variant="body2">
+                <strong>Your Unique Badge Assignment:</strong>
+              </Typography>
+              <Box sx={{ mt: 1, fontSize: '0.8rem' }}>
+                <Box sx={{ mb: 0.5 }}>• <strong>Badge Text:</strong> "{activeApp.verificationBadgeText}"</Box>
+                <Box sx={{ mb: 0.5 }}>• <strong>CSS Class:</strong> "{activeApp.verificationBadgeClass}"</Box>
+                <Box sx={{ mb: 0.5 }}>• <strong>App ID:</strong> {activeApp._id}</Box>
+                <Box sx={{ mb: 0.5 }}>• <strong>Status:</strong> {activeApp.verificationStatus}</Box>
+              </Box>
+            </Alert>
+          )}
+
+          {/* Security Requirements */}
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            <Typography variant="body2">
+              <strong>Security Requirements:</strong>
+            </Typography>
+            <Box sx={{ mt: 1, fontSize: '0.8rem' }}>
+              <Box sx={{ mb: 0.5 }}>• Verification URL must be on the same domain as your app</Box>
+              <Box sx={{ mb: 0.5 }}>• Must use HTTPS protocol</Box>
+              <Box sx={{ mb: 0.5 }}>• Cannot be a file, API endpoint, or admin page</Box>
+              <Box sx={{ mb: 0.5 }}>• No URL shorteners or redirect services allowed</Box>
+            </Box>
           </Alert>
           
           <Box sx={{ display: 'flex', gap: 1 }}>

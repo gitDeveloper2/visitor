@@ -39,6 +39,13 @@ interface IApp {
   verificationAttempts?: number;
   verificationBadgeHtml?: string;
   requiresVerification?: boolean; // true for free apps
+  
+  // Badge assignment fields for consistency
+  verificationBadgeText?: string; // The specific text assigned to this app
+  verificationBadgeClass?: string; // The specific CSS class assigned to this app
+  verificationBadgeVariations?: string[]; // All HTML variations with consistent text
+  verificationBadgeTextPool?: string[]; // Available text variations for this app
+  verificationBadgeClassPool?: string[]; // Available CSS class variations for this app
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -89,6 +96,13 @@ const appSchema = new Schema<IAppDocument>(
     verificationAttempts: { type: Number, default: 0 },
     verificationBadgeHtml: { type: String },
     requiresVerification: { type: Boolean, default: false },
+    
+    // Badge assignment fields for consistency
+    verificationBadgeText: { type: String },
+    verificationBadgeClass: { type: String },
+    verificationBadgeVariations: { type: [String], default: [] },
+    verificationBadgeTextPool: { type: [String], default: [] },
+    verificationBadgeClassPool: { type: [String], default: [] },
   },
   { timestamps: true }
 );

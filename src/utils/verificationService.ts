@@ -17,6 +17,8 @@ interface VerificationScore {
     linkCount: number;
     textMatches: string[];
     errors: string[];
+    seoScore: number;
+    antiTrackingScore: number;
   };
 }
 
@@ -67,6 +69,19 @@ export async function verifyAppBadge(appId: string): Promise<VerificationResult>
 
     const appUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/launch/${app.slug}`;
     
+    // Enhanced URL validation - ensure verification URL is a child of app URL
+    const urlValidationResult = validateVerificationUrl(app.verificationUrl, appUrl);
+    if (!urlValidationResult.isValid) {
+      return {
+        success: false,
+        found: false,
+        score: createEmptyScore(),
+        error: urlValidationResult.error,
+        method: 'static',
+        attempt: 1
+      };
+    }
+    
     // Progressive verification attempts
     const result = await progressiveVerification(app.verificationUrl, appUrl, app.name, appId);
     
@@ -88,6 +103,71 @@ export async function verifyAppBadge(appId: string): Promise<VerificationResult>
   }
 }
 
+// Enhanced URL validation function
+function validateVerificationUrl(verificationUrl: string, appUrl: string): { isValid: boolean; error?: string } {
+  try {
+    const verificationUrlObj = new URL(verificationUrl);
+    const appUrlObj = new URL(appUrl);
+    
+    // Check 1: Hostname must match or be a subdomain
+    const verificationHost = verificationUrlObj.hostname.toLowerCase();
+    const appHost = appUrlObj.hostname.toLowerCase();
+    
+    if (verificationHost !== appHost && !verificationHost.endsWith('.' + appHost)) {
+      return {
+        isValid: false,
+        error: 'Verification URL must be on the same domain or subdomain as your app'
+      };
+    }
+    
+    // Check 2: Protocol must be HTTPS (security requirement)
+    if (verificationUrlObj.protocol !== 'https:') {
+      return {
+        isValid: false,
+        error: 'Verification URL must use HTTPS for security'
+      };
+    }
+    
+    // Check 3: URL must not be a common spam/redirect domain
+    const suspiciousDomains = [
+      'bit.ly', 'tinyurl.com', 'goo.gl', 't.co', 'is.gd', 'v.gd', 'ow.ly',
+      'buff.ly', 'adf.ly', 'sh.st', 'adfly.me', 'shorte.st', 'sh.st'
+    ];
+    
+    if (suspiciousDomains.some(domain => verificationHost.includes(domain))) {
+      return {
+        isValid: false,
+        error: 'URL shorteners and redirect services are not allowed for verification'
+      };
+    }
+    
+    // Check 4: URL must not be a file (must be a webpage)
+    const fileExtensions = ['.pdf', '.doc', '.docx', '.txt', '.jpg', '.jpeg', '.png', '.gif', '.mp4', '.avi'];
+    if (fileExtensions.some(ext => verificationUrlObj.pathname.toLowerCase().endsWith(ext))) {
+      return {
+        isValid: false,
+        error: 'Verification URL must point to a webpage, not a file'
+      };
+    }
+    
+    // Check 5: URL must not be an API endpoint
+    if (verificationUrlObj.pathname.includes('/api/') || verificationUrlObj.pathname.includes('/admin/')) {
+      return {
+        isValid: false,
+        error: 'Verification URL cannot be an API endpoint or admin page'
+      };
+    }
+    
+    return { isValid: true };
+    
+  } catch (error) {
+    return {
+      isValid: false,
+      error: 'Invalid URL format'
+    };
+  }
+}
+
 function createEmptyScore(): VerificationScore {
   return {
     total: 0,
@@ -104,7 +184,9 @@ function createEmptyScore(): VerificationScore {
       isAccessible: false,
       linkCount: 0,
       textMatches: [],
-      errors: []
+      errors: [],
+      seoScore: 0,
+      antiTrackingScore: 0
     }
   };
 }
@@ -283,7 +365,9 @@ function calculateVerificationScore(html: string, expectedAppUrl: string, appNam
     isAccessible: false,
     linkCount: 0,
     textMatches: [],
-    errors: []
+    errors: [],
+    seoScore: 0,
+    antiTrackingScore: 0
   };
 
   try {
@@ -299,7 +383,7 @@ function calculateVerificationScore(html: string, expectedAppUrl: string, appNam
     details.linkCount = links.length;
     details.hasLink = links.length > 0;
 
-    // Check if any link points to our app (with flexible matching)
+    // Check if any link points to our app (with enhanced matching)
     const hasCorrectUrl = links.some(link => {
       try {
         const url = new URL(link, 'http://example.com');
@@ -321,15 +405,28 @@ function calculateVerificationScore(html: string, expectedAppUrl: string, appNam
 
     details.hasCorrectUrl = hasCorrectUrl;
 
-    // Enhanced text verification with multiple patterns
+    // Enhanced text verification with multiple patterns and anti-tracking variations
     const verificationTexts = [
+      // Standard verification texts
       'BasicUtils',
       'Verified App',
       'Verified on BasicUtils',
       'View on BasicUtils',
       appName,
       'basicutils.com',
-      'basicutils'
+      'basicutils',
+      
+      // Anti-tracking variations (different from standard to avoid crawler detection)
+      'Verified by BasicUtils',
+      'Featured on BasicUtils',
+      'Available on BasicUtils',
+      'Discover on BasicUtils',
+      'Explore on BasicUtils',
+      'Check out on BasicUtils',
+      'Find on BasicUtils',
+      'Browse on BasicUtils',
+      'View details on BasicUtils',
+      'Learn more on BasicUtils'
     ];
 
     const foundTexts = verificationTexts.filter(text => 
@@ -339,38 +436,93 @@ function calculateVerificationScore(html: string, expectedAppUrl: string, appNam
     details.textMatches = foundTexts;
     const hasCorrectText = foundTexts.length > 0;
 
-    // Check if it's a dofollow link (no rel="nofollow")
+    // Enhanced dofollow link checking with better regex
     let isDofollow = false;
+    let dofollowLinkHtml = '';
+    
     if (hasCorrectUrl) {
-      const dofollowRegex = new RegExp(
-        `<a[^>]+href\\s*=\\s*["']${expectedAppUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'][^>]*>`,
-        'i'
+      // Find the specific link that matches our expected URL
+      const matchingLinkRegex = new RegExp(
+        `<a[^>]+href\\s*=\\s*["']${expectedAppUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'][^>]*>.*?</a>`,
+        'is'
       );
       
-      const linkMatch = html.match(dofollowRegex);
+      const linkMatch = html.match(matchingLinkRegex);
       if (linkMatch) {
+        dofollowLinkHtml = linkMatch[0];
         const relMatch = linkMatch[0].match(/rel\s*=\s*["']([^"']+)["']/i);
         isDofollow = !relMatch || !relMatch[1].toLowerCase().includes('nofollow');
+        
+        // Additional SEO checks
+        const hasTitle = /title\s*=\s*["']([^"']+)["']/i.test(linkMatch[0]);
+        const hasAlt = /alt\s*=\s*["']([^'']+)["']/i.test(linkMatch[0]);
+        const hasDescription = /aria-label\s*=\s*["']([^'']+)["']/i.test(linkMatch[0]);
+        
+        // Bonus points for accessibility and SEO
+        if (hasTitle || hasAlt || hasDescription) {
+          details.seoScore += 5;
+        }
       }
     }
 
     details.isDofollow = isDofollow;
     details.isAccessible = hasCorrectUrl && hasCorrectText;
 
-    // Calculate scores
-    const linkScore = hasCorrectUrl ? 40 : 0;
-    const textScore = hasCorrectText ? Math.min(30, foundTexts.length * 10) : 0;
+    // Anti-tracking score calculation
+    // Check for variations in link structure and text to avoid crawler detection
+    let antiTrackingScore = 0;
+    
+    if (hasCorrectUrl && hasCorrectText) {
+      // Check if the link structure is different from standard patterns
+      const linkVariations = [
+        // Different link structures
+        /<a[^>]+class\s*=\s*["'][^"']*verif[^"']*["'][^>]*>/i,
+        /<a[^>]+id\s*=\s*["'][^"']*verif[^"']*["'][^>]*>/i,
+        /<a[^>]+data-verif[^>]*>/i,
+        
+        // Different text patterns
+        /verified\s+by/i,
+        /featured\s+on/i,
+        /available\s+on/i,
+        /discover\s+on/i,
+        /explore\s+on/i
+      ];
+      
+      linkVariations.forEach(pattern => {
+        if (pattern.test(html)) {
+          antiTrackingScore += 2;
+        }
+      });
+      
+      // Check for custom styling (indicates manual implementation)
+      const hasCustomStyling = /style\s*=\s*["'][^"']*verif[^"']*["']/i.test(html) ||
+                              /class\s*=\s*["'][^"']*verif[^"']*["']/i.test(html);
+      
+      if (hasCustomStyling) {
+        antiTrackingScore += 3;
+      }
+    }
+    
+    details.antiTrackingScore = Math.min(antiTrackingScore, 10);
+
+    // Calculate enhanced scores
+    const linkScore = hasCorrectUrl ? 35 : 0;
+    const textScore = hasCorrectText ? Math.min(25, foundTexts.length * 8) : 0;
     const dofollowScore = isDofollow ? 20 : 0;
     const accessibilityScore = details.isAccessible ? 10 : 0;
+    const seoBonus = details.seoScore;
+    const antiTrackingBonus = details.antiTrackingScore;
 
-    const total = linkScore + textScore + dofollowScore + accessibilityScore;
+    const total = linkScore + textScore + dofollowScore + accessibilityScore + seoBonus + antiTrackingBonus;
 
-    // Determine status based on score
+    // Enhanced status determination with better thresholds
     let status: VerificationScore['status'];
-    if (total >= 90) {
+    if (total >= 95) {
       status = 'verified';
-    } else if (total >= 70) {
+    } else if (total >= 80) {
       status = 'verified';
+    } else if (total >= 65) {
+      status = 'needs_review';
     } else if (total >= 50) {
       status = 'needs_review';
     } else {
@@ -384,7 +536,11 @@ function calculateVerificationScore(html: string, expectedAppUrl: string, appNam
       dofollowScore,
       accessibilityScore,
       status,
-      details
+      details: {
+        ...details,
+        seoScore: seoBonus,
+        antiTrackingScore: antiTrackingBonus
+      }
     };
 
   } catch (error) {

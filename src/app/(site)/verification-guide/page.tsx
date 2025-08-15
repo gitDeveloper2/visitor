@@ -66,39 +66,69 @@ export default function VerificationGuidePage() {
       {/* New Scoring System Overview */}
       <Paper sx={{ p: 4, mb: 4, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
         <Typography variant="h4" gutterBottom align="center">
-          🎯 New Intelligent Verification System
+          🚀 Enhanced Intelligent Verification System
         </Typography>
         <Typography variant="body1" align="center" sx={{ mb: 3 }}>
-          We've upgraded to a smart scoring system that provides detailed feedback and faster verification
+          We've upgraded to a comprehensive scoring system with anti-tracking measures and enhanced security
         </Typography>
         
         <Grid container spacing={3} sx={{ mt: 2 }}>
           <Grid item xs={12} md={3}>
             <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="h3" sx={{ fontWeight: 'bold' }}>90+</Typography>
+              <Typography variant="h3" sx={{ fontWeight: 'bold' }}>95+</Typography>
               <Typography variant="body2">Auto-Verified</Typography>
-              <Typography variant="caption">Instant approval</Typography>
+              <Typography variant="caption">Excellent quality</Typography>
             </Box>
           </Grid>
           <Grid item xs={12} md={3}>
             <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="h3" sx={{ fontWeight: 'bold' }}>70-89</Typography>
+              <Typography variant="h3" sx={{ fontWeight: 'bold' }}>80-94</Typography>
               <Typography variant="body2">Auto-Verified</Typography>
-              <Typography variant="caption">With minor warnings</Typography>
+              <Typography variant="caption">Good quality</Typography>
             </Box>
           </Grid>
           <Grid item xs={12} md={3}>
             <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="h3" sx={{ fontWeight: 'bold' }}>50-69</Typography>
+              <Typography variant="h3" sx={{ fontWeight: 'bold' }}>65-79</Typography>
               <Typography variant="body2">Admin Review</Typography>
               <Typography variant="caption">Human verification</Typography>
             </Box>
           </Grid>
           <Grid item xs={12} md={3}>
             <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="h3" sx={{ fontWeight: 'bold' }}>&lt;50</Typography>
-              <Typography variant="body2">Failed</Typography>
-              <Typography variant="caption">Needs fixes</Typography>
+              <Typography variant="h3" sx={{ fontWeight: 'bold' }}>&lt;65</Typography>
+              <Typography variant="body2">Needs Review</Typography>
+              <Typography variant="caption">Requires fixes</Typography>
+            </Box>
+          </Grid>
+        </Grid>
+      </Paper>
+
+      {/* New Features Highlight */}
+      <Paper sx={{ p: 4, mb: 4, background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white' }}>
+        <Typography variant="h5" gutterBottom align="center">
+          🆕 New Features & Enhancements
+        </Typography>
+        <Grid container spacing={3} sx={{ mt: 2 }}>
+          <Grid item xs={12} md={4}>
+            <Box sx={{ textAlign: 'center' }}>
+              <Security sx={{ fontSize: 40, mb: 1 }} />
+              <Typography variant="h6">Enhanced Security</Typography>
+              <Typography variant="body2">Domain validation, HTTPS requirement, spam protection</Typography>
+            </Box>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Box sx={{ textAlign: 'center' }}>
+              <TrendingUp sx={{ fontSize: 40, mb: 1 }} />
+              <Typography variant="h6">SEO Optimization</Typography>
+              <Typography variant="body2">Dofollow links, structured data, better search visibility</Typography>
+            </Box>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Box sx={{ textAlign: 'center' }}>
+              <Assignment sx={{ fontSize: 40, mb: 1 }} />
+              <Typography variant="h6">Anti-Tracking</Typography>
+              <Typography variant="body2">Multiple badge variations to avoid crawler detection</Typography>
             </Box>
           </Grid>
         </Grid>
@@ -165,13 +195,13 @@ export default function VerificationGuidePage() {
                 <Box sx={{ mb: 2 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                     <Typography variant="body2">
-                      <strong>Link to BasicUtils (40 points)</strong>
+                      <strong>Link to BasicUtils (35 points)</strong>
                     </Typography>
                     <Chip label="Required" color="error" size="small" />
                   </Box>
                   <LinearProgress 
                     variant="determinate" 
-                    value={40} 
+                    value={35} 
                     sx={{ height: 8, borderRadius: 4 }}
                   />
                   <Typography variant="caption" color="text.secondary">
@@ -184,13 +214,13 @@ export default function VerificationGuidePage() {
                 <Box sx={{ mb: 2 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                     <Typography variant="body2">
-                      <strong>Verification Text/Badge (30 points)</strong>
+                      <strong>Verification Text/Badge (25 points)</strong>
                     </Typography>
                     <Chip label="Required" color="error" size="small" />
                   </Box>
                   <LinearProgress 
                     variant="determinate" 
-                    value={30} 
+                    value={25} 
                     sx={{ height: 8, borderRadius: 4 }}
                   />
                   <Typography variant="caption" color="text.secondary">
@@ -233,6 +263,44 @@ export default function VerificationGuidePage() {
                   />
                   <Typography variant="caption" color="text.secondary">
                     Badge should be visible and accessible to users
+                  </Typography>
+                </Box>
+              </Grid>
+
+              <Grid item xs={12}>
+                <Box sx={{ mb: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                    <Typography variant="body2">
+                      <strong>SEO Attributes (5 points)</strong>
+                    </Typography>
+                    <Chip label="Bonus" color="info" size="small" />
+                  </Box>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={5} 
+                    sx={{ height: 8, borderRadius: 4 }}
+                  />
+                  <Typography variant="caption" color="text.secondary">
+                    Bonus for title, alt, or aria-label attributes on the link
+                  </Typography>
+                </Box>
+              </Grid>
+
+              <Grid item xs={12}>
+                <Box sx={{ mb: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                    <Typography variant="body2">
+                      <strong>Anti-Tracking Variations (10 points)</strong>
+                    </Typography>
+                    <Chip label="Anti-Detection" color="warning" size="small" />
+                  </Box>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={10} 
+                    sx={{ height: 8, borderRadius: 4 }}
+                  />
+                  <Typography variant="caption" color="text.secondary">
+                    Bonus for using different badge variations and custom styling
                   </Typography>
                 </Box>
               </Grid>
@@ -331,49 +399,150 @@ export default function VerificationGuidePage() {
         </Grid>
 
         <Grid item xs={12} md={4}>
+          {/* Security Requirements */}
+          <Paper sx={{ p: 4, mb: 4, background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)', color: 'white' }}>
+            <Typography variant="h5" gutterBottom>
+              🔒 Security Requirements
+            </Typography>
+            
+            <Typography variant="body2" sx={{ mb: 3 }}>
+              To prevent spam and ensure quality verification, we have strict security requirements:
+            </Typography>
+            
+            <List dense sx={{ color: 'white' }}>
+              <ListItem sx={{ px: 0 }}>
+                <ListItemIcon sx={{ minWidth: 32 }}>
+                  <CheckCircle sx={{ color: 'white' }} />
+                </ListItemIcon>
+                <ListItemText 
+                  primary="Same Domain Only"
+                  secondary="Verification URL must be on your website's domain"
+                />
+              </ListItem>
+              
+              <ListItem sx={{ px: 0 }}>
+                <ListItemIcon sx={{ minWidth: 32 }}>
+                  <CheckCircle sx={{ color: 'white' }} />
+                </ListItemIcon>
+                <ListItemText 
+                  primary="HTTPS Required"
+                  secondary="All verification URLs must use secure HTTPS protocol"
+                />
+              </ListItem>
+              
+              <ListItem sx={{ px: 0 }}>
+                <ListItemIcon sx={{ minWidth: 32 }}>
+                  <CheckCircle sx={{ color: 'white' }} />
+                </ListItemIcon>
+                <ListItemText 
+                  primary="No URL Shorteners"
+                  secondary="Blocks bit.ly, tinyurl.com, and other redirect services"
+                />
+              </ListItem>
+              
+              <ListItem sx={{ px: 0 }}>
+                <ListItemIcon sx={{ minWidth: 32 }}>
+                  <CheckCircle sx={{ color: 'white' }} />
+                </ListItemIcon>
+                <ListItemText 
+                  primary="Webpages Only"
+                  secondary="Cannot be files, API endpoints, or admin pages"
+                />
+              </ListItem>
+            </List>
+          </Paper>
+
+          {/* Anti-Tracking Features */}
+          <Paper sx={{ p: 4, mb: 4, background: 'linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%)', color: 'white' }}>
+            <Typography variant="h5" gutterBottom>
+              🕵️ Anti-Tracking Features
+            </Typography>
+            
+            <Typography variant="body2" sx={{ mb: 3 }}>
+              Our system generates multiple badge variations to avoid SEO crawler detection:
+            </Typography>
+            
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>Dynamic Text Variations:</Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                {['Verified by', 'Featured on', 'Available on', 'Discover on', 'Explore on'].map((text) => (
+                  <Chip 
+                    key={text} 
+                    label={`${text} BasicUtils`} 
+                    size="small" 
+                    sx={{ 
+                      bgcolor: 'rgba(255,255,255,0.2)', 
+                      color: 'white',
+                      fontSize: '0.7rem'
+                    }} 
+                  />
+                ))}
+              </Box>
+            </Box>
+            
+            <Typography variant="body2">
+              💡 Each verification generates a random badge variation to prevent pattern recognition while maintaining verification effectiveness.
+            </Typography>
+          </Paper>
+
           <Paper sx={{ p: 4, mb: 4 }}>
             <Typography variant="h5" gutterBottom>
-              Verification Badge Examples
+              🎨 Anti-Tracking Badge Variations
             </Typography>
             
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Choose from three different badge styles to match your website's design:
+              Choose from multiple badge styles with dynamic text variations to avoid SEO crawler detection:
             </Typography>
             
             <Stack spacing={3}>
               <Box>
                 <Typography variant="subtitle2" gutterBottom>
-                  Default Style
+                  Default Style (Random Text)
                 </Typography>
                 <Box 
                   dangerouslySetInnerHTML={{ 
-                    __html: generateVerificationBadgeHtml(exampleAppName, exampleAppUrl, 'default', 'light')
+                    __html: generateVerificationBadgeHtml(exampleAppName, exampleAppUrl, 'example-app-id', 'default', 'light')
                   }}
                 />
+                <Typography variant="caption" color="text.secondary">
+                  Full-featured badge with random text variation
+                </Typography>
               </Box>
               
               <Box>
                 <Typography variant="subtitle2" gutterBottom>
-                  Compact Style
+                  Compact Style (Random Text)
                 </Typography>
                 <Box 
                   dangerouslySetInnerHTML={{ 
-                    __html: generateVerificationBadgeHtml(exampleAppName, exampleAppUrl, 'compact', 'light')
+                    __html: generateVerificationBadgeHtml(exampleAppName, exampleAppUrl, 'example-app-id', 'compact', 'light')
                   }}
                 />
+                <Typography variant="caption" color="text.secondary">
+                  Smaller badge with random text variation
+                </Typography>
               </Box>
               
               <Box>
                 <Typography variant="subtitle2" gutterBottom>
-                  Minimal Style
+                  Minimal Style (Random Text)
                 </Typography>
                 <Box 
                   dangerouslySetInnerHTML={{ 
-                    __html: generateVerificationBadgeHtml(exampleAppName, exampleAppUrl, 'minimal', 'light')
+                    __html: generateVerificationBadgeHtml(exampleAppName, exampleAppUrl, 'example-app-id', 'minimal', 'light')
                   }}
                 />
+                <Typography variant="caption" color="text.secondary">
+                  Smallest badge with random text variation
+                </Typography>
               </Box>
             </Stack>
+
+            <Alert severity="info" sx={{ mt: 3 }}>
+              <Typography variant="body2">
+                <strong>💡 Anti-Tracking Benefits:</strong> Each badge uses different text, CSS classes, and styling to prevent SEO crawlers from detecting patterns while maintaining verification effectiveness.
+              </Typography>
+            </Alert>
           </Paper>
 
           <Paper sx={{ p: 4, mb: 4 }}>

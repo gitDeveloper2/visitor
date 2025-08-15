@@ -2,7 +2,78 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/features/shared/utils/auth';
 import { connectToDatabase } from '@lib/mongodb';
 import { ObjectId } from 'mongodb';
-import { generateVerificationBadgeHtml } from '@/components/badges/VerificationBadge';
+import { generateVerificationBadgeHtml, generateAntiTrackingBadges, generateSEOOptimizedBadge } from '@/components/badges/VerificationBadge';
+import { 
+  assignBadgeTextToApp, 
+  assignBadgeClassToApp, 
+  getBadgeTextVariations, 
+  getBadgeClassVariations 
+} from '@/utils/badgeAssignmentService';
+
+// Enhanced URL validation function
+function validateVerificationUrl(verificationUrl: string, appUrl: string): { isValid: boolean; error?: string } {
+  try {
+    const verificationUrlObj = new URL(verificationUrl);
+    const appUrlObj = new URL(appUrl);
+    
+    // Check 1: Hostname must match or be a subdomain
+    const verificationHost = verificationUrlObj.hostname.toLowerCase();
+    const appHost = appUrlObj.hostname.toLowerCase();
+    
+    if (verificationHost !== appHost && !verificationHost.endsWith('.' + appHost)) {
+      return {
+        isValid: false,
+        error: 'Verification URL must be on the same domain or subdomain as your app'
+      };
+    }
+    
+    // Check 2: Protocol must be HTTPS (security requirement)
+    if (verificationUrlObj.protocol !== 'https:') {
+      return {
+        isValid: false,
+        error: 'Verification URL must use HTTPS for security'
+      };
+    }
+    
+    // Check 3: URL must not be a common spam/redirect domain
+    const suspiciousDomains = [
+      'bit.ly', 'tinyurl.com', 'goo.gl', 't.co', 'is.gd', 'v.gd', 'ow.ly',
+      'buff.ly', 'adf.ly', 'sh.st', 'adfly.me', 'shorte.st', 'sh.st'
+    ];
+    
+    if (suspiciousDomains.some(domain => verificationHost.includes(domain))) {
+      return {
+        isValid: false,
+        error: 'URL shorteners and redirect services are not allowed for verification'
+      };
+    }
+    
+    // Check 4: URL must not be a file (must be a webpage)
+    const fileExtensions = ['.pdf', '.doc', '.docx', '.txt', '.jpg', '.jpeg', '.png', '.gif', '.mp4', '.avi'];
+    if (fileExtensions.some(ext => verificationUrlObj.pathname.toLowerCase().endsWith(ext))) {
+      return {
+        isValid: false,
+        error: 'Verification URL must point to a webpage, not a file'
+      };
+    }
+    
+    // Check 5: URL must not be an API endpoint
+    if (verificationUrlObj.pathname.includes('/api/') || verificationUrlObj.pathname.includes('/admin/')) {
+      return {
+        isValid: false,
+        error: 'Verification URL cannot be an API endpoint or admin page'
+      };
+    }
+    
+    return { isValid: true };
+    
+  } catch (error) {
+    return {
+      isValid: false,
+      error: 'Invalid URL format'
+    };
+  }
+}
 
 export async function POST(
   request: Request,
@@ -58,11 +129,28 @@ export async function POST(
       }, { status: 400 });
     }
 
-    // Generate verification badge HTML
+    // Enhanced URL validation
     const appUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/launch/${app.slug}`;
-    const badgeHtml = generateVerificationBadgeHtml(app.name, appUrl, 'default', 'light');
+    const urlValidationResult = validateVerificationUrl(verificationUrl, appUrl);
+    
+    if (!urlValidationResult.isValid) {
+      return NextResponse.json({ 
+        message: urlValidationResult.error || 'Invalid verification URL' 
+      }, { status: 400 });
+    }
 
-    // Update app with verification request
+    // Generate deterministic badge assignments for this app
+    const assignedBadgeText = await assignBadgeTextToApp(appId);
+    const assignedBadgeClass = await assignBadgeClassToApp(appId);
+    const badgeTextVariations = await getBadgeTextVariations(appId, 3);
+    const badgeClassVariations = await getBadgeClassVariations(appId, 3);
+
+    // Generate multiple badge variations for anti-tracking with consistent text
+    const defaultBadge = generateVerificationBadgeHtml(app.name, appUrl, appId, 'default', 'light');
+    const antiTrackingBadges = generateAntiTrackingBadges(app.name, appUrl, appId, 3);
+    const seoOptimizedBadge = generateSEOOptimizedBadge(app.name, appUrl, appId);
+
+    // Update app with verification request and badge assignments
     const updateResult = await db.collection('userapps').updateOne(
       { _id: new ObjectId(appId) },
       {
@@ -70,7 +158,16 @@ export async function POST(
           verificationStatus: 'pending',
           verificationUrl: verificationUrl,
           verificationSubmittedAt: new Date(),
-          verificationBadgeHtml: badgeHtml,
+          verificationBadgeHtml: defaultBadge,
+          verificationBadgeVariations: antiTrackingBadges,
+          verificationSeoBadge: seoOptimizedBadge,
+          
+          // Store deterministic badge assignments for consistency
+          verificationBadgeText: assignedBadgeText,
+          verificationBadgeClass: assignedBadgeClass,
+          verificationBadgeTextPool: badgeTextVariations,
+          verificationBadgeClassPool: badgeClassVariations,
+          
           requiresVerification: true,
           updatedAt: new Date(),
         },
@@ -85,7 +182,9 @@ export async function POST(
     return NextResponse.json({
       message: 'Verification request submitted successfully',
       verificationUrl: verificationUrl,
-      badgeHtml: badgeHtml,
+      badgeHtml: defaultBadge,
+      badgeVariations: antiTrackingBadges,
+      seoBadge: seoOptimizedBadge,
       status: 'pending'
     });
 
