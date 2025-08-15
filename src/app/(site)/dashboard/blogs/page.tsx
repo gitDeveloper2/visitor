@@ -277,14 +277,14 @@ export default function ManageBlogsPage() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <span>Drafts ({drafts.length})</span>
                   {drafts.filter(d => d.premiumReady).length > 0 && (
-                    <Chip
-                      label={`${drafts.filter(d => d.premiumReady).length} Premium`}
-                      color="success"
-                      size="small"
-                      variant="filled"
-                      icon={<span style={{ fontSize: '12px' }}>💎</span>}
-                      sx={{ height: '20px', fontSize: '0.7rem' }}
-                    />
+                                      <Chip
+                    label={`${drafts.filter(d => d.premiumReady).length} Premium`}
+                    color="default"
+                    size="small"
+                    variant="outlined"
+                    icon={<span style={{ fontSize: '12px' }}>💎</span>}
+                    sx={{ height: '20px', fontSize: '0.7rem' }}
+                  />
                   )}
                 </Box>
               } 

@@ -301,20 +301,7 @@ export const createAppTheme = (mode: "light" | "dark") => {
           },
         },
       },
-      MuiCard: {
-        styleOverrides: {
-          root: {
-            backgroundImage: "none",
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-            borderRadius: '12px',
-            transition: 'all 0.3s ease-in-out',
-            '&:hover': {
-              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.15)',
-              transform: 'translateY(-2px)',
-            },
-          },
-        },
-      },
+
       MuiTextField: {
         styleOverrides: {
           root: {
@@ -347,17 +334,71 @@ export const createAppTheme = (mode: "light" | "dark") => {
       MuiChip: {
         styleOverrides: {
           root: {
-            backgroundColor: mode === "light" 
-              ? "hsl(263 70% 50% / 0.1)" 
-              : "hsl(263 70% 50% / 0.2)",
-            color: "hsl(263 70% 50%)",
-            borderColor: mode === "light" 
-              ? "hsl(263 70% 50% / 0.2)" 
-              : "hsl(263 70% 50% / 0.3)",
-            "&:hover": {
-              backgroundColor: mode === "light" 
-                ? "hsl(263 70% 50% / 0.2)" 
-                : "hsl(263 70% 50% / 0.3)",
+            fontWeight: 600,
+            fontSize: '0.875rem',
+            // Default chip styling - works in both themes
+            '&.MuiChip-colorDefault': {
+              backgroundColor: mode === 'light' 
+                ? 'hsl(240 5% 96.1%)'  // Light grey background
+                : 'hsl(240 5% 15%)',   // Dark grey background
+              color: mode === 'light' 
+                ? 'hsl(240 5% 34.8%)'  // Dark grey text
+                : 'hsl(240 5% 64.9%)', // Light grey text
+              borderColor: mode === 'light' 
+                ? 'hsl(240 5% 84.9%)'  // Light border
+                : 'hsl(240 3% 15%)',   // Dark border
+            },
+            // Filled chips with proper text contrast
+            '&.MuiChip-colorSuccess.MuiChip-variantFilled': {
+              backgroundColor: 'hsl(142 70% 45%)',
+              color: 'white', // Always light text for dark green
+              borderColor: 'hsl(142 70% 35%)',
+            },
+            '&.MuiChip-colorWarning.MuiChip-variantFilled': {
+              backgroundColor: 'hsl(38 90% 55%)', 
+              color: 'hsl(38 90% 15%)', // Dark text for light orange
+              borderColor: 'hsl(38 90% 45%)',
+            },
+            '&.MuiChip-colorError.MuiChip-variantFilled': {
+              backgroundColor: 'hsl(0 75% 55%)',
+              color: 'white', // Always light text for dark red
+              borderColor: 'hsl(0 75% 45%)',
+            },
+            '&.MuiChip-colorInfo.MuiChip-variantFilled': {
+              backgroundColor: 'hsl(200 90% 50%)',
+              color: 'white', // Always light text for dark blue
+              borderColor: 'hsl(200 90% 40%)',
+            },
+            '&.MuiChip-colorPrimary.MuiChip-variantFilled': {
+              backgroundColor: 'hsl(263 70% 50%)',
+              color: 'white', // Always light text for dark purple
+              borderColor: 'hsl(263 70% 40%)',
+            },
+            // Outlined chips - use theme-aware colors
+            '&.MuiChip-colorSuccess.MuiChip-variantOutlined': {
+              backgroundColor: 'transparent',
+              color: mode === 'light' ? 'hsl(142 70% 25%)' : 'hsl(142 70% 55%)',
+              borderColor: mode === 'light' ? 'hsl(142 70% 35%)' : 'hsl(142 70% 45%)',
+            },
+            '&.MuiChip-colorWarning.MuiChip-variantOutlined': {
+              backgroundColor: 'transparent',
+              color: mode === 'light' ? 'hsl(38 90% 35%)' : 'hsl(38 90% 65%)',
+              borderColor: mode === 'light' ? 'hsl(38 90% 45%)' : 'hsl(38 90% 55%)',
+            },
+            '&.MuiChip-colorError.MuiChip-variantOutlined': {
+              backgroundColor: 'transparent',
+              color: mode === 'light' ? 'hsl(0 75% 35%)' : 'hsl(0 75% 65%)',
+              borderColor: mode === 'light' ? 'hsl(0 75% 45%)' : 'hsl(0 75% 55%)',
+            },
+            '&.MuiChip-colorInfo.MuiChip-variantOutlined': {
+              backgroundColor: 'transparent',
+              color: mode === 'light' ? 'hsl(200 90% 30%)' : 'hsl(200 90% 60%)',
+              borderColor: mode === 'light' ? 'hsl(200 90% 40%)' : 'hsl(200 90% 50%)',
+            },
+            '&.MuiChip-colorPrimary.MuiChip-variantOutlined': {
+              backgroundColor: 'transparent',
+              color: mode === 'light' ? 'hsl(263 70% 30%)' : 'hsl(263 70% 60%)',
+              borderColor: mode === 'light' ? 'hsl(263 70% 40%)' : 'hsl(263 70% 50%)',
             },
           },
         },
@@ -401,59 +442,19 @@ export const createAppTheme = (mode: "light" | "dark") => {
       MuiDialog: {
         styleOverrides: {
           paper: {
-            backgroundColor: colors.background.paper,
+            backgroundColor: mode === 'light' 
+              ? 'hsl(0 0% 100%)'  // Solid white
+              : 'hsl(240 10% 3.9%)', // Solid dark
             backgroundImage: 'none',
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
             borderRadius: 12,
+            border: `1px solid ${colors.divider}`,
           },
           root: {
             '& .MuiBackdrop-root': {
               backgroundColor: mode === 'light' 
                 ? 'rgba(0, 0, 0, 0.5)' 
                 : 'rgba(0, 0, 0, 0.7)',
-            },
-          },
-        },
-      },
-      MuiChip: {
-        styleOverrides: {
-          root: {
-            fontWeight: 600,
-            fontSize: '0.875rem',
-            '&.MuiChip-colorSuccess': {
-              backgroundColor: mode === 'light' 
-                ? 'hsl(142 70% 45% / 0.15)' 
-                : 'hsl(142 70% 45% / 0.2)',
-              color: mode === 'light' ? 'hsl(142 70% 25%)' : 'hsl(142 70% 55%)',
-              borderColor: mode === 'light' ? 'hsl(142 70% 35%)' : 'hsl(142 70% 45%)',
-            },
-            '&.MuiChip-colorWarning': {
-              backgroundColor: mode === 'light' 
-                ? 'hsl(38 90% 55% / 0.15)' 
-                : 'hsl(38 90% 55% / 0.2)',
-              color: mode === 'light' ? 'hsl(38 90% 35%)' : 'hsl(38 90% 65%)',
-              borderColor: mode === 'light' ? 'hsl(38 90% 45%)' : 'hsl(38 90% 55%)',
-            },
-            '&.MuiChip-colorError': {
-              backgroundColor: mode === 'light' 
-                ? 'hsl(0 75% 55% / 0.15)' 
-                : 'hsl(0 75% 55% / 0.2)',
-              color: mode === 'light' ? 'hsl(0 75% 35%)' : 'hsl(0 75% 65%)',
-              borderColor: mode === 'light' ? 'hsl(0 75% 45%)' : 'hsl(0 75% 55%)',
-            },
-            '&.MuiChip-colorInfo': {
-              backgroundColor: mode === 'light' 
-                ? 'hsl(200 90% 50% / 0.15)' 
-                : 'hsl(200 90% 50% / 0.2)',
-              color: mode === 'light' ? 'hsl(200 90% 30%)' : 'hsl(200 90% 60%)',
-              borderColor: mode === 'light' ? 'hsl(200 90% 40%)' : 'hsl(200 90% 50%)',
-            },
-            '&.MuiChip-colorPrimary': {
-              backgroundColor: mode === 'light' 
-                ? 'hsl(263 70% 50% / 0.15)' 
-                : 'hsl(263 70% 50% / 0.2)',
-              color: mode === 'light' ? 'hsl(263 70% 30%)' : 'hsl(263 70% 60%)',
-              borderColor: mode === 'light' ? 'hsl(263 70% 40%)' : 'hsl(263 70% 50%)',
             },
           },
         },
@@ -468,6 +469,11 @@ export const createAppTheme = (mode: "light" | "dark") => {
               : '0 2px 8px rgba(0, 0, 0, 0.2)',
             borderRadius: 12,
             border: `1px solid ${colors.divider}`,
+            transition: 'all 0.3s ease-in-out',
+            '&:hover': {
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.15)',
+              transform: 'translateY(-2px)',
+            },
           },
         },
       },

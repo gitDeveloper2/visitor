@@ -653,12 +653,12 @@ export default function ManageAppsPage() {
                 {app.name}
                           </Typography>
                           <Box sx={{ display: 'flex', gap: 1 }}>
-                {app.isPremium && (
+                                            {app.isPremium && (
                               <Chip
                                 label="Premium"
-                                color="success"
+                                color="default"
                                 size="small"
-                                variant="filled"
+                                variant="outlined"
                                 icon={<span style={{ fontSize: '12px' }}>💎</span>}
                               />
                             )}
@@ -691,17 +691,9 @@ export default function ManageAppsPage() {
                                               ? 'Needs Review'
                                               : 'Verification Failed'
                                       }
-                                      color={
-                                        app.verificationStatus === 'verified' 
-                                          ? 'success' 
-                                          : app.verificationStatus === 'pending' 
-                                            ? 'warning' 
-                                            : app.verificationStatus === 'needs_review'
-                                              ? 'info'
-                                              : 'error'
-                                      }
+                                      color="default"
                                       size="small"
-                                      variant="filled"
+                                      variant="outlined"
                                       icon={app.verificationStatus === 'verified' ? <CheckCircle fontSize="small" /> : undefined}
                                     />
                                   </Tooltip>
@@ -709,13 +701,9 @@ export default function ManageAppsPage() {
                                 {app.verificationScore && app.verificationStatus !== 'verified' && (
                                   <Chip
                                     label={`${app.verificationScore}/100`}
-                                    color={
-                                      app.verificationScore >= 90 ? 'success' :
-                                      app.verificationScore >= 70 ? 'warning' :
-                                      app.verificationScore >= 50 ? 'info' : 'error'
-                                    }
+                                    color="default"
                                     size="small"
-                                    variant="filled"
+                                    variant="outlined"
                                     sx={{ fontSize: '0.7rem', height: '20px' }}
                                   />
                                 )}
@@ -725,7 +713,7 @@ export default function ManageAppsPage() {
                                     label={`${app.verificationAttempts} attempts`}
                                     color="default"
                                     size="small"
-                                    variant="filled"
+                                    variant="outlined"
                                     sx={{ fontSize: '0.7rem', height: '20px' }}
                                   />
                                 )}
@@ -754,17 +742,17 @@ export default function ManageAppsPage() {
                 <Box sx={{ mb: 2 }}>
                   <Chip
                     label={`Premium: ${app.premiumPlan || 'Standard'}`}
-                    color="warning"
+                    color="default"
                     size="small"
-                    variant="filled"
+                    variant="outlined"
                     icon={<span style={{ fontSize: '12px' }}>💎</span>}
                   />
                   {app.premiumStatus && (
                     <Chip
                       label={app.premiumStatus}
-                      color={app.premiumStatus === 'active' ? 'success' : 'warning'}
+                      color="default"
                       size="small"
-                      variant="filled"
+                      variant="outlined"
                       sx={{ ml: 1 }}
                     />
                   )}

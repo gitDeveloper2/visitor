@@ -51,8 +51,8 @@ const StatCard = ({
         <Chip label={`Rejected: ${rejected}`} color="error" variant="filled" size="small" />
         {title === "Apps" && (
           <>
-            <Chip label={`Verification Pending: ${stats.apps.verification.pending}`} color="info" variant="filled" size="small" />
-            <Chip label={`Verified: ${stats.apps.verification.verified}`} color="success" variant="filled" size="small" />
+            <Chip label={`Verification Pending: ${stats.apps.verification.pending}`} color="default" variant="outlined" size="small" />
+            <Chip label={`Verified: ${stats.apps.verification.verified}`} color="default" variant="outlined" size="small" />
           </>
         )}
       </Stack>
