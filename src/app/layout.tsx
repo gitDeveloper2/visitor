@@ -40,11 +40,22 @@ export default async function RootLayout({ children }: { children: React.ReactNo
  const categories:Category[]=await fetchProcessedCategories()
  
  return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
        
       <meta name="trustpilot-one-time-domain-verification-id" content="8820f90d-483a-4d7c-a05a-8d1a308cc460"/>
       <meta property="fb:app_id" content={APPID}/>
 <meta property="fb:admins" content={ADMINID}/>
+<meta name="color-scheme" content="dark light" />
+<meta name="theme-color" content="#0b0b0c" media="(prefers-color-scheme: dark)" />
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+
+      <Script
+        id="theme-init"
+        strategy="beforeInteractive"
+        dangerouslySetInnerHTML={{
+          __html: `(function(){try{var s=localStorage.getItem('theme-mode');var m=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;var t=(s==='light'||s==='dark')?s:(m?'dark':'light');var r=document.documentElement;r.setAttribute('data-theme',t);r.style.colorScheme=t;}catch(e){}})();`
+        }}
+      />
 
       <Script
         async
@@ -60,6 +71,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v21.0&appId=1532583460736509"
         />
       <body className={inter.className}>
+      <a href="#main-content" className="skip-link">Skip to main content</a>
       <div id="fb-root"></div>
         <AppRouterCacheProvider>
             <ThemeProvider> 
@@ -68,7 +80,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <div style={{ minHeight: "90vh" }}>
                 <Navbar categories={categories}  />
                 <DonateButton/>
-                {children}
+                <main id="main-content" tabIndex={-1}>
+                  {children}
+                </main>
                <div style={{ width: '100%', maxWidth: '300px', margin: '10px auto', textAlign: 'center' }}>
       
     </div>

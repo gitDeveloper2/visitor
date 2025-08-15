@@ -23,9 +23,15 @@
   -webkit-backdrop-filter: blur(16px);
 }
 
-/* Smooth transitions */
+/* Smooth transitions - limited to color/transform to reduce motion for users */
 * {
-  transition: all 0.3s ease-in-out;
+  transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
 }
 
 /* Custom scrollbar */
@@ -38,12 +44,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, hsl(263 70% 50%), hsl(220 70% 50%));
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, hsl(263 70% 60%), hsl(220 70% 60%));
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
 }
 
 body {
@@ -68,16 +74,16 @@ html {
 
 /* Styles for inline code */
 .ql-editor code {
-  background-color: #e6e6e6; /* Background for inline code */
-  color: #c7254e; /* Color for inline code text */
+  background-color: var(--bg-paper); /* Background for inline code */
+  color: var(--text-primary); /* Color for inline code text */
   padding: 2px 4px; /* Padding around inline code */
   border-radius: 3px; /* Rounded corners */
 }
 
 /* Styles for code blocks */
 .ql-syntax {
-  background-color: #f0f0f0; /* Background for code blocks */
-  color: #333; /* Color for code block text */
+  background-color: var(--bg-paper); /* Background for code blocks */
+  color: var(--text-primary); /* Color for code block text */
   padding: 10px; /* Padding for code blocks */
   border-radius: 4px; /* Rounded corners for code blocks */
   overflow-x: auto; /* Allow horizontal scrolling for code blocks */
@@ -86,14 +92,14 @@ html {
             position: sticky;
             /* top: 40px; */
             z-index: 1000; 
-            background: white;  
+            background: var(--bg-paper);  
         }
 
         .sticky-ql-stack{
           position: sticky;
             /* top: 40px; */
             z-index: 1000; 
-            background: white; 
+            background: var(--bg-paper); 
         }
 
        
@@ -103,12 +109,12 @@ html {
           margin-left: 10px;
           line-height: normal;
           font-size: 14px; /* Adjust font size as needed */
-          color: #333; /* Adjust color as needed */
+          color: var(--text-secondary); /* Adjust color as needed */
         }
 
         .ql-generate-toc.active {
-          color: #007bff; /* Highlight color */
-          background-color: #e9f5ff; /* Optional background color */
+          color: var(--primary); /* Highlight color */
+          background-color: rgba(0,0,0,0.05); /* Optional background color */
           border-radius: 4px;
         }
         

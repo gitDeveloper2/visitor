@@ -46,13 +46,13 @@ const StatCard = ({
       </Typography>
 
       <Stack direction="row" spacing={1} mb={2} flexWrap="wrap">
-        <Chip label={`Pending: ${pending}`} color="warning" variant="outlined" />
-        <Chip label={`Approved: ${approved}`} color="success" variant="outlined" />
-        <Chip label={`Rejected: ${rejected}`} color="error" variant="outlined" />
+        <Chip label={`Pending: ${pending}`} color="warning" variant="filled" size="small" />
+        <Chip label={`Approved: ${approved}`} color="success" variant="filled" size="small" />
+        <Chip label={`Rejected: ${rejected}`} color="error" variant="filled" size="small" />
         {title === "Apps" && (
           <>
-            <Chip label={`Verification Pending: ${stats.apps.verification.pending}`} color="info" variant="outlined" />
-            <Chip label={`Verified: ${stats.apps.verification.verified}`} color="success" variant="outlined" />
+            <Chip label={`Verification Pending: ${stats.apps.verification.pending}`} color="info" variant="filled" size="small" />
+            <Chip label={`Verified: ${stats.apps.verification.verified}`} color="success" variant="filled" size="small" />
           </>
         )}
       </Stack>

@@ -71,7 +71,7 @@ const ToolsSection = () => {
           width: 256,
           height: 256,
           bgcolor: theme.palette.primary.main,
-          opacity: 0.05,
+          opacity: theme.palette.mode === 'light' ? 0.04 : 0.05,
           borderRadius: "50%",
           filter: "blur(48px)",
           zIndex: 0
@@ -85,7 +85,7 @@ const ToolsSection = () => {
           width: 384,
           height: 384,
           bgcolor: theme.palette.primary.main,
-          opacity: 0.05,
+          opacity: theme.palette.mode === 'light' ? 0.04 : 0.05,
           borderRadius: "50%",
           filter: "blur(48px)",
           zIndex: 0
@@ -170,13 +170,15 @@ const ToolsSection = () => {
                 sx={{
                   borderRadius: "1rem",
                   ...getGlassStyles(theme),
+                  // ensure strong border contrast in light mode
+                  borderColor: theme.palette.mode === 'light' ? theme.palette.divider : 'inherit',
                   boxShadow: getShadow(theme, 'elegant'),
                   height: "100%",
                   display: "flex",
                   flexDirection: "column",
                   transition: "box-shadow 0.2s, border-color 0.2s",
                   "&:hover": {
-                    borderColor: `${theme.palette.primary.main}50`,
+                    borderColor: theme.palette.mode === 'light' ? `${theme.palette.primary.main}60` : `${theme.palette.primary.main}50`,
                     boxShadow: getShadow(theme, 'elegant'),
                   },
                 }}
@@ -225,7 +227,7 @@ const ToolsSection = () => {
                       fontWeight: 700,
                       color: theme.palette.text.primary,
                       transition: "color 0.2s",
-                      "&:hover": { color: theme.palette.primary.main },
+                      "&:hover": { color: theme.palette.mode === 'light' ? theme.palette.primary.dark : theme.palette.primary.main },
                       fontSize: "1.25rem",
                       mb: 1,
                     }}

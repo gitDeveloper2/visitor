@@ -9,13 +9,14 @@ const ThemeToggle = () => {
   return (
     <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>
       <IconButton
+        aria-label={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}
         onClick={toggleTheme}
-        sx={{
+        sx={(theme) => ({
           color: 'inherit',
           '&:hover': {
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            backgroundColor: `rgba(0,0,0,${theme.palette.mode === 'dark' ? 0.2 : 0.08})`,
           },
-        }}
+        })}
       >
         {mode === 'light' ? <Moon size={20} /> : <Sun size={20} />}
       </IconButton>

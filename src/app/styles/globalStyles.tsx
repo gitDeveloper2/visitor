@@ -16,9 +16,16 @@ const GlobalStyles: React.FC = () => {
     <Global
       styles={css`
     :root {
-    --color-background: #f5f5f9;
-    --color-scrollbar: #c1c1c1;
-    --color-scrollbar-hover: #a1a1a1;
+    --bg-default: ${theme.palette.background.default};
+    --bg-paper: ${theme.palette.background.paper};
+    --text-primary: ${theme.palette.text.primary};
+    --text-secondary: ${theme.palette.text.secondary};
+    --divider: ${theme.palette.divider};
+    --primary: ${theme.palette.primary.main};
+    --secondary: ${theme.palette.secondary.main};
+    --color-background: ${theme.palette.background.default};
+    --color-scrollbar: ${theme.palette.mode === 'dark' ? '#555' : '#c1c1c1'};
+    --color-scrollbar-hover: ${theme.palette.mode === 'dark' ? '#777' : '#a1a1a1'};
   }
    
 
@@ -45,7 +52,8 @@ const GlobalStyles: React.FC = () => {
           margin: 0;
           padding: 0;
           font-family: ${theme.typography.fontFamily || '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'};
-          background-color: ${theme.palette.background.default || '#fff'};
+          background-color: var(--bg-default);
+          color: var(--text-primary);
         }
 
         a {
@@ -53,9 +61,57 @@ const GlobalStyles: React.FC = () => {
           color: inherit;
         }
 
+        /* Visually hidden utility for accessibility */
+        .visually-hidden {
+          position: absolute !important;
+          width: 1px;
+          height: 1px;
+          padding: 0;
+          margin: -1px;
+          overflow: hidden;
+          clip: rect(0, 0, 0, 0);
+          white-space: nowrap;
+          border: 0;
+        }
+
+        /* Skip link styling */
+        .skip-link {
+          position: absolute;
+          top: -40px;
+          left: 0;
+          background: ${theme.palette.mode === 'dark' ? '#1f2937' : '#ffffff'};
+          color: ${theme.palette.mode === 'dark' ? '#ffffff' : '#111827'};
+          padding: 8px 12px;
+          z-index: 10000;
+          border-radius: 0 0 6px 0;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        .skip-link:focus {
+          top: 0;
+        }
+
+        /* High-visibility focus outlines */
+        :where(a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])):focus-visible {
+          outline: 3px solid ${theme.palette.primary.main};
+          outline-offset: 3px;
+        }
+        :where(a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])):focus {
+          outline: none;
+        }
+
+        /* Respect reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+          *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+          }
+        }
+
         figcaption {
           font-size: ${theme.typography.caption?.fontSize || '0.875rem'};
-          color: ${theme.typography.caption?.color || theme.palette.text.secondary};
+          color: var(--text-secondary);
         }
 
         /* blog css start */
@@ -100,7 +156,7 @@ const GlobalStyles: React.FC = () => {
   h1 {
     font-size: 2.5rem;
     font-weight: 700;
-    color: #222;
+    color: var(--text-primary);
     margin-bottom: 1rem;
     line-height: 1.2;
     letter-spacing: -0.015em;
@@ -110,7 +166,7 @@ const GlobalStyles: React.FC = () => {
   h2 {
     font-size: 2rem;
     font-weight: 700;
-    color: #333;
+    color: var(--text-primary);
     margin-bottom: 0.75rem;
     line-height: 1.3;
     letter-spacing: -0.01em;
@@ -120,7 +176,7 @@ const GlobalStyles: React.FC = () => {
   h3 {
     font-size: 1.75rem;
     font-weight: 700;
-    color: #444;
+    color: var(--text-primary);
     margin-bottom: 0.75rem;
     line-height: 1.3;
     letter-spacing: -0.01em;
@@ -130,7 +186,7 @@ const GlobalStyles: React.FC = () => {
   h4 {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #555;
+    color: var(--text-primary);
     margin-bottom: 0.75rem;
     line-height: 1.4;
     letter-spacing: 0em;
@@ -140,7 +196,7 @@ const GlobalStyles: React.FC = () => {
   h5 {
     font-size: 1.25rem;
     font-weight: 700;
-    color: #666;
+    color: var(--text-primary);
     margin-bottom: 0.75rem;
     line-height: 1.4;
     letter-spacing: 0em;
@@ -150,7 +206,7 @@ const GlobalStyles: React.FC = () => {
   h6 {
     font-size: 1rem;
     font-weight: 700;
-    color: #777;
+    color: var(--text-primary);
     margin-bottom: 0.75rem;
     line-height: 1.4;
     letter-spacing: 0.015em;
@@ -159,7 +215,7 @@ const GlobalStyles: React.FC = () => {
   p{
     font-size: 1.125rem;
     line-height: 1.75;
-    color: #333;
+    color: var(--text-secondary);
     margin-bottom: 1.5rem;
     letter-spacing: 0.015em;
   }
@@ -167,35 +223,34 @@ const GlobalStyles: React.FC = () => {
   li{
     font-size: 1rem;
     line-height: 1.75;
-    color: #444;
+    color: var(--text-secondary);
     margin-bottom: 1.5rem;
     letter-spacing: 0.015em; 
   }
   /* styles/code.css */
 
   code {
-    background-color: #f5f5f5; /* Light theme background */
+    background-color: var(--bg-paper);
     border-radius: 4px;
     padding: 0.5em;
     font-family: monospace;
     font-size: 0.9em;
     overflow-x: auto;
     display: block; /* Ensure block display for code */
-    background-color: #2e2e2e;
-    color: #e0e0e0;
+    color: var(--text-primary);
   }
 
   /* For dark theme, if needed */
   .code.dark {
-    background-color: #2e2e2e;
-    color: #e0e0e0;
+    background-color: var(--bg-paper);
+    color: var(--text-primary);
   }
 
   /* Body 1 */
   .body1 {
     font-size: 1.125rem;
     line-height: 1.75;
-    color: #333;
+    color: var(--text-secondary);
     margin-bottom: 1.5rem;
     letter-spacing: 0.015em;
   }
@@ -204,7 +259,7 @@ const GlobalStyles: React.FC = () => {
   .body2 {
     font-size: 1rem;
     line-height: 1.75;
-    color: #444;
+    color: var(--text-secondary);
     margin-bottom: 1.5rem;
     letter-spacing: 0.015em;
   }

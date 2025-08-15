@@ -33,7 +33,7 @@ const Hero = () => {
           position: "absolute",
           inset: 0,
           background: theme.custom.gradients.hero,
-          opacity: 0.10,
+          opacity: theme.palette.mode === 'light' ? 0.06 : 0.10,
           zIndex: 0
         }}
       />
@@ -45,7 +45,7 @@ const Hero = () => {
           width: 288,
           height: 288,
           bgcolor: theme.palette.primary.main,
-          opacity: 0.2,
+          opacity: theme.palette.mode === 'light' ? 0.10 : 0.2,
           borderRadius: "50%",
           filter: "blur(48px)",
           animation: theme.custom.animations.float
@@ -59,7 +59,7 @@ const Hero = () => {
           width: 384,
           height: 384,
           bgcolor: theme.palette.primary.main,
-          opacity: 0.1,
+          opacity: theme.palette.mode === 'light' ? 0.06 : 0.1,
           borderRadius: "50%",
           filter: "blur(48px)",
           animation: theme.custom.animations.float,
@@ -153,6 +153,9 @@ const Hero = () => {
             startIcon={<Code2 style={{ width: 22, height: 22 }} />}
             sx={{
               ...commonStyles.glassButton(theme),
+              // improve contrast in light mode
+              color: theme.palette.mode === 'light' ? theme.palette.primary.dark : theme.palette.primary.main,
+              borderColor: theme.palette.mode === 'light' ? `${theme.palette.primary.main}66` : theme.palette.primary.main,
             }}
           >
             Read Articles

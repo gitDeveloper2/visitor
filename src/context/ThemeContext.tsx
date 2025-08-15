@@ -70,6 +70,15 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
+  // Reflect theme on document root for native controls and CSS hooks
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', mode);
+      // Hint the browser for built-in form controls and UA styling
+      (document.documentElement.style as any).colorScheme = mode;
+    }
+  }, [mode]);
+
   return (
     <ThemeContext.Provider value={{ mode, toggleTheme, setTheme }}>
       <MuiThemeProvider theme={theme}>

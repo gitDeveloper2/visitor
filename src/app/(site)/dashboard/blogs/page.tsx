@@ -346,7 +346,7 @@ export default function ManageBlogsPage() {
                                 label={getStatusLabel(blog.status)}
                                 color={getStatusColor(blog.status) as any}
                                 size="small"
-                                variant="outlined"
+                                variant="filled"
                               />
                             </Box>
                           </Box>
@@ -361,7 +361,7 @@ export default function ManageBlogsPage() {
 
                           <Stack direction="row" spacing={1} mb={2} flexWrap="wrap">
                             {(blog.tags || []).map((tag: string, i: number) => (
-                              <Chip key={i} size="small" label={tag} variant="outlined" />
+                              <Chip key={i} size="small" label={tag} variant="filled" />
                             ))}
                           </Stack>
 
@@ -511,7 +511,7 @@ export default function ManageBlogsPage() {
                           <Stack direction="row" spacing={1} mb={2} flexWrap="wrap">
                             {Array.isArray(draft.tags) &&
                               draft.tags.map((tag: string, i: number) => (
-                                <Chip key={i} size="small" label={tag} variant="outlined" />
+                                <Chip key={i} size="small" label={tag} variant="filled" />
                               ))}
                           </Stack>
 
@@ -529,7 +529,7 @@ export default function ManageBlogsPage() {
                                     label={`${draft.remainingDays}d`} 
                                     size="small" 
                                     color={draft.remainingDays === 0 ? "warning" : "default"}
-                                    variant="outlined"
+                                    variant="filled"
                                   />
                                 )}
                                 
@@ -537,14 +537,14 @@ export default function ManageBlogsPage() {
                                   label={`${Math.floor((new Date(draft.expiryDate).getTime() - new Date().getTime()) / (1000 * 60 * 60)) % 24}h`} 
                                   size="small" 
                                   color={draft.remainingDays === 0 ? "warning" : "default"}
-                                  variant="outlined"
+                                  variant="filled"
                                 />
                                 
                                 <Chip 
                                   label={`${Math.floor((new Date(draft.expiryDate).getTime() - new Date().getTime()) / (1000 * 60)) % 60}m`} 
                                   size="small" 
                                   color={draft.remainingDays === 0 ? "warning" : "default"}
-                                  variant="outlined"
+                                  variant="filled"
                                 />
                               </Stack>
                             </Box>
@@ -675,7 +675,7 @@ export default function ManageBlogsPage() {
                       label={`${selectedDraftForPayment.remainingDays}d`} 
                       size="small" 
                       color={selectedDraftForPayment.remainingDays === 0 ? "warning" : "default"}
-                      variant="outlined"
+                      variant="filled"
                     />
                   )}
                   
@@ -683,14 +683,14 @@ export default function ManageBlogsPage() {
                     label={`${Math.floor((new Date(selectedDraftForPayment.expiryDate).getTime() - new Date().getTime()) / (1000 * 60 * 60)) % 24}h`} 
                     size="small" 
                     color={selectedDraftForPayment.remainingDays === 0 ? "warning" : "default"}
-                    variant="outlined"
+                    variant="filled"
                   />
                   
                   <Chip 
                     label={`${Math.floor((new Date(selectedDraftForPayment.expiryDate).getTime() - new Date().getTime()) / (1000 * 60)) % 60}m`} 
                     size="small" 
                     color={selectedDraftForPayment.remainingDays === 0 ? "warning" : "default"}
-                    variant="outlined"
+                    variant="filled"
                   />
                 </Stack>
               </Box>

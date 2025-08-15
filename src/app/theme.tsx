@@ -37,7 +37,7 @@ export const createAppTheme = (mode: "light" | "dark") => {
     },
     background: {
       default: "hsl(0 0% 100%)",
-      paper: "hsla(0 0% 100% 0.8)",
+      paper: "hsla(0 0% 100% 0.95)",
     },
     text: {
       primary: "hsl(240 10% 3.9%)",
@@ -47,6 +47,26 @@ export const createAppTheme = (mode: "light" | "dark") => {
     action: {
       hover: "hsl(240 5% 96.1%)",
       selected: "hsl(240 5% 96.1%)",
+    },
+    success: {
+      main: "hsl(142 70% 45%)",
+      light: "hsl(142 70% 55%)",
+      dark: "hsl(142 70% 35%)",
+    },
+    warning: {
+      main: "hsl(38 90% 55%)",
+      light: "hsl(38 90% 65%)",
+      dark: "hsl(38 90% 45%)",
+    },
+    info: {
+      main: "hsl(200 90% 50%)",
+      light: "hsl(200 90% 60%)",
+      dark: "hsl(200 90% 40%)",
+    },
+    error: {
+      main: "hsl(0 75% 55%)",
+      light: "hsl(0 75% 65%)",
+      dark: "hsl(0 75% 45%)",
     },
   };
 
@@ -64,7 +84,7 @@ export const createAppTheme = (mode: "light" | "dark") => {
     },
     background: {
       default: "hsl(240 10% 3.9%)",
-      paper: "hsla(240 10% 3.9% 0.8)",
+      paper: "hsla(240 10% 3.9% 0.95)",
     },
     text: {
       primary: "hsl(0 0% 98%)",
@@ -74,6 +94,26 @@ export const createAppTheme = (mode: "light" | "dark") => {
     action: {
       hover: "hsl(240 5% 15%)",
       selected: "hsl(240 5% 15%)",
+    },
+    success: {
+      main: "hsl(142 70% 45%)",
+      light: "hsl(142 70% 55%)",
+      dark: "hsl(142 70% 35%)",
+    },
+    warning: {
+      main: "hsl(38 90% 55%)",
+      light: "hsl(38 90% 65%)",
+      dark: "hsl(38 90% 45%)",
+    },
+    info: {
+      main: "hsl(200 90% 50%)",
+      light: "hsl(200 90% 60%)",
+      dark: "hsl(200 90% 40%)",
+    },
+    error: {
+      main: "hsl(0 75% 55%)",
+      light: "hsl(0 75% 65%)",
+      dark: "hsl(0 75% 45%)",
     },
   };
 
@@ -88,6 +128,13 @@ export const createAppTheme = (mode: "light" | "dark") => {
       text: colors.text,
       divider: colors.divider,
       action: colors.action,
+      success: colors.success,
+      warning: colors.warning,
+      info: colors.info,
+      error: colors.error,
+      // AA large text 3.0, AA normal 4.5; default is 3. We raise to 4.5 for stronger contrast
+      contrastThreshold: 4.5,
+      tonalOffset: 0.15,
     },
     shape: {
       borderRadius: 12,
@@ -214,6 +261,23 @@ export const createAppTheme = (mode: "light" | "dark") => {
       "0px 11px 15px -7px rgba(0,0,0,0.2),0px 24px 38px 3px rgba(0,0,0,0.14),0px 9px 46px 8px rgba(0,0,0,0.12)",
     ],
     components: {
+      MuiCssBaseline: {
+        styleOverrides: {
+          body: {
+            colorScheme: mode,
+          },
+        },
+      },
+      MuiButtonBase: {
+        styleOverrides: {
+          root: {
+            '&.Mui-focusVisible': {
+              outline: `3px solid ${colors.primary.main}`,
+              outlineOffset: 3,
+            },
+          },
+        },
+      },
       MuiButton: {
         styleOverrides: {
           root: {
@@ -306,6 +370,117 @@ export const createAppTheme = (mode: "light" | "dark") => {
                 ? "hsl(263 70% 50% / 0.1)" 
                 : "hsl(263 70% 50% / 0.1)",
             },
+            '&.Mui-focusVisible': {
+              outline: `3px solid ${colors.primary.main}`,
+              outlineOffset: 3,
+            },
+          },
+        },
+      },
+      MuiOutlinedInput: {
+        styleOverrides: {
+          root: {
+            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+              borderColor: colors.primary.main,
+              borderWidth: 2,
+            },
+          },
+        },
+      },
+      MuiLink: {
+        styleOverrides: {
+          root: {
+            color: colors.primary.main,
+            textUnderlineOffset: '0.2em',
+            textDecorationThickness: '0.1em',
+            '&:hover': { textDecoration: 'underline' },
+            '&:focus-visible': { textDecoration: 'underline' },
+          },
+        },
+      },
+      MuiDialog: {
+        styleOverrides: {
+          paper: {
+            backgroundColor: colors.background.paper,
+            backgroundImage: 'none',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+            borderRadius: 12,
+          },
+          root: {
+            '& .MuiBackdrop-root': {
+              backgroundColor: mode === 'light' 
+                ? 'rgba(0, 0, 0, 0.5)' 
+                : 'rgba(0, 0, 0, 0.7)',
+            },
+          },
+        },
+      },
+      MuiChip: {
+        styleOverrides: {
+          root: {
+            fontWeight: 600,
+            fontSize: '0.875rem',
+            '&.MuiChip-colorSuccess': {
+              backgroundColor: mode === 'light' 
+                ? 'hsl(142 70% 45% / 0.15)' 
+                : 'hsl(142 70% 45% / 0.2)',
+              color: mode === 'light' ? 'hsl(142 70% 25%)' : 'hsl(142 70% 55%)',
+              borderColor: mode === 'light' ? 'hsl(142 70% 35%)' : 'hsl(142 70% 45%)',
+            },
+            '&.MuiChip-colorWarning': {
+              backgroundColor: mode === 'light' 
+                ? 'hsl(38 90% 55% / 0.15)' 
+                : 'hsl(38 90% 55% / 0.2)',
+              color: mode === 'light' ? 'hsl(38 90% 35%)' : 'hsl(38 90% 65%)',
+              borderColor: mode === 'light' ? 'hsl(38 90% 45%)' : 'hsl(38 90% 55%)',
+            },
+            '&.MuiChip-colorError': {
+              backgroundColor: mode === 'light' 
+                ? 'hsl(0 75% 55% / 0.15)' 
+                : 'hsl(0 75% 55% / 0.2)',
+              color: mode === 'light' ? 'hsl(0 75% 35%)' : 'hsl(0 75% 65%)',
+              borderColor: mode === 'light' ? 'hsl(0 75% 45%)' : 'hsl(0 75% 55%)',
+            },
+            '&.MuiChip-colorInfo': {
+              backgroundColor: mode === 'light' 
+                ? 'hsl(200 90% 50% / 0.15)' 
+                : 'hsl(200 90% 50% / 0.2)',
+              color: mode === 'light' ? 'hsl(200 90% 30%)' : 'hsl(200 90% 60%)',
+              borderColor: mode === 'light' ? 'hsl(200 90% 40%)' : 'hsl(200 90% 50%)',
+            },
+            '&.MuiChip-colorPrimary': {
+              backgroundColor: mode === 'light' 
+                ? 'hsl(263 70% 50% / 0.15)' 
+                : 'hsl(263 70% 50% / 0.2)',
+              color: mode === 'light' ? 'hsl(263 70% 30%)' : 'hsl(263 70% 60%)',
+              borderColor: mode === 'light' ? 'hsl(263 70% 40%)' : 'hsl(263 70% 50%)',
+            },
+          },
+        },
+      },
+      MuiCard: {
+        styleOverrides: {
+          root: {
+            backgroundColor: colors.background.paper,
+            backgroundImage: 'none',
+            boxShadow: mode === 'light' 
+              ? '0 2px 8px rgba(0, 0, 0, 0.08)' 
+              : '0 2px 8px rgba(0, 0, 0, 0.2)',
+            borderRadius: 12,
+            border: `1px solid ${colors.divider}`,
+          },
+        },
+      },
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            backgroundImage: 'none',
+            backgroundColor: colors.background.paper,
+            boxShadow: mode === 'light' 
+              ? '0 2px 8px rgba(0, 0, 0, 0.08)' 
+              : '0 2px 8px rgba(0, 0, 0, 0.2)',
+            borderRadius: 8,
+            border: `1px solid ${colors.divider}`,
           },
         },
       },
@@ -319,11 +494,11 @@ export const createAppTheme = (mode: "light" | "dark") => {
       },
       glass: {
         background: mode === "light" 
-          ? "hsla(255, 255, 255, 0.8)" 
+          ? "hsla(0, 0%, 100%, 0.85)" 
           : "hsla(240, 10%, 3.9%, 0.8)",
         border: mode === "light" 
-          ? "hsla(263, 70%, 50%, 0.1)" 
-          : "hsla(263, 70%, 50%, 0.2)",
+          ? colors.divider 
+          : "hsl(263 70% 50% / 0.2)",
       },
       shadows: {
         elegant: mode === "light"

@@ -21,6 +21,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import { DonateButton } from "@/features/shared/components/PaypallDonation";
 import { BuyMeCoffee } from "@/features/shared/components/BuyMeCofee";
+import ThemeToggle from "@/app/components/ThemeToggle";
 
 interface NavBarProps {
   categories: Category[];
@@ -64,7 +65,7 @@ const NavBar: React.FC<NavBarProps> = ({ categories }) => {
               ) : (
                 <>
                   <NavLinks categories={categories} />
-               
+                  <ThemeToggle />
                   <Auth isMobile={isMobile}/>
                 </>
               ))}

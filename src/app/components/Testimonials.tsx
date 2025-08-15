@@ -173,7 +173,7 @@ const Testimonials = () => {
                   top: "50%",
                   transform: "translateY(-50%)",
                   bgcolor: theme.palette.background.paper,
-                  border: `1px solid ${theme.custom.glass.border}`,
+                  border: `1px solid ${theme.palette.mode === 'light' ? theme.palette.divider : theme.custom.glass.border}`,
                   zIndex: 2,
                   "&:hover": {
                     bgcolor: theme.palette.primary.main,
@@ -192,7 +192,7 @@ const Testimonials = () => {
                   top: "50%",
                   transform: "translateY(-50%)",
                   bgcolor: theme.palette.background.paper,
-                  border: `1px solid ${theme.custom.glass.border}`,
+                  border: `1px solid ${theme.palette.mode === 'light' ? theme.palette.divider : theme.custom.glass.border}`,
                   zIndex: 2,
                   "&:hover": {
                     bgcolor: theme.palette.primary.main,

@@ -666,7 +666,7 @@ export default function ManageAppsPage() {
                               label={getStatusLabel(app.status)}
                               color={getStatusColor(app.status) as any}
                               size="small"
-                              variant="outlined"
+                              variant="filled"
                             />
                             {/* Verification status for free apps */}
                             {app.pricing === 'Free' && app.verificationStatus && (
@@ -701,7 +701,7 @@ export default function ManageAppsPage() {
                                               : 'error'
                                       }
                                       size="small"
-                                      variant="outlined"
+                                      variant="filled"
                                       icon={app.verificationStatus === 'verified' ? <CheckCircle fontSize="small" /> : undefined}
                                     />
                                   </Tooltip>
@@ -725,7 +725,7 @@ export default function ManageAppsPage() {
                                     label={`${app.verificationAttempts} attempts`}
                                     color="default"
                                     size="small"
-                                    variant="outlined"
+                                    variant="filled"
                                     sx={{ fontSize: '0.7rem', height: '20px' }}
                                   />
                                 )}
@@ -745,7 +745,7 @@ export default function ManageAppsPage() {
 
                         <Stack direction="row" spacing={1} mb={2} flexWrap="wrap">
                 {(app.tags || []).map((tag: string, i: number) => (
-                            <Chip key={i} size="small" label={tag} variant="outlined" />
+                            <Chip key={i} size="small" label={tag} variant="filled" />
                 ))}
               </Stack>
 
@@ -764,7 +764,7 @@ export default function ManageAppsPage() {
                       label={app.premiumStatus}
                       color={app.premiumStatus === 'active' ? 'success' : 'warning'}
                       size="small"
-                      variant="outlined"
+                      variant="filled"
                       sx={{ ml: 1 }}
                     />
                   )}

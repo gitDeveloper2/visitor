@@ -1,12 +1,11 @@
 // app/learn/layout.tsx
-import { ThemeProvider } from '@mui/material/styles';
+import { ThemeProvider } from '../../../context/ThemeContext';
 import BlogCss from './BlogCssBaseline';
-import { blogTheme } from '../../theme';
 
 export default function LearnLayout({ children }: { children: React.ReactNode }) {
   return (
   
-      <ThemeProvider theme={{}}>
+      <ThemeProvider>
         <BlogCss />
         {children}
       </ThemeProvider>
