@@ -1,20 +1,18 @@
-import { getServerSession } from "next-auth";
-import  AuthProvider  from "../../context/authContexts";
+
+import { getServerSession } from "@/lib/auth";
 import { redirect } from "next/navigation";  // For Next.js redirects
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
     const session = await getServerSession();
 
-
-
     if (!session) {
-      
-        return redirect("/api/auth/signin");  // Use Next.js redirect here
+        return redirect("/auth/signin");  // Use Next.js redirect here
     }
 
-    return (
-        <AuthProvider session={session}>
-            {children}
-        </AuthProvider>
-    );
+    // Check if user has admin role
+    if (session.user?.role !== 'admin') {
+        return redirect("/dashboard");  // Redirect non-admin users to dashboard
+    }
+
+    return <>{children}</>;
 }

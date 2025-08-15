@@ -1,7 +1,9 @@
+'use client';
+
 import { useEffect, useState } from "react";
 import { deletePage, getAllPages, togglePublish } from "../../actions/blogActions";
 import { metadata } from "../../app/layout";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 
 export   const usePagesHandlers=({content}:{content:string})=>{
     const [isIndexing, setIsIndexing] = useState(false);

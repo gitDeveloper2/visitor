@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 import dbConnect, { User } from '../../../lib/config/mongodb';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from "../../../lib/auth";
 
 async function isAdmin(session: any) {
   return session && session.user && session.user.role === 'admin';

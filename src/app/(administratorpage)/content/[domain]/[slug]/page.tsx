@@ -1,6 +1,6 @@
 import { Box, Button, Typography } from "@mui/material";
 import QuillEditor from "@components/libs/QuilEditor2"; 
-import { getServerSession } from "next-auth";
+import { getServerSession } from "../../../../../lib/auth";
 import {redirect} from "next/navigation"
 import { connectToDatabase } from "@lib/mongodb";
 

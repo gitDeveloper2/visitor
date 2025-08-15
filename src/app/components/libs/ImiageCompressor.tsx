@@ -14,11 +14,25 @@ import {
   Typography,
   Divider,
   Grid,
+  Paper,
+  Stack,
+  Chip,
+  Alert,
+  LinearProgress,
+  Container,
 } from "@mui/material";
-import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-import { useTheme , styled} from  '@mui/material/styles';
+import {
+  CloudUpload,
+  Download,
+  Compress,
+  Settings,
+  Image,
+  CheckCircle,
+  Error,
+} from "@mui/icons-material";
+import { useTheme } from '@mui/material/styles';
+import { getGlassStyles, getShadow } from '../../../utils/themeUtils';
 import { StyledSectionGrid } from "../layout/Spacing";
-import { Download } from "@mui/icons-material";
 import {
   StyledImagePreview,
   StyledImagePreviewBox,
@@ -42,7 +56,11 @@ const ImageCompressor: React.FC = () => {
   const [useWebWorker, setUseWebWorker] = useState<boolean>(true);
   const [convertToJPEG, setConvertToJPEG] = useState<boolean>(false);
   const [outputFormat, setOutputFormat] = useState<"jpeg" | "png" | "webp">("jpeg");
+  const [isCompressing, setIsCompressing] = useState<boolean>(false);
+  const [compressionProgress, setCompressionProgress] = useState<number>(0);
+  
   const currentProductInfo = productInfo.find(item => item.kind === "compressor");
+
   const handleFileDownload = () => {
     if (compressedFile) {
       const url = URL.createObjectURL(compressedFile);
@@ -63,199 +81,388 @@ const ImageCompressor: React.FC = () => {
     const file = event.target.files?.[0];
     if (file) {
       setSelectedFile(file);
-      try {
-        const options = {
-          maxSizeMB: parseFloat(maxSizeMB.toString()),
-          initialQuality: parseFloat(initialQuality.toString()),
-          maxWidthOrHeight: parseInt(maxWidthOrHeight.toString(), 10),
-          useWebWorker: useWebWorker,
-          fileType:
-            outputFormat === "jpeg"
-              ? "image/jpeg"
-              : outputFormat === "png"
-              ? "image/png"
-              : "image/webp",
-        };
-        const compressed = await compressImage(file, options);
-        setCompressedFile(compressed);
-        setCompressionError(null);
-      } catch (error) {
-        setCompressionError("Error compressing file");
-        console.error("Error compressing file:", error);
-      }
+      setCompressedFile(null);
+      setCompressionError(null);
+    }
+  };
+
+  const handleCompress = async () => {
+    if (!selectedFile) return;
+
+    setIsCompressing(true);
+    setCompressionProgress(0);
+    setCompressionError(null);
+
+    // Simulate progress
+    const progressInterval = setInterval(() => {
+      setCompressionProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(progressInterval);
+          return 90;
+        }
+        return prev + 10;
+      });
+    }, 100);
+
+    try {
+      const options = {
+        maxSizeMB: parseFloat(maxSizeMB.toString()),
+        initialQuality: parseFloat(initialQuality.toString()),
+        maxWidthOrHeight: parseInt(maxWidthOrHeight.toString(), 10),
+        useWebWorker: useWebWorker,
+        fileType:
+          outputFormat === "jpeg"
+            ? "image/jpeg"
+            : outputFormat === "png"
+            ? "image/png"
+            : "image/webp",
+      };
+      
+      const compressed = await compressImage(selectedFile, options);
+      setCompressedFile(compressed);
+      setCompressionProgress(100);
+      setCompressionError(null);
+    } catch (error) {
+      setCompressionError("Error compressing file. Please try again.");
+      console.error("Error compressing file:", error);
+    } finally {
+      setIsCompressing(false);
+      clearInterval(progressInterval);
     }
   };
 
   return (
-    <StyledSectionGrid theme={theme} container spacing={2} y16>
-      <Grid item xs={12} textAlign="center" sx={{ mb: 2 }}>
-        <Typography variant="h5" component="h1" gutterBottom>
-        Compress Image to Email Size
-        </Typography>
-        <Typography variant="body1">Discover how to compress images for email and website use with our comprehensive guide. Learn methods to compress image to email size, optimize images for web performance, and use various formats like WebP. Find tips on achieving quality compression without losing image clarity.</Typography>
-      </Grid>
-      <Grid item xs={12} textAlign="center" justifyContent="space-between">
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-around",
-            [theme.breakpoints.down("sm")]: {
-              flexDirection: "column",
-              gap: "8px",
-            },
+    <Container maxWidth="xl" sx={{ py: 4 }}>
+      {/* Hero Section */}
+      <Box sx={{ textAlign: "center", mb: 6 }}>
+        <Typography 
+          variant="h3" 
+          component="h1" 
+          sx={{ 
+            fontWeight: 800,
+            mb: 2,
+            background: theme.custom.gradients.primary,
+            backgroundClip: "text",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
           }}
         >
-          <Button
-            component="label"
-            role="button"
-            variant="contained"
-            startIcon={<CloudUploadIcon />}
-          >
-            Upload
-            <VisuallyHiddenInput type="file" onChange={handleFileChange} />
-          </Button>
-          {compressedFile && (
-            <Button
-              onClick={handleFileDownload}
-              variant="contained"
-              startIcon={<Download />}
-              sx={{ [theme.breakpoints.up("md")]: { ml: 2 } }}
-            >
-              Download
-            </Button>
-          )}
-        </Box>
-      </Grid>
-      <Grid item xs={12}>
-        <Grid container spacing={1}>
-          <Grid item xs={12} md={10} justifyContent="center" textAlign="center">
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "16px",
-                [theme.breakpoints.up("md")]: {
-                  flexDirection: "row",
-                },
+          Image Compressor
+        </Typography>
+        <Typography 
+          variant="h6" 
+          color="text.secondary" 
+          sx={{ mb: 4, maxWidth: 600, mx: "auto" }}
+        >
+          Compress your images to reduce file size while maintaining quality. 
+          Perfect for email attachments, websites, and social media.
+        </Typography>
+        
+        {/* Feature Chips */}
+        <Stack direction="row" spacing={2} justifyContent="center" flexWrap="wrap" sx={{ mb: 4 }}>
+          <Chip 
+            icon={<Compress />} 
+            label="Smart Compression" 
+            color="primary" 
+            variant="filled" 
+          />
+          <Chip 
+            icon={<Settings />} 
+            label="Custom Settings" 
+            color="primary" 
+            variant="filled" 
+          />
+          <Chip 
+            icon={<Download />} 
+            label="Instant Download" 
+            color="primary" 
+            variant="filled" 
+          />
+        </Stack>
+      </Box>
+
+      {/* Main Content */}
+      <Grid container spacing={4}>
+        {/* Left Panel - Upload and Settings */}
+        <Grid item xs={12} md={5}>
+          <Stack spacing={3}>
+            {/* Upload Section */}
+            <Paper 
+              elevation={0}
+              sx={{ 
+                p: 3, 
+                borderRadius: 3,
+                ...getGlassStyles(theme),
+                boxShadow: getShadow(theme, "elegant"),
               }}
             >
-              {compressionError && <Typography color="error">{compressionError}</Typography>}
-              <StyledImagePreviewBox>
-                {selectedFile && (
-                  <StyledImagePreviewContainer>
-                    <Typography variant="h6">Original Image Preview:</Typography>
-                    <Typography variant="body2">
-                      Original Size: {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                    </Typography>
-                    <StyledImagePreview
-                      src={URL.createObjectURL(selectedFile)}
-                      alt="Original Preview"
-                    />
-                  </StyledImagePreviewContainer>
-                )}
-                {compressedFile && (
-                  <StyledImagePreviewContainer>
-                    <Typography variant="h6">Compressed Image Preview:</Typography>
-                    <Typography variant="body2">
-                      Compressed Size: {(compressedFile.size / 1024 / 1024).toFixed(2)} MB
-                    </Typography>
-                    <StyledImagePreview
-                      src={URL.createObjectURL(compressedFile)}
-                      alt="Compressed Preview"
-                    />
-                  </StyledImagePreviewContainer>
-                )}
-              </StyledImagePreviewBox>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={2}>
-            <Box
-              sx={{
-                display: "flex",
-                flexWrap: "wrap",
-                padding: "0 0 0 16px",
-                flexDirection: "column",
-                alignContent: "flex-end",
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                <CloudUpload sx={{ color: theme.palette.primary.main, mr: 2, fontSize: 28 }} />
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Upload Image
+                </Typography>
+              </Box>
+
+              <Button
+                variant="contained"
+                component="label"
+                fullWidth
+                startIcon={<CloudUpload />}
+                sx={{
+                  background: theme.custom.gradients.primary,
+                  mb: 2,
+                  '&:hover': {
+                    background: theme.custom.gradients.primary,
+                    boxShadow: getShadow(theme, "neon"),
+                  }
+                }}
+              >
+                Choose Image
+                <VisuallyHiddenInput
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                />
+              </Button>
+
+              {selectedFile && (
+                <Alert severity="success" icon={<CheckCircle />}>
+                  <Typography variant="body2">
+                    <strong>{selectedFile.name}</strong> selected
+                    <br />
+                    Size: {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                  </Typography>
+                </Alert>
+              )}
+            </Paper>
+
+            {/* Compression Settings */}
+            <Paper 
+              elevation={0}
+              sx={{ 
+                p: 3, 
+                borderRadius: 3,
+                ...getGlassStyles(theme),
+                boxShadow: getShadow(theme, "elegant"),
               }}
             >
-              <Typography variant="h6">Custom Settings</Typography>
-              <Divider variant="fullWidth" />
-              <FormControl margin="normal">
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                <Settings sx={{ color: theme.palette.primary.main, mr: 2, fontSize: 28 }} />
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Compression Settings
+                </Typography>
+              </Box>
+
+              <Stack spacing={3}>
                 <TextField
-                  size="small"
                   label="Max Size (MB)"
                   type="number"
                   value={maxSizeMB}
-                  onChange={(e) => setMaxSizeMB(parseFloat(e.target.value))}
-                  inputProps={{ step: "0.1", min: "0.1" }}
-                  style={{ marginRight: "10px" }}
+                  onChange={(e) => setMaxSizeMB(Number(e.target.value))}
+                  inputProps={{ min: 0.1, max: 10, step: 0.1 }}
+                  fullWidth
                 />
-              </FormControl>
-              <FormControl margin="normal">
+
                 <TextField
-                  size="small"
-                  label="Initial Quality (0-1)"
+                  label="Quality (0-1)"
                   type="number"
                   value={initialQuality}
-                  onChange={(e) => setInitialQuality(parseFloat(e.target.value))}
-                  inputProps={{ step: "0.1", min: "0", max: "1" }}
-                  style={{ marginRight: "10px" }}
+                  onChange={(e) => setInitialQuality(Number(e.target.value))}
+                  inputProps={{ min: 0.1, max: 1, step: 0.1 }}
+                  fullWidth
                 />
-              </FormControl>
-              <FormControl margin="normal">
+
                 <TextField
-                  size="small"
-                  label="Max Width/Height"
+                  label="Max Width/Height (px)"
                   type="number"
                   value={maxWidthOrHeight}
-                  onChange={(e) => setMaxWidthOrHeight(parseInt(e.target.value, 10))}
-                  inputProps={{ step: "10", min: "100" }}
-                  style={{ marginRight: "10px" }}
+                  onChange={(e) => setMaxWidthOrHeight(Number(e.target.value))}
+                  inputProps={{ min: 100, max: 4000, step: 50 }}
+                  fullWidth
                 />
-              </FormControl>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    size="small"
-                    checked={useWebWorker}
-                    onChange={(e) => setUseWebWorker(e.target.checked)}
-                    color="primary"
-                  />
+
+                <FormControl fullWidth>
+                  <InputLabel>Output Format</InputLabel>
+                  <Select
+                    value={outputFormat}
+                    label="Output Format"
+                    onChange={(e) => setOutputFormat(e.target.value as "jpeg" | "png" | "webp")}
+                  >
+                    <MenuItem value="jpeg">JPEG</MenuItem>
+                    <MenuItem value="png">PNG</MenuItem>
+                    <MenuItem value="webp">WebP</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={useWebWorker}
+                      onChange={(e) => setUseWebWorker(e.target.checked)}
+                    />
+                  }
+                  label="Use Web Worker (faster processing)"
+                />
+
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={convertToJPEG}
+                      onChange={(e) => setConvertToJPEG(e.target.checked)}
+                    />
+                  }
+                  label="Convert to JPEG"
+                />
+              </Stack>
+            </Paper>
+
+            {/* Compress Button */}
+            <Button
+              variant="contained"
+              fullWidth
+              onClick={handleCompress}
+              disabled={!selectedFile || isCompressing}
+              startIcon={isCompressing ? <LinearProgress /> : <Compress />}
+              sx={{
+                background: theme.custom.gradients.primary,
+                py: 2,
+                '&:hover': {
+                  background: theme.custom.gradients.primary,
+                  boxShadow: getShadow(theme, "neon"),
                 }
-                label="Use Web Worker"
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    size="small"
-                    checked={convertToJPEG}
-                    onChange={(e) => setConvertToJPEG(e.target.checked)}
-                    color="primary"
-                  />
-                }
-                label="Convert to JPEG"
-              />
-              <FormControl margin="normal">
-                <InputLabel id="output-format-label">Output Format</InputLabel>
-                <Select
-                  size="small"
-                  labelId="output-format-label"
-                  value={outputFormat}
-                  onChange={(e) => setOutputFormat(e.target.value as "jpeg" | "png" | "webp")}
-                >
-                  <MenuItem value={"jpeg"}>JPEG</MenuItem>
-                  <MenuItem value={"png"}>PNG</MenuItem>
-                  <MenuItem value={"webp"}>WEBP</MenuItem>
-                </Select>
-              </FormControl>
+              }}
+            >
+              {isCompressing ? 'Compressing...' : 'Compress Image'}
+            </Button>
+
+            {/* Progress Bar */}
+            {isCompressing && (
+              <Box sx={{ width: '100%' }}>
+                <LinearProgress 
+                  variant="determinate" 
+                  value={compressionProgress} 
+                  sx={{ 
+                    height: 8, 
+                    borderRadius: 4,
+                    backgroundColor: `${theme.palette.primary.main}20`,
+                    '& .MuiLinearProgress-bar': {
+                      borderRadius: 4,
+                      background: theme.custom.gradients.primary,
+                    }
+                  }} 
+                />
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
+                  Compressing... {compressionProgress}%
+                </Typography>
+              </Box>
+            )}
+
+            {/* Error Message */}
+            {compressionError && (
+              <Alert severity="error" icon={<Error />}>
+                {compressionError}
+              </Alert>
+            )}
+          </Stack>
+        </Grid>
+
+        {/* Right Panel - Preview and Download */}
+        <Grid item xs={12} md={7}>
+          <Paper 
+            elevation={0}
+            sx={{ 
+              p: 3, 
+              borderRadius: 3,
+              ...getGlassStyles(theme),
+              boxShadow: getShadow(theme, "elegant"),
+              height: 'fit-content',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+              <Image sx={{ color: theme.palette.primary.main, mr: 2, fontSize: 28 }} />
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                Image Preview
+              </Typography>
             </Box>
-          </Grid>
+
+            {selectedFile && (
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle2" sx={{ mb: 2 }}>
+                  Original Image
+                </Typography>
+                <StyledImagePreviewContainer>
+                  <StyledImagePreview
+                    src={URL.createObjectURL(selectedFile)}
+                    alt="Original"
+                  />
+                </StyledImagePreviewContainer>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  Size: {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                </Typography>
+              </Box>
+            )}
+
+            {compressedFile && (
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle2" sx={{ mb: 2 }}>
+                  Compressed Image
+                </Typography>
+                <StyledImagePreviewContainer>
+                  <StyledImagePreview
+                    src={URL.createObjectURL(compressedFile)}
+                    alt="Compressed"
+                  />
+                </StyledImagePreviewContainer>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  Size: {(compressedFile.size / 1024 / 1024).toFixed(2)} MB
+                  {selectedFile && (
+                    <span style={{ color: theme.palette.success.main }}>
+                      {' '}({((1 - compressedFile.size / selectedFile.size) * 100).toFixed(1)}% reduction)
+                    </span>
+                  )}
+                </Typography>
+              </Box>
+            )}
+
+            {compressedFile && (
+              <Button
+                variant="contained"
+                fullWidth
+                onClick={handleFileDownload}
+                startIcon={<Download />}
+                sx={{
+                  background: theme.custom.gradients.primary,
+                  '&:hover': {
+                    background: theme.custom.gradients.primary,
+                    boxShadow: getShadow(theme, "neon"),
+                  }
+                }}
+              >
+                Download Compressed Image
+              </Button>
+            )}
+
+            {!selectedFile && (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Image sx={{ fontSize: 64, color: theme.palette.text.secondary, mb: 2 }} />
+                <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+                  No Image Selected
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Upload an image to see the preview and compression results.
+                </Typography>
+              </Box>
+            )}
+          </Paper>
         </Grid>
       </Grid>
-      <Grid item xs={12}>
-        <BlogComponent blogComponent={<Compressor/>}/>
-      </Grid>
-    </StyledSectionGrid>
+
+      {/* Blog Content */}
+      <Box sx={{ mt: 6 }}>
+        <BlogComponent blogData={Compressor} />
+      </Box>
+    </Container>
   );
 };
+
 export default ImageCompressor;

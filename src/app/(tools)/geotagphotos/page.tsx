@@ -1,6 +1,6 @@
 import { generatePageMetadata } from "../../../lib/MetadataGenerator";
 import { Metadata } from "next";
-import { GeotagLayout } from "@components/image2map/TaggerLayout";
+import { GeotagPhotosContainer } from "@components/image2map/GeotagPhotosContainer";
 const jsonLdSoftwareApplication = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
@@ -181,7 +181,7 @@ const Page: React.FC = () => {
         />
       )}
 
-      <GeotagLayout />
+      <GeotagPhotosContainer />
     </>
   );
 };

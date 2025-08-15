@@ -1,14 +1,10 @@
 "use client"
-import { Session } from 'next-auth';
-import { SessionProvider} from 'next-auth/react';
+import React from 'react';
 
-
-const AuthProvider = ({children,session}:{children:React.ReactNode, session:Session}) => {
-    return ( 
-        <SessionProvider session={session}>
-            {children}
-        </SessionProvider>
-    );
+// Simple provider that just passes through children
+// Better Auth handles the authentication state automatically
+const AuthProvider = ({children}:{children:React.ReactNode}) => {
+    return <>{children}</>;
 }
 
 export default AuthProvider;

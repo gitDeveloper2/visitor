@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from '../../../lib/mongodb';
 import { generateAndInsertToc } from '../../../utils/generators/tableofContents';
 import { normalizeHTML } from '../../../utils/transformers/HtmlStrings';
 import logger from '../../../utils/logger/customLogger';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from "../../../lib/auth";
 
 export async function POST(request: Request) {
   try {

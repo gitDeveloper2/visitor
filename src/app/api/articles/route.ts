@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from '../../../lib/mongodb';
 import logger from '../../../utils/logger/customLogger';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from "../../../lib/auth";
 import {redirect} from "next/navigation"
 import dbConnect from '../../../lib/config/mongodb';
 import BlogPost from '../../../models/BlogPost';

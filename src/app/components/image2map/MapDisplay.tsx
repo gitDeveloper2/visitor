@@ -8,7 +8,8 @@ import {
   createMarker,
   addFullscreenControl,
   addLayerControl,
-} from "../../../utils/maps/mapUtils"; // Import the utils functions
+} from "../../../utils/maps/mapUtils";
+import { Box } from "@mui/material";
 
 interface MapDisplayProps {
   lat: number;
@@ -18,7 +19,6 @@ interface MapDisplayProps {
 const DEFAULT_ZOOM = 2;
 
 const MapDisplay: React.FC<MapDisplayProps> = ({ lat, lon }) => {
-  // console.log("rerendered amap")
   const [map, setMap] = useState<L.Map | null>(null);
   const [marker, setMarker] = useState<L.Marker | null>(null);
 
@@ -50,21 +50,28 @@ const MapDisplay: React.FC<MapDisplayProps> = ({ lat, lon }) => {
 
       if (!isDefaultCoordinates) {
         // Update map view and zoom when valid coordinates are provided
-        map.setView([lat, lon], 4); // Zoom to a higher level (e.g., 12)
+        map.setView([lat, lon], 12); // Zoom to a higher level for better detail
 
         // Update marker position
         if (marker) {
           marker.setLatLng([lat, lon]);
-          marker.bindPopup(`<b>Location</b><br>Lat: ${lat}, Lon: ${lon}`).openPopup();
+          marker.bindPopup(`<b>Photo Location</b><br>Latitude: ${lat.toFixed(6)}<br>Longitude: ${lon.toFixed(6)}`).openPopup();
         }
       }
     }
   }, [lat, lon, map, marker]); // Run whenever lat, lon, map, or marker changes
 
   return (
-    <div>
-      <div id="map" style={{ height: "400px", width: "100%" }} />
-    </div>
+    <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
+      <div 
+        id="map" 
+        style={{ 
+          height: "500px", 
+          width: "100%",
+          borderRadius: "0 0 12px 12px", // Match the paper border radius
+        }} 
+      />
+    </Box>
   );
 };
 

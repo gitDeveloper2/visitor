@@ -72,7 +72,6 @@ export const auth = betterAuth({
       avatarUrl: { type: "string", input: false },
       githubUsername: { type: "string", input: false },
       kind: { type: "string", input: false },
-
       pro: { type: "boolean", defaultValue: false, input: false },
       role: { type: "string", defaultValue: "user", input: false },
       suspended: { type: "boolean", defaultValue: false, input: false },
@@ -175,7 +174,7 @@ export const auth = betterAuth({
           role: u.role ?? "user",
           suspended: u.suspended ?? false,
           socialAccounts: decodedSocials,
-          kind:u.kind
+          kind: u.kind
         },
         session: {
           ...session,

@@ -49,6 +49,7 @@ import { useRef } from "react";
         { label: "Admin Apps", href: "/dashboard/admin/apps" },
         { label: "Admin Blogs", href: "/dashboard/admin/blogs" },
         { label: "Verification Management", href: "/dashboard/admin/verification" },
+        { label: "User Management", href: "/dashboard/admin/users" },
       ],
     },
   ];

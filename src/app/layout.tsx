@@ -83,14 +83,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <main id="main-content" tabIndex={-1}>
                   {children}
                 </main>
-               <div style={{ width: '100%', maxWidth: '300px', margin: '10px auto', textAlign: 'center' }}>
-      
-    </div>
+                 <div style={{ width: '100%', maxWidth: '300px', margin: '10px auto', textAlign: 'center' }}>
+        
+        </div>
 
-              
-                {/* Footer removed - now handled by individual pages */}
-                <Footer/>
-              </div>
+                
+                  {/* Footer removed - now handled by individual pages */}
+                  <Footer/>
+                </div>
             </ThemeProvider>
         </AppRouterCacheProvider>
       </body>

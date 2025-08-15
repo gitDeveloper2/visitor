@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 import dbConnect from '../../../lib/config/mongodb';
 import App from '../../../models/App';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from "../../../lib/auth";
 
 export async function POST(request: Request) {
   const session = await getServerSession();

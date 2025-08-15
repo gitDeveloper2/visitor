@@ -1,5 +1,5 @@
 import React from 'react';
-import { Typography, Grid } from '@mui/material';
+import { Typography, Grid, Paper, Box, Stack, Chip } from '@mui/material';
 import {
   Exposure,
   FilterHdr,
@@ -8,7 +8,10 @@ import {
   Brightness5,
   FlashOn,
   LocalFlorist,
+  Camera,
 } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
+import { getGlassStyles, getShadow } from '../../../../utils/themeUtils';
 import { Exif } from '../../../../types/ExifData';
 
 interface CameraSettingsProps {
@@ -16,6 +19,7 @@ interface CameraSettingsProps {
 }
 
 const CameraSettings: React.FC<CameraSettingsProps> = ({ metadata }) => {
+  const theme = useTheme();
   const settings = metadata.cameraSettings;
 
   // If no valid cameraSettings metadata is available, return null
@@ -36,124 +40,96 @@ const CameraSettings: React.FC<CameraSettingsProps> = ({ metadata }) => {
     return null;
   }
 
+  const settingItems = [
+    { icon: <Exposure />, label: 'Exposure Time', value: settings.exposureTime, unit: 's' },
+    { icon: <FilterHdr />, label: 'F-Number', value: settings.fNumber },
+    { icon: <ShutterSpeed />, label: 'Shutter Speed', value: settings.shutterSpeedValue },
+    { icon: <Lens />, label: 'Aperture', value: settings.apertureValue },
+    { icon: <Brightness5 />, label: 'Brightness', value: settings.brightnessValue },
+    { icon: <Brightness5 />, label: 'Exposure Bias', value: settings.exposureBiasValue },
+    { icon: <Lens />, label: 'Max Aperture', value: settings.maxApertureValue },
+    { icon: <LocalFlorist />, label: 'Metering Mode', value: settings.meteringMode },
+    { icon: <FlashOn />, label: 'Flash', value: settings.flash },
+    { icon: <Lens />, label: 'Focal Length', value: settings.focalLength, unit: 'mm' },
+    { icon: <Lens />, label: 'Focal Length (35mm)', value: settings.focalLengthIn35mmFilm, unit: 'mm' },
+  ].filter(item => item.value);
+
   return (
-    <div style={{ marginTop: '16px' }}>
-      <Typography variant="h4" gutterBottom>
-        Camera Settings
-      </Typography>
+    <Paper
+      elevation={0}
+      sx={{
+        p: 3,
+        borderRadius: 3,
+        ...getGlassStyles(theme),
+        boxShadow: getShadow(theme, "elegant"),
+        height: '100%',
+      }}
+    >
+      {/* Header */}
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+        <Camera sx={{ color: theme.palette.primary.main, mr: 2, fontSize: 28 }} />
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+          Camera Settings
+        </Typography>
+      </Box>
 
-      <Grid container spacing={3}>
-        {/* Exposure Time */}
-        {settings.exposureTime && (
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2">
-              <Exposure style={{ marginRight: 8, verticalAlign: 'middle' }} />
-              Exposure Time: {settings.exposureTime}s
-            </Typography>
+      {/* Settings Grid */}
+      <Grid container spacing={2}>
+        {settingItems.map((item, index) => (
+          <Grid item xs={12} sm={6} key={index}>
+            <Box
+              sx={{
+                p: 2,
+                borderRadius: 2,
+                bgcolor: `${theme.palette.primary.main}08`,
+                border: `1px solid ${theme.palette.primary.main}20`,
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  bgcolor: `${theme.palette.primary.main}12`,
+                  transform: 'translateY(-1px)',
+                }
+              }}
+            >
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Box
+                  sx={{
+                    p: 1,
+                    borderRadius: 1,
+                    bgcolor: theme.palette.primary.main,
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {item.icon}
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                    {item.label}
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {item.value}{item.unit ? ` ${item.unit}` : ''}
+                  </Typography>
+                </Box>
+              </Stack>
+            </Box>
           </Grid>
-        )}
-
-        {/* F-Number */}
-        {settings.fNumber && (
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2">
-              <FilterHdr style={{ marginRight: 8, verticalAlign: 'middle' }} />
-              F-Number: {settings.fNumber}
-            </Typography>
-          </Grid>
-        )}
-
-        {/* Shutter Speed */}
-        {settings.shutterSpeedValue && (
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2">
-              <ShutterSpeed style={{ marginRight: 8, verticalAlign: 'middle' }} />
-              Shutter Speed: {settings.shutterSpeedValue}
-            </Typography>
-          </Grid>
-        )}
-
-        {/* Aperture Value */}
-        {settings.apertureValue && (
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2">
-              <Lens style={{ marginRight: 8, verticalAlign: 'middle' }} />
-              Aperture: {settings.apertureValue}
-            </Typography>
-          </Grid>
-        )}
-
-        {/* Brightness Value */}
-        {settings.brightnessValue && (
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2">
-              <Brightness5 style={{ marginRight: 8, verticalAlign: 'middle' }} />
-              Brightness: {settings.brightnessValue}
-            </Typography>
-          </Grid>
-        )}
-
-        {/* Exposure Bias Value */}
-        {settings.exposureBiasValue && (
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2">
-              <Brightness5 style={{ marginRight: 8, verticalAlign: 'middle' }} />
-              Exposure Bias: {settings.exposureBiasValue}
-            </Typography>
-          </Grid>
-        )}
-
-        {/* Max Aperture Value */}
-        {settings.maxApertureValue && (
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2">
-              <Lens style={{ marginRight: 8, verticalAlign: 'middle' }} />
-              Max Aperture: {settings.maxApertureValue}
-            </Typography>
-          </Grid>
-        )}
-
-        {/* Metering Mode */}
-        {settings.meteringMode && (
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2">
-              <LocalFlorist style={{ marginRight: 8, verticalAlign: 'middle' }} />
-              Metering Mode: {settings.meteringMode}
-            </Typography>
-          </Grid>
-        )}
-
-        {/* Flash */}
-        {settings.flash && (
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2">
-              <FlashOn style={{ marginRight: 8, verticalAlign: 'middle' }} />
-              Flash: {settings.flash}
-            </Typography>
-          </Grid>
-        )}
-
-        {/* Focal Length */}
-        {settings.focalLength && (
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2">
-              <Lens style={{ marginRight: 8, verticalAlign: 'middle' }} />
-              Focal Length: {settings.focalLength} mm
-            </Typography>
-          </Grid>
-        )}
-
-        {/* Focal Length in 35mm Film */}
-        {settings.focalLengthIn35mmFilm && (
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2">
-              <Lens style={{ marginRight: 8, verticalAlign: 'middle' }} />
-              Focal Length (35mm): {settings.focalLengthIn35mmFilm} mm
-            </Typography>
-          </Grid>
-        )}
+        ))}
       </Grid>
-    </div>
+
+      {/* Summary Chip */}
+      {settingItems.length > 0 && (
+        <Box sx={{ mt: 3, textAlign: 'center' }}>
+          <Chip
+            label={`${settingItems.length} camera settings detected`}
+            color="primary"
+            variant="outlined"
+            size="small"
+          />
+        </Box>
+      )}
+    </Paper>
   );
 };
 
