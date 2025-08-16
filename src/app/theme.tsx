@@ -140,64 +140,71 @@ export const createAppTheme = (mode: "light" | "dark") => {
       borderRadius: 12,
     },
     typography: {
-      fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+      fontFamily: '"Inter", "Plus Jakarta Sans", "Roboto", "Helvetica", "Arial", sans-serif',
       h1: {
+        fontFamily: '"Outfit", "Poppins", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
         fontSize: "3.5rem",
         fontWeight: 800,
         lineHeight: 1.1,
         letterSpacing: "-0.02em",
-          color: colors.text.primary,
-
+        color: colors.text.primary,
       },
       h2: {
+        fontFamily: '"Outfit", "Poppins", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
         fontSize: "2.75rem",
         fontWeight: 700,
         lineHeight: 1.1,
         letterSpacing: "-0.01em",
         color: colors.text.primary,
-
       },
       h3: {
+        fontFamily: '"Poppins", "Outfit", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
         fontSize: "2.25rem",
         fontWeight: 700,
         lineHeight: 1.2,
         color: colors.text.primary,
       },
       h4: {
+        fontFamily: '"Poppins", "Outfit", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
         fontSize: "1.875rem",
         fontWeight: 600,
         lineHeight: 1.3,
         color: colors.text.primary,
       },
       h5: {
+        fontFamily: '"Poppins", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
         fontSize: "1.5rem",
         fontWeight: 600,
         lineHeight: 1.4,
         color: colors.text.primary,
       },
       h6: {
+        fontFamily: '"Poppins", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
         fontSize: "1.25rem",
         fontWeight: 600,
         lineHeight: 1.4,
         color: colors.text.primary,
       },
       body1: {
+        fontFamily: '"Plus Jakarta Sans", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
         fontSize: "1rem",
         lineHeight: 1.6,
         color: colors.text.primary,
       },
       body2: {
+        fontFamily: '"Plus Jakarta Sans", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
         fontSize: "0.875rem",
         lineHeight: 1.5,
         color: colors.text.secondary,
       },
       button: {
+        fontFamily: '"Inter", "Plus Jakarta Sans", "Roboto", "Helvetica", "Arial", sans-serif',
         textTransform: "none",
         fontWeight: 600,
       },
       // Custom typography settings
       h1Bold: {
-        fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+        fontFamily: '"Outfit", "Poppins", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
         fontWeight: 800,
         fontSize: '3.5rem',
         lineHeight: 1.1,
@@ -207,6 +214,7 @@ export const createAppTheme = (mode: "light" | "dark") => {
         letterSpacing: '-0.02em',
       },
       MainTitle: {
+        fontFamily: '"Outfit", "Poppins", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
         fontSize: '3rem',
         fontWeight: 800,
         marginBottom: '1.5rem',
@@ -214,6 +222,7 @@ export const createAppTheme = (mode: "light" | "dark") => {
         letterSpacing: '-0.01em',
       },
       sectionTitle: {
+        fontFamily: '"Poppins", "Outfit", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
         fontSize: '2.25rem',
         fontWeight: 700,
         marginBottom: '1.25rem',
@@ -221,6 +230,7 @@ export const createAppTheme = (mode: "light" | "dark") => {
         letterSpacing: '-0.01em',
       },
       PageTitle: {
+        fontFamily: '"Poppins", "Outfit", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
         fontSize: '2rem',
         fontWeight: 700,
         marginBottom: '1.5rem',
@@ -229,6 +239,7 @@ export const createAppTheme = (mode: "light" | "dark") => {
         letterSpacing: '0em',
       },
       caption: {
+        fontFamily: '"Plus Jakarta Sans", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
         fontSize: '0.875rem',
         color: colors.text.secondary,
       },
@@ -291,16 +302,7 @@ export const createAppTheme = (mode: "light" | "dark") => {
           },
         },
       },
-      MuiPaper: {
-        styleOverrides: {
-          root: {
-            backgroundImage: "none",
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-            borderRadius: '8px',
-            
-          },
-        },
-      },
+
 
       MuiTextField: {
         styleOverrides: {
@@ -490,6 +492,7 @@ export const createAppTheme = (mode: "light" | "dark") => {
           },
         },
       },
+
     },
     // Custom theme extensions for design tokens
     custom: {

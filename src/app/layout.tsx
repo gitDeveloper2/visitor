@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Roboto } from "next/font/google";
+import { inter, poppins, outfit, plusJakartaSans, albertSans, fontClasses } from "./styles/fonts";
 import "./globals.css";
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
@@ -15,11 +15,6 @@ import Footer from "@components/Footer";
 import DonateButton from "@components/DonateButton";
 import AuthProvider from "../context/authContexts";
 
-const inter = Inter({ subsets: ["latin"] });
-const roboto = Roboto({
-  subsets: ['latin'], // This loads the Latin subset.
-  weight: ['400', '700'], // Add the desired font weights, e.g., normal (400) and bold (700)
-});
 const APPID=process.env.NEXT_PUBLIC_FACEBOOK_APPID
 const ADMINID=process.env.NEXT_PUBLIC_FACEBOOK_ADMIN_ID
 export const metadata: Metadata = {
@@ -37,7 +32,7 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
  
  return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={fontClasses.all}>
        
       <meta name="trustpilot-one-time-domain-verification-id" content="8820f90d-483a-4d7c-a05a-8d1a308cc460"/>
       <meta property="fb:app_id" content={APPID}/>

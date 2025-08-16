@@ -8,16 +8,23 @@ import {
   Button,
   Paper,
   useTheme,
+  Alert,
 } from '@mui/material';
 import {
+  AlertTriangle,
+  RefreshCw,
   Home,
-  Search,
-  ArrowBack,
-  Construction,
+  Bug,
+  Shield,
 } from 'lucide-react';
 import Link from 'next/link';
 
-export default function NotFound() {
+interface ErrorPageProps {
+  error: Error & { digest?: string };
+  reset: () => void;
+}
+
+export default function ErrorPage({ error, reset }: ErrorPageProps) {
   const theme = useTheme();
 
   return (
@@ -32,36 +39,38 @@ export default function NotFound() {
           justifyContent: 'center',
         }}
       >
-        {/* 404 Number */}
-        <Typography
-          variant="h1"
+        {/* Error Icon */}
+        <Box
           sx={{
-            fontSize: { xs: '8rem', sm: '12rem', md: '16rem' },
-            fontWeight: 900,
-            background: theme.custom?.gradients?.primary,
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            lineHeight: 0.8,
-            mb: 2,
-            fontFamily: '"Outfit", "Poppins", sans-serif',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 120,
+            height: 120,
+            borderRadius: '50%',
+            background: `linear-gradient(135deg, ${theme.palette.error.light}20, ${theme.palette.error.main}20)`,
+            mb: 4,
+            border: `2px solid ${theme.palette.error.main}30`,
           }}
         >
-          404
-        </Typography>
+          <AlertTriangle
+            size={60}
+            color={theme.palette.error.main}
+          />
+        </Box>
 
         {/* Main Message */}
         <Typography
           variant="h2"
           sx={{
-            fontSize: { xs: '1.5rem', sm: '2rem', md: '2.5rem' },
+            fontSize: { xs: '1.75rem', sm: '2.25rem', md: '2.75rem' },
             fontWeight: 700,
             mb: 2,
             color: 'text.primary',
             fontFamily: '"Poppins", "Outfit", sans-serif',
           }}
         >
-          Page Not Found
+          Something Went Wrong
         </Typography>
 
         <Typography
@@ -75,9 +84,47 @@ export default function NotFound() {
             fontFamily: '"Plus Jakarta Sans", sans-serif',
           }}
         >
-          Oops! The page you're looking for seems to have wandered off. 
-          It might have been moved, deleted, or never existed in the first place.
+          We encountered an unexpected error. Don't worry, our team has been notified 
+          and we're working to fix this issue.
         </Typography>
+
+        {/* Error Details (Development Only) */}
+        {process.env.NODE_ENV === 'development' && (
+          <Alert
+            severity="error"
+            sx={{
+              mb: 4,
+              maxWidth: 600,
+              textAlign: 'left',
+              '& .MuiAlert-message': {
+                fontFamily: '"Albert Sans", monospace',
+                fontSize: '0.875rem',
+              },
+            }}
+          >
+            <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+              Error Details:
+            </Typography>
+            <Typography
+              variant="body2"
+              component="pre"
+              sx={{
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+                fontSize: '0.75rem',
+                fontFamily: '"Albert Sans", monospace',
+                backgroundColor: 'background.paper',
+                p: 1,
+                borderRadius: 1,
+                border: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
+              {error.message}
+              {error.digest && `\nError ID: ${error.digest}`}
+            </Typography>
+          </Alert>
+        )}
 
         {/* Action Buttons */}
         <Box
@@ -90,11 +137,10 @@ export default function NotFound() {
           }}
         >
           <Button
-            component={Link}
-            href="/"
+            onClick={reset}
             variant="contained"
             size="large"
-            startIcon={<Home size={20} />}
+            startIcon={<RefreshCw size={20} />}
             sx={{
               px: 4,
               py: 1.5,
@@ -110,15 +156,15 @@ export default function NotFound() {
               transition: 'all 0.3s ease',
             }}
           >
-            Go Home
+            Try Again
           </Button>
 
           <Button
             component={Link}
-            href="/tools"
+            href="/"
             variant="outlined"
             size="large"
-            startIcon={<Search size={20} />}
+            startIcon={<Home size={20} />}
             sx={{
               px: 4,
               py: 1.5,
@@ -136,15 +182,15 @@ export default function NotFound() {
               transition: 'all 0.3s ease',
             }}
           >
-            Explore Tools
+            Go Home
           </Button>
         </Box>
 
-        {/* Helpful Links */}
+        {/* Help Section */}
         <Paper
           sx={{
             p: 4,
-            maxWidth: 500,
+            maxWidth: 600,
             background: theme.custom?.glass?.background,
             border: `1px solid ${theme.custom?.glass?.border}`,
             borderRadius: 3,
@@ -160,61 +206,86 @@ export default function NotFound() {
               fontFamily: '"Poppins", sans-serif',
             }}
           >
-            Looking for something specific?
+            Need Help?
           </Typography>
 
           <Box
             sx={{
               display: 'grid',
               gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+              gap: 3,
+            }}
+          >
+            <Box sx={{ textAlign: 'left' }}>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  fontWeight: 600,
+                  mb: 1,
+                  color: 'text.primary',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                }}
+              >
+                <Bug size={16} />
+                Report Issue
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: 'text.secondary',
+                  fontSize: '0.875rem',
+                  lineHeight: 1.5,
+                }}
+              >
+                If this error persists, please report it to our support team with the error details.
+              </Typography>
+            </Box>
+
+            <Box sx={{ textAlign: 'left' }}>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  fontWeight: 600,
+                  mb: 1,
+                  color: 'text.primary',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                }}
+              >
+                <Shield size={16} />
+                Check Status
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: 'text.secondary',
+                  fontSize: '0.875rem',
+                  lineHeight: 1.5,
+                }}
+              >
+                Check if there are any ongoing maintenance or service issues.
+              </Typography>
+            </Box>
+          </Box>
+
+          <Box
+            sx={{
+              display: 'flex',
               gap: 2,
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              mt: 3,
             }}
           >
             <Button
               component={Link}
-              href="/blogs"
-              variant="text"
-              startIcon={<Construction size={16} />}
-              sx={{
-                justifyContent: 'flex-start',
-                color: 'text.secondary',
-                '&:hover': {
-                  color: 'primary.main',
-                  backgroundColor: 'primary.main',
-                  color: 'white',
-                },
-                transition: 'all 0.2s ease',
-              }}
-            >
-              Blog & Articles
-            </Button>
-
-            <Button
-              component={Link}
-              href="/aboutus"
-              variant="text"
-              startIcon={<ArrowBack size={16} />}
-              sx={{
-                justifyContent: 'flex-start',
-                color: 'text.secondary',
-                '&:hover': {
-                  color: 'primary.main',
-                  backgroundColor: 'primary.main',
-                  color: 'white',
-                },
-                transition: 'all 0.2s ease',
-              }}
-            >
-              About Us
-            </Button>
-
-            <Button
-              component={Link}
               href="/contactus"
               variant="text"
-              startIcon={<Construction size={16} />}
+              size="small"
               sx={{
-                justifyContent: 'flex-start',
                 color: 'text.secondary',
                 '&:hover': {
                   color: 'primary.main',
@@ -231,9 +302,8 @@ export default function NotFound() {
               component={Link}
               href="/faqs"
               variant="text"
-              startIcon={<Search size={16} />}
+              size="small"
               sx={{
-                justifyContent: 'flex-start',
                 color: 'text.secondary',
                 '&:hover': {
                   color: 'primary.main',
@@ -245,10 +315,27 @@ export default function NotFound() {
             >
               FAQ
             </Button>
+
+            <Button
+              component={Link}
+              href="/status"
+              variant="text"
+              size="small"
+              sx={{
+                color: 'text.secondary',
+                '&:hover': {
+                  color: 'primary.main',
+                  backgroundColor: 'primary.main',
+                  color: 'white',
+                },
+                transition: 'all 0.2s ease',
+              }}
+            >
+              Service Status
+            </Button>
           </Box>
         </Paper>
       </Box>
     </Container>
   );
-}
-  
+} 

@@ -85,7 +85,16 @@ const Hero = () => {
           }}
         >
           <Sparkles style={{ width: 20, height: 20, color: theme.palette.primary.main }} />
-          <Typography variant="body2" fontWeight={500} sx={{ color: theme.palette.text.primary }}>
+          <Typography 
+            variant="body2" 
+            fontWeight={600} 
+            sx={{ 
+              color: theme.palette.text.primary,
+              fontFamily: '"Inter", "Plus Jakarta Sans", sans-serif',
+              fontSize: '0.875rem',
+              letterSpacing: '0.025em'
+            }}
+          >
             Powerful Development Tools & Resources
           </Typography>
         </Paper>
@@ -94,9 +103,16 @@ const Hero = () => {
         <Typography
           component="h1"
           sx={{
-            ...typographyVariants.heroTitle,
+            fontSize: { xs: '2.5rem', sm: '3.25rem', md: '4rem', lg: '4.5rem' },
+            fontWeight: 800,
+            lineHeight: { xs: 1.1, md: 1.05 },
+            letterSpacing: { xs: '-0.02em', md: '-0.03em' },
             color: theme.palette.text.primary,
-            mb: 3,
+            mb: 4,
+            fontFamily: '"Outfit", "Poppins", sans-serif',
+            textAlign: 'center',
+            maxWidth: '100%',
+            mx: 'auto',
           }}
         >
           Discover{" "}
@@ -106,6 +122,7 @@ const Hero = () => {
               display: "inline-block",
               ...commonStyles.textGradient(theme),
               fontWeight: 800,
+              fontFamily: '"Outfit", "Poppins", sans-serif',
             }}
           >
             Coding Ideas and Insightful Tools
@@ -117,10 +134,16 @@ const Hero = () => {
           variant="h6"
           sx={{
             mb: 8,
-            maxWidth: 600,
+            maxWidth: 700,
             mx: "auto",
-            lineHeight: 1.5,
+            lineHeight: { xs: 1.6, md: 1.7 },
             color: theme.palette.text.secondary,
+            fontSize: { xs: '1.125rem', sm: '1.25rem', md: '1.375rem' },
+            fontWeight: 400,
+            fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif',
+            letterSpacing: '0.01em',
+            textAlign: 'center',
+            px: { xs: 2, sm: 0 }
           }}
         >
           Stay inspired with articles exploring unique programming concepts and actionable knowledge. From understanding Zod enums to tracking npm package trends with NpmStars, and using free tools like Pic2Map and Geotag Photos Online — BasicUtils helps you learn, analyze, and create smarter.
@@ -199,10 +222,28 @@ const Hero = () => {
                   }
                 }}
               >
-                <Typography variant="h4" fontWeight="bold" sx={{ color: theme.palette.primary.main, mb: 2 }}>
+                <Typography 
+                  variant="h4" 
+                  fontWeight="bold" 
+                  sx={{ 
+                    color: theme.palette.primary.main, 
+                    mb: 2,
+                    fontFamily: '"Outfit", "Poppins", sans-serif',
+                    fontSize: { xs: '2rem', md: '2.5rem' }
+                  }}
+                >
                   {stat.number}
                 </Typography>
-                <Typography sx={{ color: theme.palette.text.secondary }}>{stat.label}</Typography>
+                <Typography 
+                  sx={{ 
+                    color: theme.palette.text.secondary,
+                    fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif',
+                    fontSize: '1rem',
+                    fontWeight: 500
+                  }}
+                >
+                  {stat.label}
+                </Typography>
               </Paper>
             </Grid>
           ))}
