@@ -8,10 +8,10 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   if (!app) return { title: "App not found" };
 
   return {
-    title: `${app.name} — YourSite`,
+    title: `${app.name} — BasicUtils`,
     description: app.tagline || app.fullDescription?.slice(0, 160) || "",
     openGraph: {
-      title: `${app.name} — YourSite`,
+      title: `${app.name} — BasicUtils`,
       description: app.tagline || app.fullDescription?.slice(0, 160) || "",
       images: app.gallery?.[0] ? [app.gallery[0]] : [],
     },

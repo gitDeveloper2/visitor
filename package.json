@@ -45,6 +45,7 @@
     "browser-image-compression": "^2.0.2",
     "busboy": "^1.6.0",
     "cheerio": "^1.0.0",
+    "cloudinary": "^2.7.0",
     "compromise": "^14.14.2",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",

@@ -25,6 +25,7 @@ import {
 import { Add as AddIcon, Delete as DeleteIcon, KeyboardArrowUp as UpIcon, KeyboardArrowDown as DownIcon, Star, Check } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import { useSearchParams } from 'next/navigation';
+import { appCategories, appTags } from "../../../../utils/categories";
 
 function SubmitAppPageContent() {
   const theme = useTheme();
@@ -258,6 +259,20 @@ function SubmitAppPageContent() {
     }));
   };
 
+  const handleTagToggle = (tag: string) => {
+    if (form.tags.includes(tag)) {
+      setForm(prev => ({
+        ...prev,
+        tags: prev.tags.filter(t => t !== tag)
+      }));
+    } else {
+      setForm(prev => ({
+        ...prev,
+        tags: [...prev.tags, tag]
+      }));
+    }
+  };
+
   // Save app as draft
   const saveDraft = async (): Promise<string | null> => {
     try {
@@ -467,11 +482,6 @@ function SubmitAppPageContent() {
 
   const reviewSteps = ["Initial Review", "Quality Check", "Publication"];
 
-  const categories = [
-    "Productivity", "Development", "Design", "Marketing", 
-    "Analytics", "Communication", "Finance", "Education", "Entertainment", "Other"
-  ];
-
   const pricingOptions = ["Free", "Freemium", "Paid", "Enterprise", "Contact Sales"];
 
   const premiumFeatures = [
@@ -592,38 +602,23 @@ function SubmitAppPageContent() {
             
             <Grid item xs={12}>
               <Typography variant="subtitle1" fontWeight={600} mb={2} color="text.secondary">
-                Tags
+                Tags (Select from predefined options)
               </Typography>
-              <Box sx={{ display: 'flex', gap: 2, mb: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-                <TextField
-                  label="Add a tag"
-                  fullWidth
-                  placeholder="e.g. React, Mobile, Productivity"
-                  value={newTag}
-                  onChange={(e) => setNewTag(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && addTag()}
-                  helperText="Press Enter or click Add to add a tag"
-                />
-                <Button
-                  variant="outlined"
-                  onClick={addTag}
-                  disabled={!newTag.trim()}
-                  sx={{ minWidth: { xs: '100%', sm: 100 } }}
-                >
-                  Add
-                </Button>
-              </Box>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {form.tags.map((tag, index) => (
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                {appTags.map((tag) => (
                   <Chip
-                    key={index}
+                    key={tag}
                     label={tag}
-                    onDelete={() => removeTag(index)}
-                    color="primary"
-                    variant="outlined"
+                    onClick={() => handleTagToggle(tag)}
+                    color={form.tags.includes(tag) ? "primary" : "default"}
+                    variant={form.tags.includes(tag) ? "filled" : "outlined"}
+                    size="small"
                   />
                 ))}
               </Box>
+              <Typography variant="caption" color="text.secondary">
+                Selected: {form.tags.length} tags
+              </Typography>
             </Grid>
             
             <Grid item xs={12}>
@@ -672,14 +667,14 @@ function SubmitAppPageContent() {
           
           <Grid container spacing={3}>
             <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
+              <FormControl fullWidth required>
                 <InputLabel>Category</InputLabel>
                 <Select
                   value={form.category}
                   label="Category"
                   onChange={(e) => handleChange("category", e.target.value)}
                 >
-                  {categories.map((category) => (
+                  {appCategories.map((category) => (
                     <MenuItem key={category} value={category}>{category}</MenuItem>
                   ))}
                 </Select>

@@ -14,13 +14,16 @@ export async function POST(request: Request) {
     const { 
       title, 
       content, 
+      category,
       tags, 
       isInternal,
       author, // from form
       role, // from form
       authorBio, // from form
       founderUrl, // from form
-      isFounderStory // from form
+      isFounderStory, // from form
+      imageUrl, // from image upload
+      imagePublicId // from image upload
     } = await request.json();
 
     if (!title || !content) {
@@ -60,6 +63,7 @@ export async function POST(request: Request) {
       title,
       slug, // Add the generated slug
       content,
+      category: category || 'Technology',
       tags: tags || [],
       authorId: session.user.id,
       authorName: session.user.name,
@@ -71,6 +75,9 @@ export async function POST(request: Request) {
       founderUrl: founderUrl || '',
       isFounderStory: isFounderStory || false,
       isInternal: isInternal || isFounderStory || false,
+      // Image fields
+      imageUrl: imageUrl || '',
+      imagePublicId: imagePublicId || '',
       // Metadata for display
       readTime: Math.ceil(content.replace(/<[^>]*>/g, '').split(' ').length / 200), // ~200 words per minute
       views: 0,

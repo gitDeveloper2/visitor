@@ -1,6 +1,7 @@
 "use client"
 import { useTheme } from '@mui/material/styles';
 import React from 'react';
+import Link from 'next/link';
 import { StyledSectionGrid } from '../layout/Spacing';
 
 const TermsOfService: React.FC = () => {
@@ -49,7 +50,7 @@ const TermsOfService: React.FC = () => {
 
 <h2>5. Privacy Policy</h2>
 <p>
-    Please refer to our <a href="/privacypolicy">Privacy Policy</a> for information on how we collect, use, and protect your data.
+    Please refer to our <Link href="/policy">Privacy Policy</Link> for information on how we collect, use, and protect your data.
 </p>
 
 <h2>6. User-Generated Content</h2>
@@ -83,7 +84,7 @@ const TermsOfService: React.FC = () => {
 
 <h2>Contact Us</h2>
 <p>
-    If you have any questions or concerns about these Terms and Conditions, please <a href="/contactus">contact us</a> or email us at support@basicutils.com.
+    If you have any questions or concerns about these Terms and Conditions, please <Link href="/contactus">contact us</Link> or email us at support@basicutils.com.
 </p>
       </div>
     </StyledSectionGrid>

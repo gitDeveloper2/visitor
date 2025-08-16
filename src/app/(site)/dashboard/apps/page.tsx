@@ -666,7 +666,7 @@ export default function ManageAppsPage() {
                               label={getStatusLabel(app.status)}
                               color={getStatusColor(app.status) as any}
                               size="small"
-                              variant="filled"
+                              variant="outlined"
                             />
                             {/* Verification status for free apps */}
                             {app.pricing === 'Free' && app.verificationStatus && (
@@ -785,10 +785,8 @@ export default function ManageAppsPage() {
                             {canEdit(app) && (
                               <Tooltip title="Edit App">
                                 <IconButton
-                                  onClick={() => {
-                                    // Navigate to app submission page with app data
-                                    router.push(`/dashboard/submission/app?appId=${app._id}`);
-                                  }}
+                                  component={Link}
+                                  href={`/dashboard/submission/app?appId=${app._id}`}
                                   size="small"
                                   color="primary"
                                 >

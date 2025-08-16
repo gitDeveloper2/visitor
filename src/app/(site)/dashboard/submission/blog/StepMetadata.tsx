@@ -1,6 +1,5 @@
-// StepMetadata.tsx (modified)
 "use client";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Grid,
@@ -9,8 +8,20 @@ import {
   Checkbox,
   FormControlLabel,
   CircularProgress,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Chip,
+  Button,
+  Alert,
+  IconButton,
+  Paper,
 } from "@mui/material";
-// types.ts (create or add to existing file)
+import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { blogCategories, blogTags, type BlogCategory, type BlogTag } from "../../../../../utils/categories";
+import { compressImage, validateImage, type CompressedImage } from "../../../../../utils/imageCompression";
+
 export type FounderDomainStatus = "unknown" | "checking" | "ok" | "taken" | "invalid";
 
 export type FounderDomainCheck = {
@@ -18,18 +29,19 @@ export type FounderDomainCheck = {
   message: string;
 };
 
-
-
 export interface BlogMetadata {
   title: string;
   author: string;
   role: string;
-  tags: string;
+  category: BlogCategory | "";
+  tags: string[];
   authorBio: string;
   content: string;
   isFounderStory?: boolean;
   founderUrl?: string;
-  founderDomainCheck?: FounderDomainCheck; // <- uses the union
+  founderDomainCheck?: FounderDomainCheck;
+  imageFile?: CompressedImage;
+  imageUrl?: string;
 }
 interface StepMetadataProps {
   formData: BlogMetadata;
@@ -46,6 +58,49 @@ function extractDomain(url: string) {
 }
 
 export default function StepMetadata({ formData, setFormData }: StepMetadataProps) {
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [compressing, setCompressing] = useState(false);
+
+  // Image upload handler
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate image
+    const validationError = validateImage(file);
+    if (validationError) {
+      setImageError(validationError);
+      return;
+    }
+
+    setCompressing(true);
+    setImageError(null);
+
+    try {
+      const compressed = await compressImage(file, 1); // 1MB limit
+      setFormData({ imageFile: compressed });
+    } catch (error) {
+      setImageError(error instanceof Error ? error.message : 'Failed to compress image');
+    } finally {
+      setCompressing(false);
+    }
+  };
+
+  // Remove image
+  const removeImage = () => {
+    setFormData({ imageFile: undefined, imageUrl: undefined });
+    setImageError(null);
+  };
+
+  // Tag selection handler
+  const handleTagToggle = (tag: BlogTag) => {
+    const currentTags = formData.tags || [];
+    const newTags = currentTags.includes(tag)
+      ? currentTags.filter(t => t !== tag)
+      : [...currentTags, tag];
+    setFormData({ tags: newTags });
+  };
+
   // debounced domain check
   useEffect(() => {
     let timer: any;
@@ -104,10 +159,106 @@ export default function StepMetadata({ formData, setFormData }: StepMetadataProp
           <TextField fullWidth label="Author Role" value={formData.role} onChange={(e) => setFormData({ role: e.target.value })} required />
         </Grid>
         <Grid item xs={12}>
-          <TextField fullWidth label="Tags" helperText="Separate with commas, e.g., React, WebDev, UX" value={formData.tags} onChange={(e) => setFormData({ tags: e.target.value })} required />
+          <FormControl fullWidth required>
+            <InputLabel>Category</InputLabel>
+            <Select
+              value={formData.category}
+              label="Category"
+              onChange={(e) => setFormData({ category: e.target.value as BlogCategory })}
+            >
+              {blogCategories.map((category) => (
+                <MenuItem key={category} value={category}>{category}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+
+        <Grid item xs={12}>
+          <Typography variant="subtitle2" gutterBottom>
+            Tags (Select multiple)
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+            {blogTags.map((tag) => (
+              <Chip
+                key={tag}
+                label={tag}
+                onClick={() => handleTagToggle(tag)}
+                color={formData.tags?.includes(tag) ? "primary" : "default"}
+                variant={formData.tags?.includes(tag) ? "filled" : "outlined"}
+                size="small"
+              />
+            ))}
+          </Box>
+          {formData.tags && formData.tags.length > 0 && (
+            <Typography variant="caption" color="text.secondary">
+              Selected: {formData.tags.join(', ')}
+            </Typography>
+          )}
         </Grid>
         <Grid item xs={12}>
           <TextField fullWidth multiline minRows={3} maxRows={5} label="Author Bio" value={formData.authorBio} onChange={(e) => setFormData({ authorBio: e.target.value })} required />
+        </Grid>
+
+        {/* Blog Image Upload */}
+        <Grid item xs={12}>
+          <Typography variant="subtitle2" gutterBottom>
+            Blog Image (Optional)
+          </Typography>
+          <Paper sx={{ p: 2, border: '2px dashed', borderColor: 'divider' }}>
+            {formData.imageFile ? (
+              <Box sx={{ position: 'relative' }}>
+                <img
+                  src={formData.imageFile.dataUrl}
+                  alt="Blog preview"
+                  style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 8 }}
+                />
+                <IconButton
+                  onClick={removeImage}
+                  sx={{ position: 'absolute', top: 8, right: 8, bgcolor: 'rgba(0,0,0,0.5)' }}
+                >
+                  <X color="white" size={16} />
+                </IconButton>
+                <Box sx={{ mt: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Size: {(formData.imageFile.size / 1024 / 1024).toFixed(2)}MB 
+                    ({(formData.imageFile.compressionRatio).toFixed(0)}% smaller)
+                  </Typography>
+                  <Typography variant="caption" color="success.main">
+                    ✓ Compressed to WebP
+                  </Typography>
+                </Box>
+              </Box>
+            ) : (
+              <Box sx={{ textAlign: 'center', py: 3 }}>
+                <input
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  id="blog-image-upload"
+                  type="file"
+                  onChange={handleImageUpload}
+                  disabled={compressing}
+                />
+                <label htmlFor="blog-image-upload">
+                  <Button
+                    component="span"
+                    variant="outlined"
+                    startIcon={compressing ? <CircularProgress size={16} /> : <Upload />}
+                    disabled={compressing}
+                  >
+                    {compressing ? 'Compressing...' : 'Upload Image'}
+                  </Button>
+                </label>
+                <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+                  Max 5MB, will be compressed to WebP format (≤1MB)
+                </Typography>
+              </Box>
+            )}
+          </Paper>
+          {imageError && (
+            <Alert severity="error" sx={{ mt: 1 }}>
+              {imageError}
+            </Alert>
+          )}
         </Grid>
 
         {/* Founder story toggle */}

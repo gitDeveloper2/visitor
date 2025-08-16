@@ -7,11 +7,12 @@ import {
   Card,
   CardContent,
   Stack,
-  Link,
+  Link as MuiLink,
   List,
   ListItem,
   ListItemText,
 } from "@mui/material";
+import Link from "next/link";
 import { FileText } from "lucide-react";
 import DonateButton from "../../components/DonateButton";
 
@@ -152,7 +153,7 @@ const DCMA = () => {
 
                       <Typography paragraph>
                         For further questions regarding our DMCA policy, please contact us through our{" "}
-                        <Link href="/contactus" color="primary">
+                        <Link href="/contactus">
                           Contact Us
                         </Link>{" "}
                         page.

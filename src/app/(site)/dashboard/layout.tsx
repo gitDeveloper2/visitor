@@ -9,201 +9,314 @@ import {
   Menu,
   MenuItem,
   Typography,
-  Collapse,
+  Chip,
 } from "@mui/material";
 import Link from "next/link";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { useTheme } from "@mui/material/styles";
+import { authClient } from "@/app/auth-client";
 
-import { useRef } from "react";
+// Icons
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import AppsIcon from "@mui/icons-material/Apps";
+import ArticleIcon from "@mui/icons-material/Article";
+import AddIcon from "@mui/icons-material/Add";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+import PeopleIcon from "@mui/icons-material/People";
+import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 
-  const groupedLinks = [
-    {
-      group: "Main",
-      links: [
-        { label: "Dashboard", href: "/dashboard" },
-        { label: "Apps", href: "/dashboard/apps" },
-        { label: "Blogs", href: "/dashboard/blogs" },
-      ],
-    },
-    {
-      group: "Launchpad",
-      links: [
-        { label: "Public Blogs", href: "/blogs" },
-        { label: "Launchpad", href: "/launch" },
-        { label: "Launch Details", href: "/launch/snippet-saver" },
-        { label: "How Launch Works", href: "/launch/how-it-works" },
-      ],
-    },
-    {
-      group: "Write",
-      links: [
-        { label: "Write Blog", href: "/dashboard/blogs/write" },
-        { label: "Test Edit", href: "/dashboard/blogs/test-edit" },
-      ],
-    },
-    {
-      group: "Admin",
-      links: [
-        { label: "Admin Apps", href: "/dashboard/admin/apps" },
-        { label: "Admin Blogs", href: "/dashboard/admin/blogs" },
-        { label: "Verification Management", href: "/dashboard/admin/verification" },
-        { label: "User Management", href: "/dashboard/admin/users" },
-      ],
-    },
-  ];
-
-  const submitMenuItems = [
-    { label: "Submit App", href: "/dashboard/submission/app" },
-    { label: "Submit Blog", href: "/dashboard/submission/blog" },
-  ];
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-    const theme = useTheme();
-  
-  const [submitAnchorEl, setSubmitAnchorEl] = React.useState<null | HTMLElement>(null);
-  const [groupMenuAnchor, setGroupMenuAnchor] = React.useState<null | HTMLElement>(null);
-  const [openGroup, setOpenGroup] = React.useState<string | null>(null);
+  const theme = useTheme();
+  const { data: session, isPending } = authClient.useSession();
+  const [adminMenuAnchor, setAdminMenuAnchor] = React.useState<null | HTMLElement>(null);
+  const [submitMenuAnchor, setSubmitMenuAnchor] = React.useState<null | HTMLElement>(null);
 
-  const handleGroupMenuOpen = (group: string) => (e: React.MouseEvent<HTMLElement>) => {
-    setGroupMenuAnchor(e.currentTarget);
-    setOpenGroup(group);
-  };
-  const handleGroupMenuClose = () => {
-    setGroupMenuAnchor(null);
-    setOpenGroup(null);
+  const isAdmin = session?.user?.role === 'admin';
+
+  const handleAdminMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAdminMenuAnchor(event.currentTarget);
   };
 
-  // ...existing groupedLinks and submitMenuItems...
+  const handleAdminMenuClose = () => {
+    setAdminMenuAnchor(null);
+  };
+
+  const handleSubmitMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setSubmitMenuAnchor(event.currentTarget);
+  };
+
+  const handleSubmitMenuClose = () => {
+    setSubmitMenuAnchor(null);
+  };
+
+  if (isPending) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <Typography>Loading...</Typography>
+      </Box>
+    );
+  }
+
+  if (!session?.user) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <Typography>Please sign in to access the dashboard</Typography>
+      </Box>
+    );
+  }
 
   return (
-    <Box>
+    <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
+      {/* Enhanced Navigation Bar */}
       <Box
         component="nav"
         sx={{
           position: "sticky",
           top: 0,
-          zIndex: 10,
-          my: 3,
-          px: { xs: 1, md: 2 },
-          py: 0.5,
-          display: "flex",
-          alignItems: "center",
-          backgroundColor: "background.paper",
-          backdropFilter: "blur(8px)",
+          zIndex: 1100,
+          bgcolor: "background.paper",
           borderBottom: "1px solid",
           borderColor: "divider",
-          borderRadius: "0.5rem",
-          width: "100%",
-          overflowX: "auto",
-          whiteSpace: "nowrap",
-          "&::-webkit-scrollbar": { display: "none" },
+          backdropFilter: "blur(20px)",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
         }}
       >
-<Box sx={{ mx: "auto", }}>
-  <Stack direction="row" spacing={{ xs: 1, sm: 2 }} alignItems="center" justifyContent="center">
-
-          {groupedLinks.map(({ group, links }) => (
-            <Box key={group}>
+        <Box
+          sx={{
+            maxWidth: "1400px",
+            mx: "auto",
+            px: { xs: 2, md: 4 },
+            py: 1,
+          }}
+        >
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            spacing={2}
+          >
+            {/* Left Section - Main Navigation */}
+            <Stack direction="row" spacing={1} alignItems="center">
+              {/* Dashboard Home */}
               <Button
-                endIcon={openGroup === group ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                component={Link}
+                href="/dashboard"
+                startIcon={<DashboardIcon />}
                 variant="text"
-                size="small"
-                onClick={handleGroupMenuOpen(group)}
                 sx={{
-                  color: "text.primary",
                   fontWeight: 600,
                   textTransform: "none",
+                  color: "text.primary",
+                  "&:hover": {
+                    bgcolor: "action.hover",
+                  },
                 }}
               >
-                {group}
+                Dashboard
+              </Button>
+
+              <Divider orientation="vertical" flexItem sx={{ height: 24 }} />
+
+              {/* Apps Section */}
+              <Button
+                component={Link}
+                href="/dashboard/apps"
+                startIcon={<AppsIcon />}
+                variant="text"
+                sx={{
+                  fontWeight: 500,
+                  textTransform: "none",
+                  color: "text.secondary",
+                  "&:hover": {
+                    bgcolor: "action.hover",
+                    color: "text.primary",
+                  },
+                }}
+              >
+                My Apps
+              </Button>
+
+              {/* Blogs Section */}
+              <Button
+                component={Link}
+                href="/dashboard/blogs"
+                startIcon={<ArticleIcon />}
+                variant="text"
+                sx={{
+                  fontWeight: 500,
+                  textTransform: "none",
+                  color: "text.secondary",
+                  "&:hover": {
+                    bgcolor: "action.hover",
+                    color: "text.primary",
+                  },
+                }}
+              >
+                My Blogs
+              </Button>
+
+              <Divider orientation="vertical" flexItem sx={{ height: 24 }} />
+
+              {/* Submit Section */}
+              <Button
+                startIcon={<AddIcon />}
+                variant="contained"
+                color="primary"
+                size="small"
+                onClick={handleSubmitMenuOpen}
+                sx={{
+                  fontWeight: 600,
+                  textTransform: "none",
+                  borderRadius: 2,
+                  px: 2,
+                  "&:hover": {
+                    transform: "translateY(-1px)",
+                    boxShadow: 2,
+                  },
+                }}
+              >
+                Submit
               </Button>
               <Menu
-  anchorEl={groupMenuAnchor}
-  open={openGroup === group}
-  onClose={handleGroupMenuClose}
-  anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-  transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-  PaperProps={{
-    sx: {
-        bgcolor: theme.palette.background.default, // solid background color
-            color: theme.palette.text.primary,  // or "#fff" for white
-      // Optional: add a border or shadow if you want
-      boxShadow: 3,
-    },
-  }}
->
-  {links.map((item) => (
-    <MenuItem
-      key={item.href}
-      component={Link}
-      href={item.href}
-      onClick={handleGroupMenuClose}
-    >
-      {item.label}
-    </MenuItem>
-  ))}
-</Menu>
-            </Box>
-          ))}
+                anchorEl={submitMenuAnchor}
+                open={Boolean(submitMenuAnchor)}
+                onClose={handleSubmitMenuClose}
+                anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                transformOrigin={{ vertical: "top", horizontal: "left" }}
+                PaperProps={{
+                  sx: {
+                    mt: 1,
+                    minWidth: 180,
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+                    borderRadius: 2,
+                  },
+                }}
+              >
+                <MenuItem
+                  component={Link}
+                  href="/dashboard/submission/app"
+                  onClick={handleSubmitMenuClose}
+                  sx={{ py: 1.5 }}
+                >
+                  <AppsIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                  Submit App
+                </MenuItem>
+                <MenuItem
+                  component={Link}
+                  href="/dashboard/submission/blog"
+                  onClick={handleSubmitMenuClose}
+                  sx={{ py: 1.5 }}
+                >
+                  <ArticleIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                  Submit Blog
+                </MenuItem>
+              </Menu>
 
-          <Divider
-            orientation="vertical"
-            flexItem
-            sx={{ mx: { xs: 1, sm: 2 }, borderColor: "divider" }}
-          />
+              {/* Admin Section - Only visible to admins */}
+              {isAdmin && (
+                <>
+                  <Divider orientation="vertical" flexItem sx={{ height: 24 }} />
+                  <Button
+                    startIcon={<AdminPanelSettingsIcon />}
+                    variant="outlined"
+                    color="secondary"
+                    size="small"
+                    onClick={handleAdminMenuOpen}
+                    sx={{
+                      fontWeight: 600,
+                      textTransform: "none",
+                      borderRadius: 2,
+                      px: 2,
+                      borderColor: "secondary.main",
+                      color: "secondary.main",
+                      "&:hover": {
+                        bgcolor: "secondary.main",
+                        color: "white",
+                      },
+                    }}
+                  >
+                    Admin
+                    <Chip
+                      label="Admin"
+                      size="small"
+                      color="secondary"
+                      sx={{
+                        ml: 1,
+                        height: 18,
+                        fontSize: "0.7rem",
+                        fontWeight: 600,
+                      }}
+                    />
+                  </Button>
+                  <Menu
+                    anchorEl={adminMenuAnchor}
+                    open={Boolean(adminMenuAnchor)}
+                    onClose={handleAdminMenuClose}
+                    anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                    transformOrigin={{ vertical: "top", horizontal: "left" }}
+                    PaperProps={{
+                      sx: {
+                        mt: 1,
+                        minWidth: 220,
+                        boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+                        borderRadius: 2,
+                      },
+                    }}
+                  >
+                    <MenuItem
+                      component={Link}
+                      href="/dashboard/admin/apps"
+                      onClick={handleAdminMenuClose}
+                      sx={{ py: 1.5 }}
+                    >
+                      <AppsIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                      Manage Apps
+                    </MenuItem>
+                    <MenuItem
+                      component={Link}
+                      href="/dashboard/admin/blogs"
+                      onClick={handleAdminMenuClose}
+                      sx={{ py: 1.5 }}
+                    >
+                      <ArticleIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                      Manage Blogs
+                    </MenuItem>
+                    <MenuItem
+                      component={Link}
+                      href="/dashboard/admin/users"
+                      onClick={handleAdminMenuClose}
+                      sx={{ py: 1.5 }}
+                    >
+                      <PeopleIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                      User Management
+                    </MenuItem>
+                    <MenuItem
+                      component={Link}
+                      href="/dashboard/admin/verification"
+                      onClick={handleAdminMenuClose}
+                      sx={{ py: 1.5 }}
+                    >
+                      <VerifiedUserIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                      Verification
+                    </MenuItem>
+                  </Menu>
+                </>
+              )}
+            </Stack>
 
-          {/* Expandable Submit Menu */}
-          <Box>
-            <Button
-              variant="outlined"
-              color="primary"
-              size="small"
-              sx={{
-                fontWeight: 600,
-                borderRadius: 999,
-                px: { xs: 1.5, sm: 2 },
-                textTransform: "none",
-              }}
-              onClick={e => setSubmitAnchorEl(e.currentTarget)}
-            >
-              Submit <Typography component="span" sx={{ ml: 0.5 }}>▾</Typography>
-            </Button>
-           <Menu
-  anchorEl={submitAnchorEl}
-  open={Boolean(submitAnchorEl)}
-  onClose={() => setSubmitAnchorEl(null)}
-  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-  transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-  PaperProps={{
-    sx: {
-      backgroundColor: "background.paper", // or "#fff"
-      boxShadow: 3,
-    },
-  }}
->
-  {submitMenuItems.map((item) => (
-    <MenuItem
-      key={item.href}
-      component={Link}
-      href={item.href}
-      onClick={() => setSubmitAnchorEl(null)}
-    >
-      {item.label}
-    </MenuItem>
-  ))}
-</Menu>
-          </Box>
-        </Stack>
+            {/* Right Section - empty (main navbar handles user menu) */}
+            <Box />
+          </Stack>
         </Box>
       </Box>
 
       {/* Page Content */}
-      <Box sx={{ p: { xs: 2, md: 4 } }}>{children}</Box>
+      <Box sx={{ maxWidth: "1400px", mx: "auto", px: { xs: 2, md: 4 }, py: 3 }}>
+        {children}
+      </Box>
     </Box>
   );
 }

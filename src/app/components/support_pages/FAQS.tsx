@@ -1,6 +1,7 @@
 "use client";
 
-import { Box, Container, Typography, Stack, Link } from "@mui/material";
+import { Box, Container, Typography, Stack, Link as MuiLink } from "@mui/material";
+import Link from "next/link";
 import { FileText } from "lucide-react";
 import DonateButton from "../../components/DonateButton";
 import Footer from "../../components/Footer";
@@ -162,7 +163,7 @@ const FAQS = () => {
                   </Typography>
                   <Typography component="dd" mb={3}>
                     You can contact us through the{" "}
-                    <Link href="/contactus" color="primary" underline="hover">
+                    <Link href="/contactus">
                       Contact Us
                     </Link>{" "}
                     page or by sending an email to support@basicutils.com.
@@ -173,7 +174,7 @@ const FAQS = () => {
                   </Typography>
                   <Typography component="dd" mb={3}>
                     If you encounter any issues, please report them through the{" "}
-                    <Link href="/contactus" color="primary" underline="hover">
+                    <Link href="/contactus">
                       Contact Us
                     </Link>{" "}
                     page. We’ll do our best to assist you.

@@ -33,7 +33,8 @@ function BlogSubmitPageContent() {
     title: "",
     author: "",
     role: "",
-    tags: "",
+    category: "",
+    tags: [] as string[],
     authorBio: "",
     content: "",
     isFounderStory: false,
@@ -42,6 +43,8 @@ function BlogSubmitPageContent() {
       status: "unknown" | "checking" | "ok" | "taken" | "invalid";
       message?: string;
     },
+    imageFile: undefined as any,
+    imageUrl: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,12 +103,15 @@ function BlogSubmitPageContent() {
           title: draft.title || '',
           author: draft.author || '',
           role: draft.role || '',
-          tags: Array.isArray(draft.tags) ? draft.tags.join(', ') : draft.tags || '',
+          category: draft.category || '',
+          tags: Array.isArray(draft.tags) ? draft.tags : [],
           authorBio: draft.authorBio || '',
           content: draft.content || '',
           isFounderStory: draft.isFounderStory || false,
           founderUrl: draft.founderUrl || '',
           founderDomainCheck: draft.founderDomainCheck || { status: "unknown", message: "" },
+          imageFile: draft.imageFile || undefined,
+          imageUrl: draft.imageUrl || '',
         };
         
         console.log('📋 Setting form data:', formDataToSet);
@@ -195,10 +201,36 @@ function BlogSubmitPageContent() {
     setSuccess(false);
     
     try {
+      // First, upload image if present
+      let imageUrl = "";
+      let imagePublicId = "";
+      
+      if (formData.imageFile) {
+        const formDataImage = new FormData();
+        formDataImage.append('image', formData.imageFile.file);
+        
+        const imageRes = await fetch('/api/upload/image', {
+          method: 'POST',
+          body: formDataImage,
+        });
+        
+        if (imageRes.status === 503) {
+          // Image upload service not configured, continue without image
+          console.warn('Image upload service not configured, proceeding without image');
+        } else if (!imageRes.ok) {
+          throw new Error('Failed to upload image');
+        } else {
+          const imageData = await imageRes.json();
+          imageUrl = imageData.url;
+          imagePublicId = imageData.publicId;
+        }
+      }
+
       const payload = {
         title: formData.title,
         content: formData.content,
-        tags: formData.tags.split(',').map((t) => t.trim()).filter(Boolean),
+        category: formData.category,
+        tags: formData.tags,
         isInternal: formData.isFounderStory || false,
         // Additional metadata fields
         author: formData.author,
@@ -206,6 +238,8 @@ function BlogSubmitPageContent() {
         authorBio: formData.authorBio,
         founderUrl: formData.founderUrl,
         isFounderStory: formData.isFounderStory,
+        imageUrl,
+        imagePublicId,
       };
 
       const res = await fetch("/api/user-blogs", {
@@ -234,12 +268,15 @@ function BlogSubmitPageContent() {
         title: "",
         author: "",
         role: "",
-        tags: "",
+        category: "",
+        tags: [],
         authorBio: "",
         content: "",
         isFounderStory: false,
         founderUrl: "",
         founderDomainCheck: { status: "unknown", message: "" },
+        imageFile: undefined,
+        imageUrl: "",
       });
       setDraftId(null);
     } catch (err: any) {

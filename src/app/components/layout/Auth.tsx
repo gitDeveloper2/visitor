@@ -15,6 +15,7 @@ import {
 import { ExpandMore } from "@mui/icons-material";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { authClient } from "../../auth-client";
 
 type AuthProps = {
@@ -46,16 +47,6 @@ const Auth: React.FC<AuthProps> = ({ isMobile }) => {
     });
   };
 
-  const handleGoToDashboard = () => {
-    handleMenuClose();
-    router.push("/dashboard");
-  };
-
-  const handleGoToUser = () => {
-    handleMenuClose();
-    router.push("/dashboard/profile");
-  };
-
   if (isPending) {
     return <CircularProgress size={24} />;
   }
@@ -70,10 +61,18 @@ const Auth: React.FC<AuthProps> = ({ isMobile }) => {
           alignItems: "center",
         }}
       >
-        <Button variant="outlined" onClick={() => router.push("/auth/signup")}>
+        <Button 
+          component={Link}
+          href="/auth/signup"
+          variant="outlined"
+        >
           Sign Up
         </Button>
-        <Button variant="contained" onClick={() => router.push("/auth/signin")}>
+        <Button 
+          component={Link}
+          href="/auth/signin"
+          variant="contained"
+        >
           Login
         </Button>
       </Box>
@@ -106,7 +105,9 @@ const Auth: React.FC<AuthProps> = ({ isMobile }) => {
         }}
       >
         <MenuItem
-          onClick={handleGoToUser}
+          component={Link}
+          href="/dashboard/profile"
+          onClick={handleMenuClose}
           sx={{
             flexDirection: "column",
             alignItems: "flex-start",
@@ -127,7 +128,13 @@ const Auth: React.FC<AuthProps> = ({ isMobile }) => {
 
         <Divider sx={{ my: 1 }} />
 
-        <MenuItem onClick={handleGoToDashboard}>Dashboard</MenuItem>
+        <MenuItem 
+          component={Link}
+          href="/dashboard"
+          onClick={handleMenuClose}
+        >
+          Dashboard
+        </MenuItem>
         <MenuItem onClick={handleLogout}>Logout</MenuItem>
       </Menu>
     </Stack>

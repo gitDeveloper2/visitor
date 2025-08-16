@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { useTheme } from '@mui/material/styles';
-import { Box, Typography, Stack, Card, CardContent, Divider, Link } from '@mui/material';
+import { Box, Typography, Stack, Card, CardContent, Divider, Link as MuiLink } from '@mui/material';
+import Link from 'next/link';
 import { StyledSectionGrid } from '../layout/Spacing';
 
 const PrivacyPolicy: React.FC = () => {
@@ -140,8 +141,8 @@ const PrivacyPolicy: React.FC = () => {
                   </Link>
                 </li>
                 <li><strong>Contact Page:</strong>{' '}
-                  <Link href="https://basicutils.com/contactus" target="_blank" rel="noopener">
-                    https://basicutils.com/contactus
+                  <Link href="/contactus">
+                    Contact Us
                   </Link>
                 </li>
               </ul>

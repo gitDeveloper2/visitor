@@ -38,6 +38,8 @@ interface BlogPost {
   views?: number;
   likes?: number;
   slug?: string;
+  imageUrl?: string;
+  imagePublicId?: string;
 }
 
 interface FounderStoryCardProps {
@@ -70,7 +72,10 @@ function FounderStoryCard({ blog }: FounderStoryCardProps) {
         <Box
           sx={{
             height: 160,
-            backgroundImage: `url('https://picsum.photos/400/200?random=${blog._id}')`,
+            backgroundImage: blog.imageUrl 
+              ? `url('${blog.imageUrl}')` 
+              : 'none',
+            backgroundColor: blog.imageUrl ? 'transparent' : theme.palette.grey[100],
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
@@ -169,28 +174,29 @@ export default function FounderStoriesPage() {
   return (
     <Box component="main" sx={{ bgcolor: "background.default", py: 10 }}>
       <Container maxWidth="lg">
-        <Box sx={{ textAlign: "center", mb: 6 }}>
-          <Typography variant="h2" sx={typographyVariants.sectionTitle}>
+        {/* Hero Section */}
+        <Box sx={{ textAlign: "center", mb: 8 }}>
+          <Typography variant="h1" sx={typographyVariants.heroTitle}>
             Founder{" "}
             <Box component="span" sx={commonStyles.textGradient(theme)}>
               Stories
             </Box>
           </Typography>
           <Typography
-            variant="h6"
+            variant="h5"
             sx={{
               color: "text.secondary",
-              mt: 2,
+              mt: 3,
               maxWidth: 720,
               mx: "auto",
               lineHeight: 1.5,
             }}
           >
-            Real journeys from developers who built tools, startups, and side projects that scaled.
+            Inspiring journeys from entrepreneurs who built something amazing. Discover the challenges, triumphs, and lessons learned.
           </Typography>
         </Box>
 
-        {/* Search Bar */}
+        {/* Search Section */}
         <Paper
           elevation={0}
           sx={{
@@ -199,24 +205,27 @@ export default function FounderStoriesPage() {
             py: 4,
             borderRadius: "1rem",
             ...getGlassStyles(theme),
-            display: "flex",
-            justifyContent: "center",
             boxShadow: getShadow(theme, "elegant"),
           }}
         >
           <TextField
-            size="large"
+            fullWidth
+            size="medium"
             placeholder="Search founder stories..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <Search size={18} />
+                  <Search size={20} />
                 </InputAdornment>
               ),
             }}
-            sx={{ minWidth: 300 }}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 2,
+              },
+            }}
           />
         </Paper>
 

@@ -1,4 +1,5 @@
-import { Box, Container, Typography, Card, CardContent, Stack, Link } from "@mui/material";
+import { Box, Container, Typography, Card, CardContent, Stack, Link as MuiLink } from "@mui/material";
+import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 import DonateButton from "../../components/DonateButton";
 import Footer from "../../components/Footer";
@@ -105,9 +106,9 @@ const Disclaimer = () => {
                       Contact Us
                     </Link>{" "}
                     page or via email at{" "}
-                    <Link href="mailto:support@basicutils.com" color="primary">
+                    <MuiLink href="mailto:support@basicutils.com" color="primary">
                       support@basicutils.com
-                    </Link>
+                    </MuiLink>
                     .
                   </Typography>
                 </CardContent>

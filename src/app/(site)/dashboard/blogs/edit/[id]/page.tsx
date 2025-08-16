@@ -20,6 +20,7 @@ import StepEditor from "../../../submission/blog/StepEditor";
 import StepReview from "../../../submission/blog/StepReview";
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 
 const steps = ["Blog Info", "Write Blog", "Review & Submit"];
 
@@ -141,7 +142,11 @@ export default function BlogEditPage() {
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
-        <Button variant="contained" onClick={() => router.push("/dashboard/blogs")}>
+        <Button 
+          component={Link}
+          href="/dashboard/blogs"
+          variant="contained"
+        >
           Back to Blogs
         </Button>
       </Container>
