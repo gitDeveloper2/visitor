@@ -16,7 +16,7 @@ import {
 import PageList from '@components/admin/PageList';
 import GscInsightsPage from '@components/admin/GscStats';
 
-export default function AdminPage() {
+export default function LegacyAdminPage() {
   const [content, setContent] = useState<'blog' | 'news'>('blog');
   const [selectedSection, setSelectedSection] = useState('pages');
 
@@ -102,8 +102,8 @@ export default function AdminPage() {
         {selectedSection === 'gsc' && <GscInsightsPage />}
         {selectedSection === 'settings' && (
           <div>
-            <Typography variant="h4">Settings</Typography>
-            <Typography variant="body1">Admin settings and configuration options will be displayed here.</Typography>
+            <Typography variant="h4">Legacy Admin Settings</Typography>
+            <Typography variant="body1">Legacy admin settings and configuration options will be displayed here.</Typography>
           </div>
         )}
       </Box>

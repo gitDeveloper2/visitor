@@ -41,7 +41,7 @@ const PageActions: React.FC<PageActionsProps> = ({
   content
 }) => {
   const path=content=="blog"?"learn":"news";
-  const editPath=content=="blog"?"content":"content-news";
+  const editPath=content=="blog"?"dashboard/admin/legacy/content":"dashboard/admin/legacy/content-news";
   return (
    
 

@@ -322,6 +322,15 @@ export default function DashboardLayout({
                       <EmojiEventsIcon sx={{ mr: 1.5, fontSize: 20 }} />
                       Manage Badges
                     </MenuItem>
+                    <MenuItem
+                      component={Link}
+                      href="/dashboard/admin/legacy/admin"
+                      onClick={handleAdminMenuClose}
+                      sx={{ py: 1.5 }}
+                    >
+                      <AdminPanelSettingsIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                      Legacy Admin
+                    </MenuItem>
                   </Menu>
                 </>
               )}
