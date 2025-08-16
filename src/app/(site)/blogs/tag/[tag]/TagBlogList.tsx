@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Grid,
@@ -9,6 +9,7 @@ import {
   Chip,
   Avatar,
   Button,
+  Pagination,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { Calendar, Clock, Eye, ThumbsUp } from "lucide-react";
@@ -49,6 +50,24 @@ interface TagBlogListProps {
 
 export default function TagBlogList({ blogs, tag }: TagBlogListProps) {
   const theme = useTheme();
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
+
+  // Pagination logic
+  const totalPages = Math.ceil(blogs.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedBlogs = blogs.slice(startIndex, endIndex);
+
+  const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+    setCurrentPage(value);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Reset to first page when blogs change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [blogs]);
 
   const renderBlogCard = (blog: BlogPost) => {
     const excerpt = blog.content.replace(/<[^>]*>/g, '').slice(0, 120) + '...';
@@ -155,7 +174,7 @@ export default function TagBlogList({ blogs, tag }: TagBlogListProps) {
   return (
     <Box>
       <Grid container spacing={4}>
-        {blogs.map((blog) => (
+        {paginatedBlogs.map((blog) => (
           <Grid item xs={12} sm={6} md={4} key={blog._id}>
             <Link href={`/blogs/${blog.slug || blog._id}`} style={{ textDecoration: 'none' }}>
               {renderBlogCard(blog)}
@@ -178,6 +197,18 @@ export default function TagBlogList({ blogs, tag }: TagBlogListProps) {
           >
             Back to All Blogs
           </Button>
+        </Box>
+      )}
+
+      {totalPages > 1 && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={handlePageChange}
+            color="primary"
+            size="large"
+          />
         </Box>
       )}
     </Box>

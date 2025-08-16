@@ -274,8 +274,8 @@ export default function BlogMainPage({
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(Math.ceil(initialBlogs.length / 12));
   const [totalBlogs, setTotalBlogs] = useState(initialBlogs.length);
+  const itemsPerPage = 12;
 
   // Filter blogs based on search query only
   const filteredBlogs = blogs.filter((blog) => {
@@ -285,10 +285,21 @@ export default function BlogMainPage({
     return matchesSearch;
   });
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredBlogs.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedBlogs = filteredBlogs.slice(startIndex, endIndex);
+
   const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
     setCurrentPage(value);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // Reset to first page when search changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   const renderTags = (tags: string[]) => (
     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
@@ -573,7 +584,7 @@ export default function BlogMainPage({
       {filteredBlogs.length > 0 ? (
         <>
           <Grid container spacing={4}>
-            {filteredBlogs.map((blog) => (
+            {paginatedBlogs.map((blog) => (
               <Grid item xs={12} sm={6} md={4} key={blog._id}>
                 <Link href={`/blogs/${blog.slug || blog._id}`} style={{ textDecoration: 'none' }}>
                   {renderBlogCard(blog)}

@@ -14,6 +14,7 @@ import {
   CircularProgress,
   Alert,
   Button,
+  Pagination,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { Search, Clock, Calendar, Plus } from "lucide-react";
@@ -122,6 +123,8 @@ export default function FounderStoriesPage() {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [search, setSearch] = React.useState("");
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const itemsPerPage = 12;
 
   React.useEffect(() => {
     async function fetchFounderStories() {
@@ -149,6 +152,22 @@ export default function FounderStoriesPage() {
     story.content.toLowerCase().includes(search.toLowerCase()) ||
     story.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase()))
   );
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredStories.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedStories = filteredStories.slice(startIndex, endIndex);
+
+  const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+    setCurrentPage(value);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Reset to first page when search changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
 
   if (loading) {
     return (
@@ -248,15 +267,30 @@ export default function FounderStoriesPage() {
 
         {/* Stories Grid */}
         {filteredStories.length > 0 ? (
-          <Grid container spacing={4}>
-            {filteredStories.map((story) => (
-              <Grid item xs={12} sm={6} md={4} key={story._id}>
-                <Link href={`/blogs/${story.slug || story._id}`} style={{ textDecoration: 'none' }}>
-                  <FounderStoryCard blog={story} />
-                </Link>
-              </Grid>
-            ))}
-          </Grid>
+          <>
+            <Grid container spacing={4}>
+              {paginatedStories.map((story) => (
+                <Grid item xs={12} sm={6} md={4} key={story._id}>
+                  <Link href={`/blogs/${story.slug || story._id}`} style={{ textDecoration: 'none' }}>
+                    <FounderStoryCard blog={story} />
+                  </Link>
+                </Grid>
+              ))}
+            </Grid>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
+                <Pagination
+                  count={totalPages}
+                  page={currentPage}
+                  onChange={handlePageChange}
+                  color="primary"
+                  size="large"
+                />
+              </Box>
+            )}
+          </>
         ) : (
           <Box sx={{ textAlign: 'center', py: 8 }}>
             <Typography variant="h6" color="text.secondary" gutterBottom>
@@ -280,6 +314,19 @@ export default function FounderStoriesPage() {
                 Submit Your First Story
               </Button>
             )}
+          </Box>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
+            <Pagination
+              count={totalPages}
+              page={currentPage}
+              onChange={handlePageChange}
+              color="primary"
+              size="large"
+            />
           </Box>
         )}
       </Container>
