@@ -4,12 +4,13 @@ import React from "react";
 import { Box, Stepper, Step, StepLabel, Button, Typography, Container, Paper, Alert, CircularProgress } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { getShadow, getGlassStyles } from "../../../../../../utils/themeUtils";
-import StepMetadata from "../../../submission/blog/StepMetadata";
-import StepEditor from "../../../submission/blog/StepEditor";
-import StepReview from "../../../submission/blog/StepReview";
+
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import StepReview from "../../../submit/blog/StepReview";
+import StepEditor from "../../../submit/blog/StepEditor";
+import StepMetadata, { type BlogMetadata } from "../../../submit/blog/StepMetadata";
 
 const steps = ["Blog Info", "Write Blog", "Review & Submit"];
 
@@ -18,16 +19,17 @@ export default function BlogEditPage() {
   const params = useParams();
   const router = useRouter();
   const [activeStep, setActiveStep] = React.useState(0);
-  const [formData, setFormData] = React.useState({
+  const [formData, setFormData] = React.useState<BlogMetadata>({
     title: "",
     author: "",
     role: "Author",
-    tags: "",
+    category: "",
+    tags: [],
     authorBio: "Passionate developer and writer sharing insights about modern web development.",
     content: "",
     isFounderStory: false,
     founderUrl: "",
-    founderDomainCheck: { status: "unknown", message: "" },
+    founderDomainCheck: { status: "unknown" as const, message: "" },
   });
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
@@ -48,12 +50,13 @@ export default function BlogEditPage() {
           title: blog.title || "",
           author: blog.author || blog.authorName || "",
           role: blog.role || "Author",
-          tags: Array.isArray(blog.tags) ? blog.tags.join(", ") : "",
+          category: blog.category || "",
+          tags: Array.isArray(blog.tags) ? blog.tags : [],
           authorBio: blog.authorBio || "Passionate developer and writer sharing insights about modern web development.",
           content: blog.content || "",
           isFounderStory: blog.isInternal || blog.isFounderStory || false,
           founderUrl: blog.founderUrl || "",
-          founderDomainCheck: { status: "unknown", message: "" },
+          founderDomainCheck: { status: "unknown" as const, message: "" },
         });
       } catch (err: any) {
         setError(err.message || "Failed to fetch blog");
@@ -78,11 +81,12 @@ export default function BlogEditPage() {
       const payload = {
         title: formData.title,
         content: formData.content,
-        tags: formData.tags.split(',').map((t) => t.trim()).filter(Boolean),
+        tags: formData.tags,
         isInternal: formData.isFounderStory,
         // Additional metadata fields
         author: formData.author,
         role: formData.role,
+        category: formData.category,
         authorBio: formData.authorBio,
         founderUrl: formData.founderUrl,
         isFounderStory: formData.isFounderStory,

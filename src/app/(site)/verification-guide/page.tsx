@@ -36,7 +36,7 @@ import {
   Error,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
-import { generateVerificationBadgeHtml } from '@/app/components/badges/VerificationBadge';
+import { generateVerificationBadgeHtml } from '@/components/badges/VerificationBadge';
 
 export default function VerificationGuidePage() {
   const theme = useTheme();

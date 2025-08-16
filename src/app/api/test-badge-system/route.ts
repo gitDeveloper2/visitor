@@ -3,9 +3,8 @@ import {
   initializeBadgePools,
   getAllBadgeTextsFromDB,
   getAllBadgeClassesFromDB,
-  assignBadgeTextToApp,
-  assignBadgeClassToApp
 } from '@/utils/badgeDatabaseService';
+import { assignBadgeClassToApp, assignBadgeTextToApp } from '@/utils/badgeAssignmentService';
 
 export async function GET(request: NextRequest) {
   try {

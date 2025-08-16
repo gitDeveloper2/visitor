@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useState, useCallback, useRef } from "react";
+import React, { Suspense, useState, useCallback, useRef, useEffect } from "react";
 import {
   Box,
   Button,
@@ -27,7 +27,7 @@ import { Star } from "lucide-react";
 import { useTheme } from "@mui/material/styles";
 import { useSearchParams } from 'next/navigation';
 import Link from "next/link";
-import { appTags, fetchCategoryNames } from "../../../../utils/categories";
+import { appTags, fetchCategoryNames } from "@/utils/categories";
 
 function SubmitAppPageContent() {
   const theme = useTheme();
@@ -842,11 +842,11 @@ function SubmitAppPageContent() {
               >
                 <CardContent sx={{ p: 3, textAlign: 'center' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-                    {selectedPremiumPlan === 'premium' && (
-                      <Box sx={{ mr: 1, color: 'primary.main', display: 'inline-flex' }}>
-                        <Check size={24} />
-                      </Box>
-                    )}
+                                         {selectedPremiumPlan === 'premium' && (
+                       <Box sx={{ mr: 1, color: 'primary.main', display: 'inline-flex' }}>
+                         <Check sx={{ fontSize: 24 }} />
+                       </Box>
+                     )}
                     <Box sx={{ color: 'primary.main', display: 'inline-flex' }}>
                       <Star size={32} />
                     </Box>
@@ -864,16 +864,16 @@ function SubmitAppPageContent() {
                   <Divider sx={{ my: 2 }} />
                   
                   <Box sx={{ textAlign: 'left' }}>
-                    {premiumFeatures.slice(0, 4).map((feature, index) => (
-                      <Box key={index} display="flex" alignItems="center" mb={1}>
-                        <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
-                          <Check size={16} />
-                        </Box>
-                        <Typography variant="body2" fontSize="0.875rem">
-                          {feature}
-                        </Typography>
-                      </Box>
-                    ))}
+                                         {premiumFeatures.slice(0, 4).map((feature, index) => (
+                       <Box key={index} display="flex" alignItems="center" mb={1}>
+                         <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
+                           <Check sx={{ fontSize: 16 }} />
+                         </Box>
+                         <Typography variant="body2" fontSize="0.875rem">
+                           {feature}
+                         </Typography>
+                       </Box>
+                     ))}
                   </Box>
                 </CardContent>
               </Card>
@@ -896,11 +896,11 @@ function SubmitAppPageContent() {
               >
                 <CardContent sx={{ p: 3, textAlign: 'center' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-                    {selectedPremiumPlan === 'free' && (
-                      <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
-                        <Check size={24} />
-                      </Box>
-                    )}
+                                         {selectedPremiumPlan === 'free' && (
+                       <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
+                         <Check sx={{ fontSize: 24 }} />
+                       </Box>
+                     )}
                     <Typography variant="h4" color="success.main">🚀</Typography>
                   </Box>
                   <Typography variant="h6" fontWeight={600} gutterBottom>
@@ -916,17 +916,17 @@ function SubmitAppPageContent() {
                   <Divider sx={{ my: 2 }} />
                   
                   <Box sx={{ textAlign: 'left' }}>
+                                         <Box display="flex" alignItems="center" mb={1}>
+                       <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
+                         <Check sx={{ fontSize: 16 }} />
+                       </Box>
+                       <Typography variant="body2" fontSize="0.875rem">
+                         Standard app listing
+                       </Typography>
+                     </Box>
                     <Box display="flex" alignItems="center" mb={1}>
                       <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
-                        <Check size={16} />
-                      </Box>
-                      <Typography variant="body2" fontSize="0.875rem">
-                        Standard app listing
-                      </Typography>
-                    </Box>
-                    <Box display="flex" alignItems="center" mb={1}>
-                      <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
-                        <Check size={16} />
+                        <Check sx={{ fontSize: 16 }} />
                       </Box>
                       <Typography variant="body2" fontSize="0.875rem">
                         Community review process
@@ -934,7 +934,7 @@ function SubmitAppPageContent() {
                     </Box>
                     <Box display="flex" alignItems="center" mb={1}>
                       <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
-                        <Check size={16} />
+                        <Check sx={{ fontSize: 16 }} />
                       </Box>
                       <Typography variant="body2" fontSize="0.875rem">
                         Basic analytics

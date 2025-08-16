@@ -5,7 +5,12 @@ import { authClient } from '../app/auth-client';
  * This replaces useSession and other NextAuth hooks
  */
 export function useAuthState() {
-  const { data: session, isPending, status } = authClient.useSession();
+  const { data: session, isPending, error } = authClient.useSession();
+  console.log(session)
+  
+  // Determine authentication status based on session data
+  const isAuthenticated = !!session?.user;
+  const isUnauthenticated = !isPending && !session?.user;
   
   return {
     // Session state
@@ -14,8 +19,8 @@ export function useAuthState() {
     
     // Loading states
     isLoading: isPending,
-    isAuthenticated: status === 'authenticated',
-    isUnauthenticated: status === 'unauthenticated',
+    isAuthenticated,
+    isUnauthenticated,
     
     // Auth methods
     signIn: authClient.signIn,
@@ -48,12 +53,12 @@ export function usePermissions() {
   const { user, isAuthenticated } = useAuthState();
   
   return {
-    canCreateContent: isAuthenticated && !user?.isSuspended,
+    canCreateContent: isAuthenticated && !user?.suspended,
     canEditContent: isAuthenticated && (user?.role === 'admin' || user?.role === 'moderator'),
     canDeleteContent: isAuthenticated && user?.role === 'admin',
     canManageUsers: isAuthenticated && user?.role === 'admin',
     canAccessAdmin: isAuthenticated && user?.role === 'admin',
-    isProUser: isAuthenticated && user?.isPro,
+    isProUser: isAuthenticated && user?.pro,
   };
 }
 
@@ -63,13 +68,13 @@ export function usePermissions() {
 export function useAuthActions() {
   return {
     signInWithEmail: (email: string, password: string) => 
-      authClient.signIn('email', { email, password }),
-    signInWithGoogle: () => authClient.signIn('google'),
-    signInWithGithub: () => authClient.signIn('github'),
+      authClient.signIn.email({ email, password }),
+    signInWithGoogle: () => authClient.signIn.social({ provider: 'google' }),
+    signInWithGithub: () => authClient.signIn.social({ provider: 'github' }),
     signUpWithEmail: (email: string, password: string, name?: string) => 
-      authClient.signUp('email', { email, password, name }),
+      authClient.signUp.email({ email, password, name }),
     signOut: () => authClient.signOut(),
-    resetPassword: (email: string) => authClient.resetPassword(email),
-    verifyEmail: (token: string) => authClient.verifyEmail(token),
+    resetPassword: (newPassword: string, token?: string) => authClient.resetPassword({ newPassword, token }),
+    verifyEmail: (token: string) => authClient.verifyEmail({ token }),
   };
 } 

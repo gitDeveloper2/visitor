@@ -1,7 +1,7 @@
 'use client';
 
+import { useAuthState } from '@/hooks/useAuth';
 import { useState } from 'react';
-import { useAuthState } from '../../../../hooks/useAuth';
 
 export default function UserManagementPage() {
   const { user, isAdmin } = useAuthState();
