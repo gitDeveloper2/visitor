@@ -23,6 +23,8 @@ import AddIcon from "@mui/icons-material/Add";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import PeopleIcon from "@mui/icons-material/People";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
+import CategoryIcon from "@mui/icons-material/Category";
+import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 
 export default function DashboardLayout({
   children,
@@ -123,7 +125,7 @@ export default function DashboardLayout({
               {/* Apps Section */}
               <Button
                 component={Link}
-                href="/dashboard/apps"
+                href="/dashboard/my-apps"
                 startIcon={<AppsIcon />}
                 variant="text"
                 sx={{
@@ -142,7 +144,7 @@ export default function DashboardLayout({
               {/* Blogs Section */}
               <Button
                 component={Link}
-                href="/dashboard/blogs"
+                href="/dashboard/my-blogs"
                 startIcon={<ArticleIcon />}
                 variant="text"
                 sx={{
@@ -197,7 +199,7 @@ export default function DashboardLayout({
               >
                 <MenuItem
                   component={Link}
-                  href="/dashboard/submission/app"
+                  href="/dashboard/submit/app"
                   onClick={handleSubmitMenuClose}
                   sx={{ py: 1.5 }}
                 >
@@ -206,7 +208,7 @@ export default function DashboardLayout({
                 </MenuItem>
                 <MenuItem
                   component={Link}
-                  href="/dashboard/submission/blog"
+                  href="/dashboard/submit/blog"
                   onClick={handleSubmitMenuClose}
                   sx={{ py: 1.5 }}
                 >
@@ -301,6 +303,24 @@ export default function DashboardLayout({
                     >
                       <VerifiedUserIcon sx={{ mr: 1.5, fontSize: 20 }} />
                       Verification
+                    </MenuItem>
+                    <MenuItem
+                      component={Link}
+                      href="/dashboard/admin/categories"
+                      onClick={handleAdminMenuClose}
+                      sx={{ py: 1.5 }}
+                    >
+                      <CategoryIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                      Manage Categories
+                    </MenuItem>
+                    <MenuItem
+                      component={Link}
+                      href="/dashboard/admin/badges"
+                      onClick={handleAdminMenuClose}
+                      sx={{ py: 1.5 }}
+                    >
+                      <EmojiEventsIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                      Manage Badges
                     </MenuItem>
                   </Menu>
                 </>

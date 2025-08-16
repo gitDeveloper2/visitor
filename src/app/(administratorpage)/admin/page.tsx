@@ -11,8 +11,8 @@ import {
   CssBaseline,
   Checkbox,
   FormControlLabel,
+  Typography,
 } from '@mui/material';
-import BlogList from '@components/admin/BlogList';
 import PageList from '@components/admin/PageList';
 import GscInsightsPage from '@components/admin/GscStats';
 
@@ -53,7 +53,7 @@ export default function AdminPage() {
           }}
         >
           <List sx={{ display: 'flex', flexDirection: 'row', padding: 0 }}>
-            {['Pages', 'Gsc', 'Settings'].map((text) => (
+            {['pages', 'gsc', 'settings'].map((text) => (
               <ListItem
                 key={text}
                 button
@@ -72,7 +72,7 @@ export default function AdminPage() {
                 }}
               >
                 <ListItemText
-                  primary={text}
+                  primary={text.charAt(0).toUpperCase() + text.slice(1)}
                   sx={{ textAlign: 'center', whiteSpace: 'nowrap', minWidth: '80px' }}
                 />
               </ListItem>
@@ -99,8 +99,13 @@ export default function AdminPage() {
 
       <Box component="main" sx={{ flex: 1, bgcolor: 'background.default', p: 3 }}>
         {selectedSection === 'pages' && <PageList content={content} />}
-        {selectedSection === 'blog' && <BlogList />}
         {selectedSection === 'gsc' && <GscInsightsPage />}
+        {selectedSection === 'settings' && (
+          <div>
+            <Typography variant="h4">Settings</Typography>
+            <Typography variant="body1">Admin settings and configuration options will be displayed here.</Typography>
+          </div>
+        )}
       </Box>
     </Box>
   );

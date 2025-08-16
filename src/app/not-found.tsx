@@ -9,12 +9,10 @@ import {
   Paper,
   useTheme,
 } from '@mui/material';
-import {
-  Home,
-  Search,
-  ArrowBack,
-  Construction,
-} from 'lucide-react';
+import { Home } from 'lucide-react';
+import { Search } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import { Construction } from 'lucide-react';
 import Link from 'next/link';
 
 export default function NotFound() {
@@ -193,7 +191,7 @@ export default function NotFound() {
               component={Link}
               href="/aboutus"
               variant="text"
-              startIcon={<ArrowBack size={16} />}
+              startIcon={<ArrowLeft size={16} />}
               sx={{
                 justifyContent: 'flex-start',
                 color: 'text.secondary',

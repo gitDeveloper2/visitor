@@ -1,128 +1,50 @@
 "use client";
 
+import React, { Suspense, useState, useCallback, useRef } from "react";
 import {
   Box,
-  Container,
-  Typography,
-  TextField,
-  InputAdornment,
-  Chip,
   Button,
-  Paper,
+  Container,
   Grid,
+  TextField,
+  Typography,
+  FormControlLabel,
+  Switch,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  FormHelperText,
-  Stack,
-  Divider,
   Alert,
+  Chip,
   IconButton,
-  CircularProgress,
+  Paper,
+  Card,
+  CardContent,
+  Divider,
 } from "@mui/material";
+import { Add as AddIcon, Delete as DeleteIcon, KeyboardArrowUp as UpIcon, KeyboardArrowDown as DownIcon, Check } from "@mui/icons-material";
+import { Star } from "lucide-react";
 import { useTheme } from "@mui/material/styles";
+import { useSearchParams } from 'next/navigation';
 import Link from "next/link";
-import { BadgeCheck, DollarSign, UploadCloud, Github, Globe, User, Code, Star, ArrowUp, ArrowDown, X } from "lucide-react";
-import { KeyboardArrowUp as UpIcon, KeyboardArrowDown as DownIcon, Delete as DeleteIcon } from "@mui/icons-material";
-import { getGlassStyles, getShadow, typographyVariants, commonStyles } from "@/utils/themeUtils";
-import { useState, useEffect } from "react";
-import PremiumAppListing from '@/components/premium/PremiumAppListing';
-import { fetchCategoryNames } from "../../../../utils/categories";
+import { appTags, fetchCategoryNames } from "../../../../utils/categories";
 
-// Pricing options
-const pricingOptions = ["Free", "Freemium", "One-time", "Subscription", "Enterprise"];
-
-// Tech stack suggestions
-const techStackSuggestions = [
-  "React", "Vue", "Angular", "Node.js", "Python", "Java", "C#", "PHP",
-  "MongoDB", "PostgreSQL", "MySQL", "Redis", "AWS", "Azure", "GCP",
-  "Docker", "Kubernetes", "GraphQL", "REST API", "TypeScript", "JavaScript"
-];
-
-export default function SubmitAppPage() {
+function SubmitAppPageContent() {
   const theme = useTheme();
-  
-  // App categories for selection - will be fetched from API
+  const searchParams = useSearchParams();
+  const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
-  
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [userData, setUserData] = useState<any>(null);
-  
-  const [formData, setFormData] = useState({
-    name: "",
-    tagline: "",
-    description: "",
-    fullDescription: "",
-    website: "",
-    github: "",
-    category: "",
-    pricing: "",
-    tags: [] as string[], // Changed to array
-    techStack: [] as string[], // Changed to array
-    features: [] as string[], // Changed to array
-    authorName: "",
-    authorEmail: "",
-    authorBio: "",
-  });
-  
-  // Feature management state
-  const [newFeature, setNewFeature] = useState("");
-  const [newTag, setNewTag] = useState("");
-  const [newTech, setNewTech] = useState("");
 
-  // Check authentication status and fetch categories on component mount
+  // Fetch categories from API on component mount
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // Try the better-auth session endpoint
-        const response = await fetch('/api/auth/session', {
-          credentials: 'include', // Include cookies
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        console.log('Session response status:', response.status);
-        
-        if (response.ok) {
-          const session = await response.json();
-          console.log('Session data:', session);
-          
-          if (session.user) {
-            setIsAuthenticated(true);
-            setUserData(session.user);
-            // Pre-fill author information from session
-            if (session.user.name && !formData.authorName) {
-              setFormData(prev => ({ ...prev, authorName: session.user.name }));
-            }
-            if (session.user.email && !formData.authorEmail) {
-              setFormData(prev => ({ ...prev, authorEmail: session.user.email }));
-            }
-          } else {
-            console.log('No user in session');
-            setIsAuthenticated(false);
-          }
-        } else {
-          console.log('Session response not ok:', response.status);
-          setIsAuthenticated(false);
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error);
-        setIsAuthenticated(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    const fetchCategories = async () => {
+    const loadCategories = async () => {
       try {
         const apiCategories = await fetchCategoryNames('app');
         setCategories(apiCategories);
       } catch (error) {
-        console.error('Error fetching categories:', error);
-        // Fallback to default categories if API fails
+        console.error('Error loading categories:', error);
+        // Fallback to minimal categories
         setCategories([
           "Productivity", "Development", "Design", "Marketing", 
           "Analytics", "Communication", "Finance", "Education", "Entertainment"
@@ -132,43 +54,193 @@ export default function SubmitAppPage() {
       }
     };
 
-    checkAuth();
-    fetchCategories();
+    loadCategories();
+  }, []);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [newFeature, setNewFeature] = useState("");
+  const [newTag, setNewTag] = useState("");
+  const [newTech, setNewTech] = useState("");
+  const [selectedPremiumPlan, setSelectedPremiumPlan] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingAppId, setEditingAppId] = useState<string | null>(null);
+  const hasLoadedDataRef = useRef(false);
+
+  const [form, setForm] = useState({
+    name: "",
+    description: "",
+    tags: [] as string[],
+    website: "",
+    github: "",
+    category: "",
+    techStack: [] as string[],
+    pricing: "Free",
+    features: [] as string[],
+    isInternal: false,
+  });
+
+  // Load draft data to restore form
+  const loadDraftData = useCallback(async (draftId: string) => {
+    try {
+      const response = await fetch(`/api/user-apps/draft/${draftId}`);
+      if (response.ok) {
+        const draftData = await response.json();
+        
+        console.log('Loading draft data:', draftData);
+        
+        // Restore form with draft data
+        const newFormData = {
+          name: draftData.name || "",
+          description: draftData.description || "",
+          tags: draftData.tags || [],
+          website: draftData.website || "",
+          github: draftData.github || "",
+          category: draftData.category || "",
+          techStack: draftData.techStack || [],
+          pricing: draftData.pricing || "Free",
+          features: draftData.features || [],
+          isInternal: draftData.isInternal || false,
+        };
+        
+        console.log('Setting form data:', newFormData);
+        setForm(newFormData);
+        
+        setSelectedPremiumPlan(draftData.premiumPlan || null);
+        setIsEditing(true);
+        setEditingAppId(draftId);
+        hasLoadedDataRef.current = true;
+      }
+    } catch (error) {
+      console.error('Error loading draft data:', error);
+    }
   }, []);
 
-  const reviewSteps = ["Initial Review", "Quality Check", "Publication"];
+  // Load published app data for editing
+  const loadPublishedAppData = useCallback(async (appId: string) => {
+    try {
+      const response = await fetch(`/api/user-apps/${appId}`);
+      if (response.ok) {
+        const data = await response.json();
+        const appData = data.app; // The API returns { app: {...} }
+        
+        console.log('Loading published app data:', appData);
+        
+        // Restore form with published app data
+        const newFormData = {
+          name: appData.name || "",
+          description: appData.description || "",
+          tags: appData.tags || [],
+          website: appData.website || "",
+          github: appData.github || "",
+          category: appData.category || "",
+          techStack: appData.techStack || [],
+          pricing: appData.pricing || "Free",
+          features: appData.features || [],
+          isInternal: appData.isInternal || false,
+        };
+        
+        console.log('Setting form data:', newFormData);
+        setForm(newFormData);
+        
+        // Don't set premium plan for published apps - they're already paid for
+        setSelectedPremiumPlan(null);
+        setIsEditing(true);
+        setEditingAppId(appId);
+        hasLoadedDataRef.current = true;
+      }
+    } catch (error) {
+      console.error('Error loading published app data:', error);
+    }
+  }, []);
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  // Check for payment success on component mount
+  React.useEffect(() => {
+    if (hasLoadedDataRef.current) return; // Prevent multiple loads
+    
+    const paymentSuccessParam = searchParams.get('payment_success');
+    const draftId = searchParams.get('draftId');
+    const appId = searchParams.get('appId');
+    
+    console.log('URL params:', { paymentSuccessParam, draftId, appId });
+    
+    if (paymentSuccessParam === 'true' && draftId) {
+      setPaymentSuccess(true);
+      setSuccess(true);
+      
+      // Load draft data to restore form
+      loadDraftData(draftId);
+      
+      // Clear the URL parameters
+      const url = new URL(window.location.href);
+      url.searchParams.delete('payment_success');
+      url.searchParams.delete('draftId');
+      window.history.replaceState({}, '', url.toString());
+    } else if (appId) {
+      // Load published app data for editing
+      loadPublishedAppData(appId);
+    } else if (draftId) {
+      // Load draft data for editing (without payment success)
+      loadDraftData(draftId);
+    }
+    
+    hasLoadedDataRef.current = true;
+  }, [searchParams, loadDraftData, loadPublishedAppData]);
+
+  // Debug: Monitor form changes
+  React.useEffect(() => {
+    console.log('Form state changed:', form);
+  }, [form]);
+
+  // Debug: Monitor editing state changes
+  React.useEffect(() => {
+    console.log('Editing state changed:', { isEditing, editingAppId, hasLoadedData: hasLoadedDataRef.current });
+  }, [isEditing, editingAppId]);
+
+  // Debug: Monitor when form is reset to empty values
+  React.useEffect(() => {
+    if (form.name === "" && form.description === "" && isEditing) {
+      console.log('⚠️ Form was reset to empty values while editing!');
+      console.trace('Stack trace for form reset');
+    }
+  }, [form.name, form.description, isEditing]);
+
+  const handleChange = (field: string, value: any) => {
+    console.log(`Setting ${field} to:`, value);
+    setForm(prev => {
+      const newForm = { ...prev, [field]: value };
+      console.log('New form state:', newForm);
+      return newForm;
+    });
   };
-  
+
   // Feature management functions
   const addFeature = () => {
-    if (newFeature.trim() && !formData.features.includes(newFeature.trim())) {
-      setFormData(prev => ({
+    if (newFeature.trim() && !form.features.includes(newFeature.trim())) {
+      setForm(prev => ({
         ...prev,
         features: [...prev.features, newFeature.trim()]
       }));
       setNewFeature("");
     }
   };
-  
+
   const removeFeature = (index: number) => {
-    setFormData(prev => ({
+    setForm(prev => ({
       ...prev,
       features: prev.features.filter((_, i) => i !== index)
     }));
   };
-  
+
   const moveFeature = (index: number, direction: 'up' | 'down') => {
     if (direction === 'up' && index > 0) {
-      setFormData(prev => {
+      setForm(prev => {
         const newFeatures = [...prev.features];
         [newFeatures[index], newFeatures[index - 1]] = [newFeatures[index - 1], newFeatures[index]];
         return { ...prev, features: newFeatures };
       });
-    } else if (direction === 'down' && index < formData.features.length - 1) {
-      setFormData(prev => {
+    } else if (direction === 'down' && index < form.features.length - 1) {
+      setForm(prev => {
         const newFeatures = [...prev.features];
         [newFeatures[index], newFeatures[index + 1]] = [newFeatures[index + 1], newFeatures[index]];
         return { ...prev, features: newFeatures };
@@ -178,8 +250,8 @@ export default function SubmitAppPage() {
 
   // Tag management functions
   const addTag = () => {
-    if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
-      setFormData(prev => ({
+    if (newTag.trim() && !form.tags.includes(newTag.trim())) {
+      setForm(prev => ({
         ...prev,
         tags: [...prev.tags, newTag.trim()]
       }));
@@ -188,7 +260,7 @@ export default function SubmitAppPage() {
   };
 
   const removeTag = (index: number) => {
-    setFormData(prev => ({
+    setForm(prev => ({
       ...prev,
       tags: prev.tags.filter((_, i) => i !== index)
     }));
@@ -196,8 +268,8 @@ export default function SubmitAppPage() {
 
   // Tech stack management functions
   const addTech = () => {
-    if (newTech.trim() && !formData.techStack.includes(newTech.trim())) {
-      setFormData(prev => ({
+    if (newTech.trim() && !form.techStack.includes(newTech.trim())) {
+      setForm(prev => ({
         ...prev,
         techStack: [...prev.techStack, newTech.trim()]
       }));
@@ -206,706 +278,745 @@ export default function SubmitAppPage() {
   };
 
   const removeTech = (index: number) => {
-    setFormData(prev => ({
+    setForm(prev => ({
       ...prev,
       techStack: prev.techStack.filter((_, i) => i !== index)
     }));
   };
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<{
-    type: 'success' | 'error' | null;
-    message: string;
-  }>({ type: null, message: '' });
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Check if user is authenticated
-    if (!isAuthenticated || !userData) {
-      setSubmitStatus({
-        type: 'error',
-        message: 'You must be logged in to submit an app. Please sign in first.'
-      });
-      return;
-    }
-    
-    setIsSubmitting(true);
-    setSubmitStatus({ type: null, message: '' });
-    
-    try {
-      // Client-side validation
-      if (!formData.name.trim()) {
-        throw new Error('App name is required');
-      }
-      if (!formData.description.trim()) {
-        throw new Error('App description is required');
-      }
-      if (!formData.category) {
-        throw new Error('Please select a category');
-      }
-      if (!formData.authorName.trim()) {
-        throw new Error('Author name is required');
-      }
-      if (!formData.authorEmail.trim()) {
-        throw new Error('Author email is required');
-      }
-      
-      // Process the data before submission
-      const processedData = {
-        name: formData.name.trim(),
-        description: formData.description.trim(),
-        tagline: formData.tagline.trim(),
-        fullDescription: formData.fullDescription.trim(),
-        website: formData.website.trim(),
-        github: formData.github.trim(),
-        category: formData.category,
-        pricing: formData.pricing,
-        tags: formData.tags, // Already an array, no need to split
-        techStack: formData.techStack, // Already an array, no need to split
-        features: formData.features, // Already an array, no need to split
-        authorName: formData.authorName.trim(),
-        authorEmail: formData.authorEmail.trim(),
-        authorBio: formData.authorBio.trim(),
-        authorId: userData.id, // Add the authenticated user's ID
-        isInternal: false, // Default to false for public submissions
-      };
-      
-      console.log("Form data:", processedData);
-      console.log("Submitting to API:", '/api/user-apps');
-      
-      // Submit to API
-      const response = await fetch('/api/user-apps', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(processedData)
-      });
-      
-      console.log("API Response status:", response.status);
-      console.log("API Response headers:", Object.fromEntries(response.headers.entries()));
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to submit app');
-      }
-      
-      const result = await response.json();
-      setSubmitStatus({
-        type: 'success',
-        message: 'App submitted successfully! We\'ll review it within 48-72 hours.'
-      });
-      
-      // Reset form after successful submission
-      setFormData({
-        name: "",
-        tagline: "",
-        description: "",
-        fullDescription: "",
-        website: "",
-        github: "",
-        category: "",
-        pricing: "",
-        tags: [], // Reset to empty array
-        techStack: [], // Reset to empty array
-        features: [], // Reset to empty array
-        authorName: "",
-        authorEmail: "",
-        authorBio: "",
-      });
-      setNewFeature(""); // Reset feature input
-      setNewTag(""); // Reset tag input
-      setNewTech(""); // Reset tech stack input
-      
-    } catch (error: any) {
-      console.error('Submission error:', error);
-      let errorMessage = 'Failed to submit app. Please try again.';
-      
-      if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        errorMessage = 'Network error. Please check your connection and try again.';
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
-      setSubmitStatus({
-        type: 'error',
-        message: errorMessage
-      });
-    } finally {
-      setIsSubmitting(false);
+  const handleTagToggle = (tag: string) => {
+    if (form.tags.includes(tag)) {
+      setForm(prev => ({
+        ...prev,
+        tags: prev.tags.filter(t => t !== tag)
+      }));
+    } else {
+      setForm(prev => ({
+        ...prev,
+        tags: [...prev.tags, tag]
+      }));
     }
   };
 
-  return (
-    <Box component="main" sx={{ bgcolor: "background.default", py: 10 }}>
-      <Container maxWidth="lg">
-        {/* Page Title */}
-        <Typography variant="h2" sx={typographyVariants.sectionTitle} textAlign="center">
-          Submit Your <Box component="span" sx={commonStyles.textGradient}>App</Box>
-        </Typography>
-        <Typography variant="h6" color="text.secondary" textAlign="center" mt={2} mb={6}>
-          Share your innovation with thousands of tech enthusiasts and get the visibility you deserve.
-        </Typography>
+  // Save app as draft
+  const saveDraft = async (): Promise<string | null> => {
+    try {
+      const payload = {
+        name: form.name,
+        description: form.description,
+        tags: form.tags,
+        website: form.website,
+        github: form.github,
+        category: form.category,
+        techStack: form.techStack,
+        pricing: form.pricing,
+        features: form.features,
+        isInternal: form.isInternal,
+        premiumPlan: selectedPremiumPlan,
+      };
 
-        {/* Authentication Status */}
-        {isLoading && (
-          <Alert severity="info" sx={{ mb: 3 }}>
-            Checking authentication status...
-          </Alert>
-        )}
+      const res = await fetch("/api/user-apps/draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Could not save draft");
+      }
+
+      const result = await res.json();
+      return result.draftId;
+    } catch (err: any) {
+      console.error('Error saving draft:', err);
+      return null;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+    
+    try {
+      // Determine if we're editing a draft vs a published app
+      const isEditingDraft = isEditing && editingAppId && searchParams.get('draftId') === editingAppId;
+      const isEditingPublishedApp = isEditing && editingAppId && searchParams.get('appId') === editingAppId;
+      
+      // For published apps, we never go through premium flow since they're already paid
+      // For drafts, premium selection can trigger payment/submission flow
+      if (selectedPremiumPlan === 'premium') {
+        // If we are editing a draft that may already be premium-ready, submit it directly
+        if (isEditingDraft) {
+          try {
+            const draftRes = await fetch(`/api/user-apps/draft/${editingAppId}`);
+            if (!draftRes.ok) {
+              throw new Error('Failed to load draft details.');
+            }
+            const draftData = await draftRes.json();
+            if (draftData?.premiumReady) {
+              // Submit draft to apps (pending review)
+              const submitRes = await fetch(`/api/user-apps/draft/${editingAppId}/submit`, {
+                method: 'POST',
+              });
+              if (!submitRes.ok) {
+                const j = await submitRes.json().catch(() => ({}));
+                throw new Error(j.message || 'Failed to submit draft.');
+              }
+              setSuccess(true);
+              setIsEditing(false);
+              setEditingAppId(null);
+              setSelectedPremiumPlan(null);
+              return;
+            }
+          } catch (e: any) {
+            console.error('Draft submit check failed:', e);
+            // fall through to checkout flow
+          }
+        }
+
+        // Not premium-ready yet → ensure we have a draft ID and create checkout
+        let draftId: string | null = null;
+        if (isEditingDraft) {
+          draftId = editingAppId;
+        } else {
+          draftId = await saveDraft();
+          if (!draftId) {
+            throw new Error('Failed to save draft. Please try again.');
+          }
+        }
+
+        try {
+          const checkoutRes = await fetch("/api/lemonsqueezy/checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              variantId: process.env.NEXT_PUBLIC_LEMON_SQUEEZY_APP_LISTING_VARIANT_ID,
+              custom: {
+                subscription_type: "premium_app_listing",
+                draft_id: draftId,
+                app_name: form.name,
+                return_url: `${window.location.origin}/dashboard/submission/app?draftId=${draftId}&payment_success=true`,
+              },
+            }),
+          });
+
+          if (checkoutRes.ok) {
+            const { checkoutUrl } = await checkoutRes.json();
+            window.location.href = checkoutUrl;
+            return;
+          } else {
+            const errorData = await checkoutRes.json().catch(() => ({}));
+            throw new Error(`Failed to create checkout: ${errorData.error || 'Unknown error'}`);
+          }
+        } catch (checkoutError: any) {
+          console.error('Checkout error:', checkoutError);
+          setError(`Payment setup failed: ${checkoutError.message}. Your draft was saved and you can retry payment later.`);
+          setSuccess(true);
+          return;
+        }
+      } else {
+        // Free app - submit directly or update existing
+        const payload = {
+          name: form.name,
+          description: form.description,
+          tags: form.tags,
+          website: form.website,
+          github: form.github,
+          category: form.category,
+          techStack: form.techStack,
+          pricing: form.pricing,
+          features: form.features,
+          isInternal: form.isInternal,
+          premiumPlan: selectedPremiumPlan,
+        };
+
+        // For published apps, always update directly (no payment needed)
+        // For drafts, submit to apps collection
+        let url: string;
+        let method: string;
         
-        {isAuthenticated && userData && (
-          <Alert severity="success" sx={{ mb: 3 }}>
-            Welcome back, {userData.name || userData.email}! You're logged in and ready to submit your app.
-            <Button 
-              variant="outlined" 
-              size="small" 
-              sx={{ ml: 2 }}
-              onClick={() => window.location.href = '/auth/signout'}
-            >
-              Sign Out
-            </Button>
-          </Alert>
-        )}
+        if (isEditingPublishedApp) {
+          // Editing a published app - just update it
+          url = `/api/user-apps/${editingAppId}`;
+          method = "PUT";
+        } else if (isEditingDraft) {
+          // Editing a draft - submit it to apps
+          const submitRes = await fetch(`/api/user-apps/draft/${editingAppId}/submit`, {
+            method: 'POST',
+          });
+          if (!submitRes.ok) {
+            const j = await submitRes.json().catch(() => ({}));
+            throw new Error(j.message || 'Failed to submit draft.');
+          }
+          setSuccess(true);
+          setIsEditing(false);
+          setEditingAppId(null);
+          return;
+        } else {
+          // New app - create it
+          url = "/api/user-apps";
+          method = "POST";
+        }
+
+        // Only make the fetch call for published app updates and new apps
+        if (url && method) {
+          const res = await fetch(url, {
+            method,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          if (!res.ok) {
+            const j = await res.json().catch(() => ({}));
+            throw new Error(j.message || `Could not ${isEditing ? 'update' : 'save'} app`);
+          }
+        }
         
-        {!isAuthenticated && (
-          <Alert severity="warning" sx={{ mb: 3 }}>
-            You need to be logged in to submit an app. Please sign in first.
-            <Button 
-              variant="outlined" 
-              size="small" 
-              sx={{ ml: 2 }}
-              onClick={() => window.location.href = '/auth/signin'}
-            >
-              Sign In
-            </Button>
-          </Alert>
-        )}
+        setSuccess(true);
+        if (!isEditing) {
+          setForm({ 
+            name: "", 
+            description: "", 
+            tags: [],
+            website: "",
+            github: "",
+            category: "",
+            techStack: [],
+            pricing: "Free",
+            features: [],
+            isInternal: false
+          });
+          setSelectedPremiumPlan(null);
+        }
         
-        {/* Form */}
-        <Paper sx={{ ...getGlassStyles(theme), p: 4, borderRadius: "1.5rem", boxShadow: getShadow(theme, "elegant"), position: 'relative' }}>
-          {isSubmitting && (
-            <Box sx={{ 
-              position: 'absolute', 
-              top: 0, 
-              left: 0, 
-              right: 0, 
-              bottom: 0, 
-              bgcolor: 'rgba(255,255,255,0.8)', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              zIndex: 1,
-              borderRadius: "1.5rem"
-            }}>
-              <Box sx={{ textAlign: 'center' }}>
-                <Typography variant="h6" color="primary.main" mb={1}>
-                  Submitting your app...
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Please wait while we process your submission
-                </Typography>
+        // Reset editing state after successful submission
+        if (isEditing) {
+          // Don't reset immediately - let user see the success message
+          // The form will stay in editing mode until they click "New App" or navigate away
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const reviewSteps = ["Initial Review", "Quality Check", "Publication"];
+
+  const pricingOptions = ["Free", "Freemium", "Paid", "Enterprise", "Contact Sales"];
+
+  const premiumFeatures = [
+    'Verified badge and premium placement',
+    'Priority review process (24-48 hours)',
+    'Enhanced app analytics and insights',
+    'Featured in premium app showcase',
+    'Priority customer support',
+    'Marketing promotion opportunities',
+    'Lifetime premium status (no expiration)',
+  ];
+
+  const handlePremiumSelection = (plan: string | null) => {
+    setSelectedPremiumPlan(plan);
+  };
+
+  return (
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" component="h1" gutterBottom fontWeight={600}>
+          {isEditing ? 'Edit Your App' : 'Submit Your App'}
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+          {isEditing 
+            ? 'Update your app information and save your changes.'
+            : 'Share your amazing app with the developer community. We\'ll review it and publish it on our platform.'
+          }
+        </Typography>
+        
+        {/* Progress Steps */}
+        <Box sx={{ display: 'flex', gap: 2, mb: 4, flexWrap: 'wrap' }}>
+          {reviewSteps.map((step, index) => (
+            <Chip
+              key={step}
+              label={step}
+              variant={index === 0 ? "filled" : "outlined"}
+              color={index === 0 ? "primary" : "default"}
+              size="small"
+            />
+          ))}
+        </Box>
+      </Box>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
+      {success && (
+        <Alert severity="success" sx={{ mb: 3 }}>
+                  {paymentSuccess 
+          ? "🎉 Payment successful! Your app draft has been restored. You can now complete your submission with premium features activated."
+          : isEditing 
+            ? "App updated successfully! Your changes have been saved."
+            : "App submitted successfully! We'll review it and get back to you soon."
+        }
+        </Alert>
+      )}
+
+      <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {/* Basic Information */}
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom fontWeight={600} sx={{ mb: 2 }}>
+            Basic Information
+          </Typography>
+          
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <TextField 
+                label="App Name" 
+                name="name" 
+                value={form.name} 
+                onChange={(e) => handleChange("name", e.target.value)} 
+                fullWidth 
+                required 
+                placeholder="Enter your app name"
+              />
+            </Grid>
+            
+            <Grid item xs={12}>
+              <TextField 
+                label="Description" 
+                name="description" 
+                value={form.description} 
+                onChange={(e) => handleChange("description", e.target.value)} 
+                fullWidth 
+                required 
+                multiline 
+                rows={3}
+                placeholder="Brief description of what your app does"
+              />
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              <TextField 
+                fullWidth 
+                label="Website" 
+                name="website" 
+                value={form.website} 
+                onChange={(e) => handleChange("website", e.target.value)} 
+                placeholder="https://yourapp.com"
+                helperText="Optional: Your app's website"
+              />
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              <TextField 
+                fullWidth 
+                label="GitHub Repository" 
+                name="github" 
+                value={form.github} 
+                onChange={(e) => handleChange("github", e.target.value)} 
+                placeholder="https://github.com/username/repo"
+                helperText="Optional: Link to your source code"
+              />
+            </Grid>
+            
+            <Grid item xs={12}>
+              <Typography variant="subtitle1" fontWeight={600} mb={2} color="text.secondary">
+                Tags (Select from predefined options)
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                {appTags.map((tag) => (
+                  <Chip
+                    key={tag}
+                    label={tag}
+                    onClick={() => handleTagToggle(tag)}
+                    color={form.tags.includes(tag) ? "primary" : "default"}
+                    variant={form.tags.includes(tag) ? "filled" : "outlined"}
+                    size="small"
+                  />
+                ))}
               </Box>
+              <Typography variant="caption" color="text.secondary">
+                Selected: {form.tags.length} tags
+              </Typography>
+            </Grid>
+            
+            <Grid item xs={12}>
+              <Typography variant="subtitle1" fontWeight={600} mb={2} color="text.secondary">
+                Tech Stack
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2, mb: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <TextField
+                  label="Add technology"
+                  fullWidth
+                  placeholder="e.g. React, Node.js, MongoDB"
+                  value={newTech}
+                  onChange={(e) => setNewTech(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && addTech()}
+                  helperText="Press Enter or click Add to add a technology"
+                />
+                <Button
+                  variant="outlined"
+                  onClick={addTech}
+                  disabled={!newTech.trim()}
+                  sx={{ minWidth: { xs: '100%', sm: 100 } }}
+                >
+                  Add
+                </Button>
+              </Box>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {form.techStack.map((tech, index) => (
+                  <Chip
+                    key={index}
+                    label={tech}
+                    onDelete={() => removeTech(index)}
+                    color="secondary"
+                    variant="outlined"
+                  />
+                ))}
+              </Box>
+            </Grid>
+          </Grid>
+        </Paper>
+
+        {/* App Details */}
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom fontWeight={600} sx={{ mb: 2 }}>
+            App Details
+          </Typography>
+          
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth required>
+                <InputLabel>Category</InputLabel>
+                <Select
+                  value={form.category}
+                  label="Category"
+                  onChange={(e) => handleChange("category", e.target.value)}
+                  disabled={categoriesLoading}
+                >
+                  {categoriesLoading ? (
+                    <MenuItem disabled>Loading categories...</MenuItem>
+                  ) : (
+                    categories.map((category) => (
+                      <MenuItem key={category} value={category}>{category}</MenuItem>
+                    ))
+                  )}
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Pricing Model</InputLabel>
+                <Select
+                  value={form.pricing}
+                  label="Pricing Model"
+                  onChange={(e) => handleChange("pricing", e.target.value)}
+                >
+                  {pricingOptions.map((option) => (
+                    <MenuItem key={option} value={option}>{option}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12}>
+              <Typography variant="subtitle1" fontWeight={600} mb={2} color="text.secondary">
+                Key Features
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2, mb: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <TextField
+                  label="Add a feature"
+                  fullWidth
+                  placeholder="e.g. Real-time collaboration, AI-powered suggestions, Cross-platform sync..."
+                  value={newFeature}
+                  onChange={(e) => setNewFeature(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && addFeature()}
+                  helperText="Press Enter or click Add to add a feature"
+                />
+                <Button
+                  variant="outlined"
+                  onClick={addFeature}
+                  disabled={!newFeature.trim()}
+                  sx={{ minWidth: { xs: '100%', sm: 100 } }}
+                >
+                  Add
+                </Button>
+              </Box>
+              
+              {/* Features List */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {form.features.map((feature, index) => (
+                  <Paper
+                    key={index}
+                    sx={{
+                      p: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      backgroundColor: theme.palette.background.paper,
+                      border: `1px solid ${theme.palette.divider}`,
+                    }}
+                  >
+                    <Typography variant="body2" sx={{ flex: 1 }}>
+                      ✨ {feature}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => moveFeature(index, 'up')}
+                        disabled={index === 0}
+                      >
+                        <UpIcon />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => moveFeature(index, 'down')}
+                        disabled={index === form.features.length - 1}
+                      >
+                        <DownIcon />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => removeFeature(index)}
+                        color="error"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                  </Paper>
+                ))}
+              </Box>
+            </Grid>
+          </Grid>
+        </Paper>
+
+        {/* Settings */}
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom fontWeight={600} sx={{ mb: 2 }}>
+            Settings
+          </Typography>
+          
+          <FormControlLabel
+            control={
+              <Switch
+                checked={form.isInternal}
+                onChange={(e) => handleChange("isInternal", e.target.checked)}
+              />
+            }
+            label="Internal Tool (Only visible to your organization)"
+          />
+        </Paper>
+
+        {/* Premium Upgrade Option - Only show for new apps or drafts, not published apps */}
+        {(!isEditing || (isEditing && searchParams.get('draftId') === editingAppId)) && (
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom fontWeight={600} sx={{ mb: 2 }}>
+              Premium Upgrade (Optional)
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Boost your app's visibility with premium features. This is completely optional.
+            </Typography>
+          
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <Card 
+                sx={{ 
+                  height: '100%',
+                  border: selectedPremiumPlan === 'premium' ? `2px solid ${theme.palette.primary.main}` : `1px solid ${theme.palette.divider}`,
+                  backgroundColor: selectedPremiumPlan === 'premium' ? `${theme.palette.primary.main}08` : 'transparent',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': {
+                    borderColor: theme.palette.primary.main,
+                    backgroundColor: `${theme.palette.primary.main}04`,
+                  }
+                }}
+                onClick={() => handlePremiumSelection(selectedPremiumPlan === 'premium' ? null : 'premium')}
+              >
+                <CardContent sx={{ p: 3, textAlign: 'center' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                    {selectedPremiumPlan === 'premium' && (
+                      <Box sx={{ mr: 1, color: 'primary.main', display: 'inline-flex' }}>
+                        <Check size={24} />
+                      </Box>
+                    )}
+                    <Box sx={{ color: 'primary.main', display: 'inline-flex' }}>
+                      <Star size={32} />
+                    </Box>
+                  </Box>
+                  <Typography variant="h6" fontWeight={600} gutterBottom>
+                    Premium Listing
+                  </Typography>
+                  <Typography variant="h4" fontWeight={800} color="primary" gutterBottom>
+                    $19
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    One-time payment • Lifetime benefits
+                  </Typography>
+                  
+                  <Divider sx={{ my: 2 }} />
+                  
+                  <Box sx={{ textAlign: 'left' }}>
+                    {premiumFeatures.slice(0, 4).map((feature, index) => (
+                      <Box key={index} display="flex" alignItems="center" mb={1}>
+                        <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
+                          <Check size={16} />
+                        </Box>
+                        <Typography variant="body2" fontSize="0.875rem">
+                          {feature}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+            
+            <Grid item xs={12} md={6}>
+              <Card 
+                sx={{ 
+                  height: '100%',
+                  border: selectedPremiumPlan === 'free' ? `2px solid ${theme.palette.success.main}` : `1px solid ${theme.palette.divider}`,
+                  backgroundColor: selectedPremiumPlan === 'free' ? `${theme.palette.success.main}08` : 'transparent',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': {
+                    borderColor: theme.palette.success.main,
+                    backgroundColor: `${theme.palette.success.main}04`,
+                  }
+                }}
+                onClick={() => handlePremiumSelection(selectedPremiumPlan === 'free' ? null : 'free')}
+              >
+                <CardContent sx={{ p: 3, textAlign: 'center' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                    {selectedPremiumPlan === 'free' && (
+                      <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
+                        <Check size={24} />
+                      </Box>
+                    )}
+                    <Typography variant="h4" color="success.main">🚀</Typography>
+                  </Box>
+                  <Typography variant="h6" fontWeight={600} gutterBottom>
+                    Free Listing
+                  </Typography>
+                  <Typography variant="h4" fontWeight={800} color="success.main" gutterBottom>
+                    $0
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Standard listing • No additional cost
+                  </Typography>
+                  
+                  <Divider sx={{ my: 2 }} />
+                  
+                  <Box sx={{ textAlign: 'left' }}>
+                    <Box display="flex" alignItems="center" mb={1}>
+                      <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
+                        <Check size={16} />
+                      </Box>
+                      <Typography variant="body2" fontSize="0.875rem">
+                        Standard app listing
+                      </Typography>
+                    </Box>
+                    <Box display="flex" alignItems="center" mb={1}>
+                      <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
+                        <Check size={16} />
+                      </Box>
+                      <Typography variant="body2" fontSize="0.875rem">
+                        Community review process
+                      </Typography>
+                    </Box>
+                    <Box display="flex" alignItems="center" mb={1}>
+                      <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
+                        <Check size={16} />
+                      </Box>
+                      <Typography variant="body2" fontSize="0.875rem">
+                        Basic analytics
+                      </Typography>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+          
+          {selectedPremiumPlan === 'premium' && (
+            <Box sx={{ mt: 3, p: 2, backgroundColor: `${theme.palette.primary.main}08`, borderRadius: 2, border: `1px solid ${theme.palette.primary.main}20` }}>
+              <Typography variant="body2" color="primary" fontWeight={500}>
+                💡 Premium selected! You'll be redirected to payment after submission.
+              </Typography>
             </Box>
           )}
-          <form onSubmit={handleSubmit}>
-            {!isAuthenticated && (
-              <Box sx={{ mb: 3, p: 2, bgcolor: 'action.disabledBackground', borderRadius: 1 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Form disabled - authentication required
-                </Typography>
-              </Box>
-            )}
-            <Grid container spacing={4}>
-              {/* Basic App Information */}
-              <Grid item xs={12}>
-                <Typography variant="h5" fontWeight={600} mb={3} display="flex" alignItems="center" gap={1}>
-                  <Star size={24} color={theme.palette.primary.main} />
-                  Basic App Information
-                </Typography>
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <TextField 
-                  fullWidth 
-                  label="App Name" 
-                  required 
-                  value={formData.name}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
-                  helperText="Choose a memorable and descriptive name"
-                  disabled={!isAuthenticated || isSubmitting}
-                />
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth required>
-                  <InputLabel>Category</InputLabel>
-                  <Select
-                    value={formData.category}
-                    label="Category"
-                    onChange={(e) => handleInputChange("category", e.target.value)}
-                    disabled={!isAuthenticated || isSubmitting || categoriesLoading}
-                  >
-                    {categoriesLoading ? (
-                      <MenuItem disabled>
-                        <CircularProgress size={20} sx={{ mr: 1 }} />
-                        Loading categories...
-                      </MenuItem>
-                    ) : (
-                      categories.map((category) => (
-                        <MenuItem key={category} value={category}>
-                          {category}
-                        </MenuItem>
-                      ))
-                    )}
-                  </Select>
-                  {categoriesLoading && (
-                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-                      Loading categories from database...
-                    </Typography>
-                  )}
-                </FormControl>
-              </Grid>
-
-              <Grid item xs={12}>
-                <TextField
-                  label="Tagline"
-                  fullWidth
-                  required
-                  placeholder="A brief, compelling description of your app"
-                  value={formData.tagline}
-                  onChange={(e) => handleInputChange("tagline", e.target.value)}
-                  helperText="A short, catchy description that appears in listings (max 100 characters)"
-                />
-              </Grid>
-
-              <Grid item xs={12}>
-                <TextField
-                  label="Description"
-                  multiline
-                  rows={3}
-                  required
-                  fullWidth
-                  value={formData.description}
-                  onChange={(e) => handleInputChange("description", e.target.value)}
-                  helperText="A concise description for listings and previews (100-200 characters)"
-                />
-              </Grid>
-
-              <Grid item xs={12}>
-                <TextField
-                  label="Full Description"
-                  multiline
-                  rows={6}
-                  fullWidth
-                  placeholder="Tell the full story of your app, its features, benefits, target audience, and what makes it unique"
-                  value={formData.fullDescription}
-                  onChange={(e) => handleInputChange("fullDescription", e.target.value)}
-                  helperText="Detailed description for the app page. Include use cases, benefits, and what problems it solves."
-                />
-              </Grid>
-
-              <Grid item xs={12}>
-                <Typography variant="subtitle1" fontWeight={600} mb={2} color="text.secondary">
-                  Tags
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                  <TextField
-                    label="Add a tag"
-                    fullWidth
-                    placeholder="e.g. React, Mobile, Productivity, AI, SaaS"
-                    value={newTag}
-                    onChange={(e) => setNewTag(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && addTag()}
-                    helperText="Press Enter or click Add to add a tag"
-                    disabled={!isAuthenticated || isSubmitting}
-                  />
-                  <Button
-                    variant="outlined"
-                    onClick={addTag}
-                    disabled={!newTag.trim() || !isAuthenticated || isSubmitting}
-                    sx={{ minWidth: 100 }}
-                  >
-                    Add
-                  </Button>
-                </Box>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  {formData.tags.map((tag, index) => (
-                    <Chip
-                      key={index}
-                      label={tag}
-                      onDelete={() => removeTag(index)}
-                      color="primary"
-                      variant="outlined"
-                    />
-                  ))}
-                </Box>
-              </Grid>
-
-              {/* Links and URLs */}
-              <Grid item xs={12}>
-                <Typography variant="h5" fontWeight={600} mb={3} display="flex" alignItems="center" gap={1}>
-                  <Globe size={24} color={theme.palette.primary.main} />
-                  Links & URLs
-                </Typography>
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <TextField 
-                  fullWidth 
-                  label="Website URL" 
-                  placeholder="https://yourapp.com" 
-                  required
-                  value={formData.website}
-                  onChange={(e) => handleInputChange("website", e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Globe size={20} />
-                      </InputAdornment>
-                    ),
-                  }}
-                  helperText="Your app's main website or landing page"
-                />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <TextField 
-                  fullWidth 
-                  label="GitHub Repository" 
-                  placeholder="https://github.com/username/repo"
-                  value={formData.github}
-                  onChange={(e) => handleInputChange("github", e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Github size={20} />
-                      </InputAdornment>
-                    ),
-                  }}
-                  helperText="Optional: Link to your open-source code"
-                />
-              </Grid>
-
-              {/* Technical Details */}
-              <Grid item xs={12}>
-                <Typography variant="h5" fontWeight={600} mb={3} display="flex" alignItems="center" gap={1}>
-                  <Code size={24} color={theme.palette.primary.main} />
-                  Technical Details
-                </Typography>
-              </Grid>
-
-              <Grid item xs={12}>
-                <Typography variant="subtitle1" fontWeight={600} mb={2} color="text.secondary">
-                  Tech Stack
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                  <TextField
-                    label="Add technology"
-                    fullWidth
-                    placeholder="e.g. React, Node.js, MongoDB, AWS"
-                    value={newTech}
-                    onChange={(e) => setNewTech(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && addTech()}
-                    helperText="Press Enter or click Add to add a technology"
-                    disabled={!isAuthenticated || isSubmitting}
-                  />
-                  <Button
-                    variant="outlined"
-                    onClick={addTech}
-                    disabled={!newTech.trim() || !isAuthenticated || isSubmitting}
-                    sx={{ minWidth: 100 }}
-                  >
-                    Add
-                  </Button>
-                </Box>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  {formData.techStack.map((tech, index) => (
-                    <Chip
-                      key={index}
-                      label={tech}
-                      onDelete={() => removeTech(index)}
-                      color="secondary"
-                      variant="outlined"
-                    />
-                  ))}
-                </Box>
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth required>
-                  <InputLabel>Pricing Model</InputLabel>
-                  <Select
-                    value={formData.pricing}
-                    label="Pricing Model"
-                    onChange={(e) => handleInputChange("pricing", e.target.value)}
-                  >
-                    {pricingOptions.map((option) => (
-                      <MenuItem key={option} value={option}>{option}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              <Grid item xs={12}>
-                <Typography variant="subtitle1" fontWeight={600} mb={2} color="text.secondary">
-                  Key Features
-                </Typography>
-                {/* Feature Input */}
-                <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-                  <TextField
-                    label="Add a feature"
-                    fullWidth
-                    placeholder="e.g. Real-time collaboration, AI-powered suggestions, Cross-platform sync..."
-                    value={newFeature}
-                    onChange={(e) => setNewFeature(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && addFeature()}
-                    helperText="Press Enter or click Add to add a feature"
-                    disabled={!isAuthenticated || isSubmitting}
-                  />
-                  <Button
-                    variant="outlined"
-                    onClick={addFeature}
-                    disabled={!newFeature.trim() || !isAuthenticated || isSubmitting}
-                    sx={{ minWidth: 100 }}
-                  >
-                    Add
-                  </Button>
-                </Box>
-                
-                {/* Features List */}
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 3 }}>
-                  {formData.features.map((feature, index) => (
-                    <Paper
-                      key={index}
-                      sx={{
-                        p: 2,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        backgroundColor: theme.palette.background.paper,
-                        border: `1px solid ${theme.palette.divider}`,
-                      }}
-                    >
-                      <Typography variant="body2" sx={{ flex: 1 }}>
-                        ✨ {feature}
-                      </Typography>
-                      <Box sx={{ display: 'flex', gap: 0.5 }}>
-                        <IconButton
-                          size="small"
-                          onClick={() => moveFeature(index, 'up')}
-                          disabled={index === 0}
-                        >
-                          <UpIcon />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => moveFeature(index, 'down')}
-                          disabled={index === formData.features.length - 1}
-                        >
-                          <DownIcon />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => removeFeature(index)}
-                          color="error"
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Box>
-                    </Paper>
-                  ))}
-                </Box>
-                
-                <Typography variant="caption" color="text.secondary" mt={1} display="block">
-                  Focus on the most important features that solve real problems for your users
-                </Typography>
-              </Grid>
-
-              {/* Author Information */}
-              <Grid item xs={12}>
-                <Typography variant="h5" fontWeight={600} mb={3} display="flex" alignItems="center" gap={1}>
-                  <User size={24} color={theme.palette.primary.main} />
-                  Author Information
-                  {isAuthenticated && (
-                    <Chip 
-                      label="Pre-filled from your session" 
-                      size="small" 
-                      color="success" 
-                      variant="outlined"
-                      sx={{ ml: 2 }}
-                    />
-                  )}
-                </Typography>
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <TextField 
-                  fullWidth 
-                  label="Author Name" 
-                  required
-                  value={formData.authorName}
-                  onChange={(e) => handleInputChange("authorName", e.target.value)}
-                  helperText={isAuthenticated ? "Pre-filled from your profile" : "Your name or company name"}
-                  disabled={!isAuthenticated || isSubmitting}
-                />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <TextField 
-                  fullWidth 
-                  label="Author Email" 
-                  type="email"
-                  required
-                  value={formData.authorEmail}
-                  onChange={(e) => handleInputChange("authorEmail", e.target.value)}
-                  helperText={isAuthenticated ? "Pre-filled from your profile" : "We'll use this to contact you about your submission"}
-                  disabled={!isAuthenticated || isSubmitting}
-                />
-              </Grid>
-
-              <Grid item xs={12}>
-                <TextField
-                  label="Author Bio"
-                  multiline
-                  rows={3}
-                  fullWidth
-                  placeholder="Tell us about yourself, your background, and what inspired you to create this app"
-                  value={formData.authorBio}
-                  onChange={(e) => handleInputChange("authorBio", e.target.value)}
-                  helperText="A brief bio that will be displayed on your app page"
-                  disabled={!isAuthenticated || isSubmitting}
-                />
-              </Grid>
-
-              {/* Screenshots & Media */}
-              <Grid item xs={12}>
-                <Typography variant="h5" fontWeight={600} mb={3} display="flex" alignItems="center" gap={1}>
-                  <UploadCloud size={24} color={theme.palette.primary.main} />
-                  Screenshots & Media
-                </Typography>
-              </Grid>
-
-              <Grid item xs={12}>
-                <Box
-                  sx={{
-                    border: `1px dashed ${theme.palette.divider}`,
-                    borderRadius: "12px",
-                    textAlign: "center",
-                    p: 4,
-                    color: "text.secondary",
-                    cursor: "pointer",
-                    '&:hover': {
-                      backgroundColor: theme.palette.action.hover,
-                    },
-                  }}
-                >
-                  <UploadCloud size={28} />
-                  <Typography mt={1}>Drag and drop your screenshots here</Typography>
-                  <Typography variant="caption">Upload 3-5 high-quality images (PNG/JPG) showcasing your app</Typography>
-                  <Button sx={{ mt: 2 }} variant="outlined" size="small">Choose Files</Button>
-                </Box>
-              </Grid>
-
-              <Grid item xs={12}>
-                <Divider sx={{ my: 2 }} />
-              </Grid>
-
-              {/* Premium Section */}
-              <Grid item xs={12}>
-                <Box
-                  sx={{
-                    p: 3,
-                    borderRadius: "1rem",
-                    ...getGlassStyles(theme),
-                    border: `1px solid ${theme.palette.warning.main}`,
-                    boxShadow: getShadow(theme, "elegant"),
-                  }}
-                >
-                  <Typography variant="h6" fontWeight={700} display="flex" alignItems="center" gap={1}>
-                    <DollarSign size={20} color={theme.palette.warning.main} />
-                    Upgrade to Premium – <Box component="span" color="warning.main">$19</Box>
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" mt={1}>
-                    Get a verified badge, priority placement, analytics insights, and faster review process for your app.
-                  </Typography>
-                  <Button
-                    component={Link}
-                    href="/pricing"
-                    sx={{ mt: 2, borderRadius: "999px" }}
-                    variant="outlined"
-                    color="warning"
-                    startIcon={<BadgeCheck />}
-                  >
-                    View Pricing Plans
-                  </Button>
-                </Box>
-              </Grid>
-
-              {/* Review Process */}
-              <Grid item xs={12}>
-                <Box mt={4}>
-                  <Typography variant="subtitle1" fontWeight={700} mb={2}>
-                    Review Process
-                  </Typography>
-                  <Stack direction="row" flexWrap="wrap" gap={1.5}>
-                    {reviewSteps.map((step, index) => (
-                      <Chip
-                        key={step}
-                        label={`${index + 1}. ${step}`}
-                        variant="outlined"
-                        sx={{
-                          fontWeight: 600,
-                          px: 2,
-                          borderRadius: "999px",
-                          backgroundColor: theme.palette.background.paper,
-                          borderColor: theme.palette.divider,
-                          color: theme.palette.text.primary,
-                          "&:hover": {
-                              backgroundColor: theme.palette.action.hover,
-                            },
-                        }}
-                      />
-                    ))}
-                  </Stack>
-                  <Typography variant="body2" color="text.secondary" mt={2}>
-                    We review all submissions within 48-72 hours. Premium submissions get priority review.
-                  </Typography>
-                </Box>
-              </Grid>
-
-              {/* Status Messages */}
-              {submitStatus.type && (
-                <Grid item xs={12}>
-                  <Alert 
-                    severity={submitStatus.type} 
-                    sx={{ mt: 2 }}
-                    onClose={() => setSubmitStatus({ type: null, message: '' })}
-                  >
-                    {submitStatus.message}
-                  </Alert>
-                </Grid>
-              )}
-
-              {/* Submit Button */}
-              <Grid item xs={12}>
-                <Box mt={4} textAlign="center">
-                  <Button 
-                    type="submit"
-                    variant="contained" 
-                    color="primary" 
-                    size="large" 
-                    sx={{ borderRadius: "999px", px: 6, py: 1.5 }}
-                    startIcon={<Star size={20} />}
-                    disabled={isSubmitting || !isAuthenticated}
-                  >
-                    {isSubmitting ? 'Submitting...' : 'Submit App for Review'}
-                  </Button>
-                </Box>
-              </Grid>
-            </Grid>
-          </form>
         </Paper>
-      </Container>
-    </Box>
+        )}
+
+        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+          {isEditing && (
+            <Button
+              variant="outlined"
+              size="large"
+              onClick={() => {
+                setIsEditing(false);
+                setEditingAppId(null);
+                setForm({
+                  name: "",
+                  description: "",
+                  tags: [],
+                  website: "",
+                  github: "",
+                  category: "",
+                  techStack: [],
+                  pricing: "Free",
+                  features: [],
+                  isInternal: false,
+                });
+                setSelectedPremiumPlan(null);
+                setSuccess(false);
+                setError(null);
+              }}
+              sx={{ py: 1.5, px: 4, fontSize: '1.1rem' }}
+            >
+              New App
+            </Button>
+          )}
+          <Button
+            type="submit"
+            variant="contained"
+            size="large"
+            disabled={loading || !form.name || !form.description}
+            sx={{ py: 1.5, px: 4, fontSize: '1.1rem' }}
+          >
+            {loading ? (isEditing ? "Updating..." : "Submitting...") : (isEditing ? "Update App" : "Submit App")}
+          </Button>
+        </Box>
+        
+        <Box sx={{ mt: 3, textAlign: 'center' }}>
+          <Button
+            component={Link}
+            href="/pricing"
+            variant="outlined"
+            size="medium"
+            startIcon={<Star size={20} />}
+            sx={{ borderRadius: 2 }}
+          >
+            View Premium Plans
+          </Button>
+        </Box>
+      </Box>
+    </Container>
+  );
+}
+
+export default function SubmitAppPage() {
+  return (
+    <Suspense fallback={<div />}>
+      <SubmitAppPageContent />
+    </Suspense>
   );
 }
