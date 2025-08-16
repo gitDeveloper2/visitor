@@ -15,6 +15,7 @@ import "@styles/quilstyles.module.css"
 import { Analytics } from "@vercel/analytics/next"
 import Footer from "@components/Footer";
 import DonateButton from "@components/DonateButton";
+import AuthProvider from "../context/authContexts";
 
 const inter = Inter({ subsets: ["latin"] });
 const roboto = Roboto({
@@ -75,22 +76,24 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <div id="fb-root"></div>
         <AppRouterCacheProvider>
             <ThemeProvider> 
-              <GlobalStyles />
-              <Analytics/>
-              <div style={{ minHeight: "90vh" }}>
-                <Navbar categories={categories}  />
-                <DonateButton/>
-                <main id="main-content" tabIndex={-1}>
-                  {children}
-                </main>
-                 <div style={{ width: '100%', maxWidth: '300px', margin: '10px auto', textAlign: 'center' }}>
-        
-        </div>
+              <AuthProvider>
+                <GlobalStyles />
+                <Analytics/>
+                <div style={{ minHeight: "90vh" }}>
+                  <Navbar categories={categories}  />
+                  <DonateButton/>
+                  <main id="main-content" tabIndex={-1}>
+                    {children}
+                  </main>
+                   <div style={{ width: '100%', maxWidth: '300px', margin: '10px auto', textAlign: 'center' }}>
+          
+          </div>
 
-                
-                  {/* Footer removed - now handled by individual pages */}
-                  <Footer/>
-                </div>
+                  
+                    {/* Footer removed - now handled by individual pages */}
+                    <Footer/>
+                  </div>
+              </AuthProvider>
             </ThemeProvider>
         </AppRouterCacheProvider>
       </body>

@@ -86,26 +86,25 @@ function FeaturedBlogCard({ blog, isFounderStory = false }: FeaturedBlogCardProp
         },
       }}
     >
-      <Box sx={{ position: "relative" }}>
-        <Box
-          sx={{
-            height: 200,
-            backgroundImage: blog.imageUrl 
-              ? `url('${blog.imageUrl}')` 
-              : 'none',
-            backgroundColor: blog.imageUrl ? 'transparent' : theme.palette.grey[100],
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            borderTopLeftRadius: 'inherit',
-            borderTopRightRadius: 'inherit',
-          }}
-        />
-        {isFounderStory && (
-          <Box sx={{ position: "absolute", top: 12, left: 12 }}>
-            <Badge variant="founder" label="Founder Story" />
-          </Box>
-        )}
-      </Box>
+      {blog.imageUrl && (
+        <Box sx={{ position: "relative" }}>
+          <Box
+            sx={{
+              height: 200,
+              backgroundImage: `url('${blog.imageUrl}')`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              borderTopLeftRadius: 'inherit',
+              borderTopRightRadius: 'inherit',
+            }}
+          />
+          {isFounderStory && (
+            <Box sx={{ position: "absolute", top: 12, left: 12 }}>
+              <Badge variant="founder" label="Founder Story" />
+            </Box>
+          )}
+        </Box>
+      )}
 
       <Box sx={{ p: 3, flex: 1, display: "flex", flexDirection: "column" }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
@@ -115,6 +114,12 @@ function FeaturedBlogCard({ blog, isFounderStory = false }: FeaturedBlogCardProp
             <Typography variant="caption" color="text.secondary">{blog.role}</Typography>
           </Box>
         </Box>
+
+        {!blog.imageUrl && isFounderStory && (
+          <Box sx={{ mb: 2 }}>
+            <Badge variant="founder" label="Founder Story" />
+          </Box>
+        )}
 
         <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, lineHeight: 1.3 }}>
           {blog.title}
@@ -207,24 +212,29 @@ function FounderStoryCard({ blog }: { blog: BlogPost }) {
         },
       }}
     >
-      <Box sx={{ position: "relative" }}>
-        <Box
-          sx={{
-            height: 160,
-            backgroundImage: blog.imageUrl 
-              ? `url('${blog.imageUrl}')` 
-              : 'none',
-            backgroundColor: blog.imageUrl ? 'transparent' : theme.palette.grey[100],
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        />
-        <Box sx={{ position: "absolute", top: 12, left: 12 }}>
-          <Badge variant="founder" label="Founder Story" />
+      {blog.imageUrl && (
+        <Box sx={{ position: "relative" }}>
+          <Box
+            sx={{
+              height: 160,
+              backgroundImage: `url('${blog.imageUrl}')`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+          />
+          <Box sx={{ position: "absolute", top: 12, left: 12 }}>
+            <Badge variant="founder" label="Founder Story" />
+          </Box>
         </Box>
-      </Box>
+      )}
 
       <Box sx={{ p: 3, flex: 1, display: "flex", flexDirection: "column" }}>
+        {!blog.imageUrl && (
+          <Box sx={{ mb: 2 }}>
+            <Badge variant="founder" label="Founder Story" />
+          </Box>
+        )}
+        
         <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1, lineHeight: 1.3 }}>
           {blog.title}
         </Typography>

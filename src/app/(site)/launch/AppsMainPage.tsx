@@ -11,9 +11,11 @@ import {
   Pagination,
   CircularProgress,
   Alert,
+  TextField,
+  InputAdornment,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { AppWindow, BadgeCheck, DollarSign, Plus } from "lucide-react";
+import { AppWindow, BadgeCheck, DollarSign, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import {
   getGlassStyles,
@@ -46,6 +48,27 @@ export default function AppsMainPage({
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(Math.ceil(initialTotalApps / 12));
   const [totalApps, setTotalApps] = useState(initialTotalApps);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Filter apps based on search query
+  const filteredApps = apps.filter((app) => {
+    if (!searchQuery) return true;
+    
+    const query = searchQuery.toLowerCase();
+    return (
+      app.name.toLowerCase().includes(query) ||
+      app.description.toLowerCase().includes(query) ||
+      app.authorName?.toLowerCase().includes(query) ||
+      app.author?.toLowerCase().includes(query) ||
+      (app.tags && app.tags.some(tag => tag.toLowerCase().includes(query))) ||
+      (app.techStack && app.techStack.some(tech => tech.toLowerCase().includes(query)))
+    );
+  });
+
+  // Reset to first page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   // Only fetch additional data when filter or page changes (not on initial load)
   useEffect(() => {
@@ -149,165 +172,302 @@ export default function AppsMainPage({
     );
   };
 
-  const renderAppCard = (app) => (
+  const renderAppCard = (app) => {
+    // Convert MongoDB ObjectId to string for safe usage
+    const appId = app._id?.toString() || app._id;
+    
+    return (
     <Paper
-      key={app._id}
+      key={appId}
       sx={{
-        p: 3,
-        borderRadius: 3,
+        borderRadius: "1rem",
+        overflow: "hidden",
+        background: theme.palette.background.paper,
+        boxShadow: getShadow(theme, "elegant"),
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        background: theme.palette.background.paper,
-        boxShadow: getShadow(theme, "elegant"),
         transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
         "&:hover": {
-          transform: "translateY(-2px)",
+          transform: "translateY(-4px)",
           boxShadow: getShadow(theme, "neon"),
         },
-        // Add special styling for premium apps
+        // Subtle premium indicator
         ...(app.isPremium && {
-          border: `2px solid ${theme.palette.warning.main}`,
-          background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.warning.light}10 100%)`
+          border: `1px solid ${theme.palette.primary.main}`,
         })
       }}
     >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
-        <Avatar>
-          <AppWindow size={18} />
-        </Avatar>
-        <Box sx={{ flex: 1 }}>
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>{app.name}</Typography>
-          <Typography variant="caption" color="text.secondary">
-            by {app.authorName || app.author}
-          </Typography>
-        </Box>
-        {/* Premium Badge */}
-        {app.isPremium && (
-          <Chip
-            label="Premium"
-            color="warning"
-            size="small"
-            icon={<DollarSign size={16} />}
-            sx={{ fontWeight: 600 }}
+      {/* App Image Section */}
+      {app.imageUrl && (
+        <Box sx={{ position: "relative" }}>
+          <Box
+            sx={{
+              height: 160,
+              backgroundImage: `url('${app.imageUrl}')`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
           />
-        )}
-      </Box>
-
-      <Typography
-        variant="body2"
-        sx={{ mb: 2, color: "text.secondary", flex: 1 }}
-      >
-        {app.description}
-      </Typography>
-
-      {/* Tech Stack */}
-      {app.techStack && Array.isArray(app.techStack) && app.techStack.length > 0 && (
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="caption" color="text.secondary" display="block" mb={1}>
-            Tech Stack
-          </Typography>
-          <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-            {app.techStack.slice(0, 3).map((tech, i) => (
-              <Chip key={i} size="small" label={tech} variant="outlined" />
-            ))}
-            {app.techStack.length > 3 && (
-              <Chip size="small" label={`+${app.techStack.length - 3}`} variant="outlined" />
-            )}
-          </Box>
+          {app.isPremium && (
+            <Box sx={{ position: "absolute", top: 12, left: 12 }}>
+              <Chip
+                label="Premium"
+                size="small"
+                sx={{ 
+                  fontWeight: 600,
+                  backgroundColor: theme.palette.primary.main,
+                  color: theme.palette.primary.contrastText,
+                  boxShadow: getShadow(theme, "elegant"),
+                }}
+              />
+            </Box>
+          )}
         </Box>
       )}
 
-      {/* Tags */}
-      {app.tags && Array.isArray(app.tags) && app.tags.length > 0 && (
-        <Box sx={{ mb: 2 }}>
-          <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-            {app.tags.slice(0, 4).map((tag, i) => (
-              <Chip key={i} size="small" label={tag} variant="outlined" />
-            ))}
-            {app.tags.length > 4 && (
-              <Chip size="small" label={`+${app.tags.length - 4}`} variant="outlined" />
-            )}
+      <Box sx={{ p: 3, flex: 1, display: "flex", flexDirection: "column" }}>
+        {/* Premium Badge for cards without images */}
+        {!app.imageUrl && app.isPremium && (
+          <Box sx={{ mb: 2 }}>
+            <Chip
+              label="Premium"
+              size="small"
+              sx={{ 
+                fontWeight: 600,
+                backgroundColor: theme.palette.primary.main,
+                color: theme.palette.primary.contrastText,
+                boxShadow: getShadow(theme, "elegant"),
+              }}
+            />
+          </Box>
+        )}
+
+        {/* App Header with Author */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+          <Avatar sx={{ width: 32, height: 32, bgcolor: theme.palette.primary.main }}>
+            <AppWindow size={16} />
+          </Avatar>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="body2" fontWeight={600} color="text.primary">
+              {app.authorName || app.author}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Developer
+            </Typography>
           </Box>
         </Box>
-      )}
 
-      {/* Pricing and Stats */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, mt: 'auto' }}>
-        {/* Pricing Chip */}
-        <Chip
-          icon={<DollarSign size={16} />}
-          label={app.isPremium ? 'Premium' : (app.pricing || 'Free')}
-          size="small"
-          color={app.isPremium ? 'warning' : (app.pricing === 'Free' ? 'success' : 'primary')}
-          variant="outlined"
-        />
-        
-        {/* Stats */}
-        {app.views && (
-          <Typography variant="caption" color="text.secondary">
-            {app.views} views
-          </Typography>
-        )}
-        {app.likes && (
-          <Typography variant="caption" color="text.secondary">
-            {app.likes} likes
-          </Typography>
-        )}
-      </Box>
+        {/* App Title */}
+        <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, lineHeight: 1.3, color: "text.primary" }}>
+          {app.name}
+        </Typography>
 
-      {/* Action Buttons */}
-      <Box sx={{ display: "flex", gap: 1, width: "100%" }}>
-        {app.website && (
-          <Button
-            component="a"
-            href={app.website}
-            target="_blank"
-            rel="noopener noreferrer"
-            variant="outlined"
-            size="small"
-            sx={{ flex: 1 }}
-          >
-            Visit App
-          </Button>
-        )}
-
-        {app.github && (
-          <Button
-            component="a"
-            href={app.github}
-            target="_blank"
-            rel="noopener noreferrer"
-            variant="outlined"
-            size="small"
-            sx={{ flex: 1 }}
-          >
-            View Code
-          </Button>
-        )}
-
-        {/* always shown */}
-        <Button
-          component={Link}
-          href={`/launch/${app.slug}`}
-          variant="outlined"
-          size="small"
-          sx={{ flex: 1 }}
+        {/* App Description */}
+        <Typography
+          variant="body2"
+          sx={{ color: "text.secondary", mb: 3, flex: 1, lineHeight: 1.5 }}
         >
-          View Details
-        </Button>
-      </Box>
+          {app.description}
+        </Typography>
 
-      {/* Premium Plan Info */}
-      {app.premiumPlan && (
-        <Box sx={{ mt: 2, p: 1.5, bgcolor: 'warning.light', borderRadius: 1 }}>
-          <Typography variant="caption" color="warning.dark" fontWeight={600}>
-            Premium Plan: {app.premiumPlan}
-          </Typography>
+        {/* Tech Stack and Tags - Combined */}
+        {(app.techStack?.length > 0 || app.tags?.length > 0) && (
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1, fontWeight: 600 }}>
+              Technologies & Tags
+            </Typography>
+            <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+              {/* Show tech stack first (max 2) */}
+              {app.techStack?.slice(0, 2).map((tech, i) => (
+                <Chip 
+                  key={`tech-${i}`} 
+                  size="small" 
+                  label={tech} 
+                  variant="outlined"
+                  sx={{
+                    fontWeight: 600,
+                    color: theme.palette.primary.main,
+                    borderColor: theme.palette.primary.main,
+                    backgroundColor: theme.palette.primary.light + '10',
+                    fontSize: "0.7rem",
+                    "&:hover": {
+                      backgroundColor: theme.palette.primary.main,
+                      color: theme.palette.primary.contrastText,
+                    },
+                  }}
+                />
+              ))}
+              
+              {/* Show tags (max 2) */}
+              {app.tags?.slice(0, 2).map((tag, i) => (
+                <Chip 
+                  key={`tag-${i}`} 
+                  size="small" 
+                  label={tag} 
+                  variant="outlined"
+                  sx={{
+                    fontWeight: 500,
+                    color: theme.palette.text.primary,
+                    borderColor: theme.palette.divider,
+                    backgroundColor: theme.palette.background.paper,
+                    fontSize: "0.7rem",
+                    "&:hover": {
+                      backgroundColor: theme.palette.action.hover,
+                      borderColor: theme.palette.primary.main,
+                    },
+                  }}
+                />
+              ))}
+              
+              {/* Show total count if there are more items */}
+              {((app.techStack?.length || 0) + (app.tags?.length || 0)) > 4 && (
+                <Chip 
+                  size="small" 
+                  label={`+${((app.techStack?.length || 0) + (app.tags?.length || 0)) - 4}`} 
+                  variant="outlined"
+                  sx={{
+                    fontWeight: 500,
+                    color: theme.palette.text.secondary,
+                    borderColor: theme.palette.divider,
+                    backgroundColor: theme.palette.background.paper,
+                    fontSize: "0.7rem",
+                  }}
+                />
+              )}
+            </Box>
+          </Box>
+        )}
+
+        {/* Pricing and Stats */}
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          color: "text.secondary",
+          fontSize: "0.75rem",
+          mt: "auto",
+          mb: 2,
+          p: 1.5,
+          bgcolor: theme.palette.action.hover,
+          borderRadius: 1,
+        }}>
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <DollarSign size={14} />
+              <Typography variant="caption" fontWeight={600}>
+                {app.isPremium ? 'Premium' : (app.pricing || 'Free')}
+              </Typography>
+            </Box>
+            {app.views && (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                <Typography variant="caption">
+                  {app.views} views
+                </Typography>
+              </Box>
+            )}
+          </Box>
+          {app.likes && (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <Typography variant="caption">
+                {app.likes} likes
+              </Typography>
+            </Box>
+          )}
         </Box>
-      )}
+
+        {/* Action Buttons */}
+        <Box sx={{ display: "flex", gap: 1, width: "100%" }}>
+          {app.website && (
+            <Button
+              component="a"
+              href={app.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="outlined"
+              size="small"
+              sx={{ 
+                flex: 1,
+                fontWeight: 600,
+                borderColor: theme.palette.divider,
+                "&:hover": {
+                  borderColor: theme.palette.primary.main,
+                  backgroundColor: theme.palette.primary.main,
+                  color: theme.palette.primary.contrastText,
+                }
+              }}
+            >
+              Visit App
+            </Button>
+          )}
+
+          {app.github && (
+            <Button
+              component="a"
+              href={app.github}
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="outlined"
+              size="small"
+              sx={{ 
+                flex: 1,
+                fontWeight: 600,
+                borderColor: theme.palette.divider,
+                "&:hover": {
+                  borderColor: theme.palette.primary.main,
+                  backgroundColor: theme.palette.primary.main,
+                  color: theme.palette.primary.contrastText,
+                }
+              }}
+            >
+              View Code
+            </Button>
+          )}
+
+          {/* Only show View Details for featured apps */}
+          {featuredApps.some(featuredApp => featuredApp._id?.toString() === app._id?.toString()) && (
+            <Button
+              component={Link}
+              href={`/launch/${app.slug}`}
+              variant="contained"
+              size="small"
+              sx={{ 
+                flex: 1, 
+                fontWeight: 600,
+                backgroundColor: theme.palette.primary.main,
+                "&:hover": {
+                  backgroundColor: theme.palette.primary.dark,
+                }
+              }}
+            >
+              View Details
+            </Button>
+          )}
+        </Box>
+
+        {/* Featured Badge - if app is in featured section */}
+        {featuredApps.some(featuredApp => featuredApp._id?.toString() === app._id?.toString()) && (
+          <Box sx={{ 
+            mt: 2, 
+            display: "flex", 
+            justifyContent: "center" 
+          }}>
+            <Chip
+              label="Featured"
+              size="small"
+              sx={{ 
+                fontWeight: 600,
+                backgroundColor: theme.palette.success.main,
+                color: theme.palette.success.contrastText,
+                boxShadow: getShadow(theme, "elegant"),
+              }}
+            />
+          </Box>
+        )}
+      </Box>
     </Paper>
   );
+  }
 
   // Get unique tags for filter (combine app categories and tags)
   const allFilters = ["All", ...appCategories, ...appTags.slice(0, 15)];
@@ -349,7 +509,31 @@ export default function AppsMainPage({
           boxShadow: getShadow(theme, "elegant"),
         }}
       >
-        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", justifyContent: "center" }}>
+        <Grid container spacing={3} alignItems="center">
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              size="medium"
+              placeholder="Search apps, tags, or authors..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search size={20} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 2,
+                },
+              }}
+            />
+          </Grid>
+        </Grid>
+        
+        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", justifyContent: "center", mt: 3 }}>
           {allFilters.map((filter) => (
             <Chip
               key={filter}
@@ -372,21 +556,24 @@ export default function AppsMainPage({
 
       <SubmitAppCTA />
 
-      {/* Featured Apps */}
-      {featuredApps.length > 0 && (
-        <Box sx={{ mb: 6 }}>
-          <Typography
-            variant="h6"
-            sx={{ fontWeight: 700, mb: 3, color: "text.primary" }}
-          >
-            <Box component="span" sx={{ color: theme.palette.primary.main }}>
-              Featured
-            </Box>{" "}
-            Apps
-          </Typography>
+             {/* Featured Apps */}
+       {featuredApps.length > 0 && (
+         <Box sx={{ mb: 6 }}>
+           <Typography
+             variant="h6"
+             sx={{ fontWeight: 700, mb: 3, color: "text.primary" }}
+           >
+             <Box component="span" sx={{ color: theme.palette.primary.main }}>
+               Featured
+             </Box>{" "}
+             Apps{" "}
+             <Typography component="span" variant="body2" color="text.secondary" sx={{ fontWeight: 400 }}>
+               (Paid apps from the last 7 days)
+             </Typography>
+           </Typography>
           <Grid container spacing={3}>
             {featuredApps.map((app) => (
-              <Grid item xs={12} sm={6} md={4} key={app._id}>
+              <Grid item xs={12} sm={6} md={4} key={app._id?.toString() || app._id}>
                 {renderAppCard(app)}
               </Grid>
             ))}
@@ -396,27 +583,16 @@ export default function AppsMainPage({
 
       {/* All Apps Section */}
       <Box sx={{ mt: 6, mb: 3 }}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-          <Typography
-            variant="h6"
-            sx={{
-              fontWeight: 700,
-              color: theme.palette.text.primary,
-            }}
-          >
-            All Apps
-          </Typography>
-          <Button
-            component={Link}
-            href="/dashboard/submission/app"
-            variant="contained"
-            color="primary"
-            startIcon={<Plus size={18} />}
-            sx={{ fontWeight: 600 }}
-          >
-            Submit App
-          </Button>
-        </Box>
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 700,
+            color: theme.palette.text.primary,
+            mb: 3,
+          }}
+        >
+          All Apps
+        </Typography>
       </Box>
 
       {/* Apps Grid */}
@@ -434,11 +610,11 @@ export default function AppsMainPage({
 
       {!loading && !error && (
         <>
-          {apps.length > 0 ? (
+          {filteredApps.length > 0 ? (
             <>
               <Grid container spacing={4}>
-                {apps.map((app) => (
-                  <Grid item xs={12} sm={6} md={4} key={app._id}>
+                {filteredApps.map((app) => (
+                  <Grid item xs={12} sm={6} md={4} key={app._id?.toString() || app._id}>
                     {renderAppCard(app)}
                   </Grid>
                 ))}
@@ -451,7 +627,8 @@ export default function AppsMainPage({
                     count={totalPages} 
                     page={currentPage} 
                     onChange={handlePageChange} 
-                    color="primary" 
+                    color="primary"
+                    size="large"
                   />
                 </Box>
               )}
@@ -462,23 +639,11 @@ export default function AppsMainPage({
                 No apps found
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                {selectedFilter !== "All" 
-                  ? "Try adjusting your filter criteria."
+                {searchQuery || selectedFilter !== "All" 
+                  ? "Try adjusting your search or filter criteria."
                   : "Be the first to submit your app to the community!"
                 }
               </Typography>
-              {selectedFilter === "All" && (
-                <Button
-                  component={Link}
-                  href="/dashboard/submission/app"
-                  variant="contained"
-                  color="primary"
-                  startIcon={<Plus size={18} />}
-                  sx={{ fontWeight: 600 }}
-                >
-                  Submit Your First App
-                </Button>
-              )}
             </Box>
           )}
         </>

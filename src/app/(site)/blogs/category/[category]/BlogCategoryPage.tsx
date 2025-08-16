@@ -189,6 +189,7 @@ export default function BlogCategoryPage({ category, page, tag }: BlogCategoryPa
         {filteredBlogs.map((blog) => (
           <Grid item xs={12} sm={6} md={4} key={blog._id}>
             <Paper
+              key={blog._id}
               sx={{
                 borderRadius: "1rem",
                 overflow: "hidden",
@@ -204,25 +205,25 @@ export default function BlogCategoryPage({ category, page, tag }: BlogCategoryPa
                 },
               }}
             >
-              <Box sx={{ position: "relative" }}>
-                <Box
-                  sx={{
-                    height: 200,
-                    backgroundImage: blog.imageUrl 
-                      ? `url('${blog.imageUrl}')`
-                      : `url('https://picsum.photos/800/400?random=${blog._id}')`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    borderTopLeftRadius: 'inherit',
-                    borderTopRightRadius: 'inherit',
-                  }}
-                />
-                {blog.isFounderStory && (
-                  <Box sx={{ position: "absolute", top: 12, left: 12 }}>
-                    <Badge variant="founder" label="Founder Story" />
-                  </Box>
-                )}
-              </Box>
+              {blog.imageUrl && (
+                <Box sx={{ position: "relative" }}>
+                  <Box
+                    sx={{
+                      height: 200,
+                      backgroundImage: `url('${blog.imageUrl}')`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      borderTopLeftRadius: 'inherit',
+                      borderTopRightRadius: 'inherit',
+                    }}
+                  />
+                  {blog.isFounderStory && (
+                    <Box sx={{ position: "absolute", top: 12, left: 12 }}>
+                      <Badge variant="founder" label="Founder Story" />
+                    </Box>
+                  )}
+                </Box>
+              )}
 
               <Box sx={{ p: 3, flex: 1, display: "flex", flexDirection: "column" }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
@@ -232,6 +233,12 @@ export default function BlogCategoryPage({ category, page, tag }: BlogCategoryPa
                     <Typography variant="caption" color="text.secondary">{blog.role}</Typography>
                   </Box>
                 </Box>
+
+                {!blog.imageUrl && blog.isFounderStory && (
+                  <Box sx={{ mb: 2 }}>
+                    <Badge variant="founder" label="Founder Story" />
+                  </Box>
+                )}
 
                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, lineHeight: 1.3 }}>
                   {blog.title}
