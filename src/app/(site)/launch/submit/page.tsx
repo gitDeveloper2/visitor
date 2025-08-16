@@ -45,8 +45,9 @@ const techStackSuggestions = [
 
 export default function SubmitAppPage() {
   const theme = useTheme();
-  const [isAuthenticated, setIsAuthenticated] = useState(true); // Assume authenticated for now
-  const [isLoading, setIsLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [userData, setUserData] = useState<any>(null);
   
   const [formData, setFormData] = useState({
     name: "",
@@ -70,22 +71,51 @@ export default function SubmitAppPage() {
   const [newTag, setNewTag] = useState("");
   const [newTech, setNewTech] = useState("");
 
-  // Pre-fill author information from user session
+  // Check authentication status on component mount
   useEffect(() => {
-    if (isAuthenticated) {
-      // In a real application, you would fetch user data from an API
-      // For now, we'll just set some default values or leave them empty
-      // If you have a user session, you might set formData.authorName and authorEmail
-      // based on the session data.
-      // For this example, we'll just ensure they are not empty if they are not set.
-      if (!formData.authorName) {
-        setFormData(prev => ({ ...prev, authorName: "Your Name" }));
+    const checkAuth = async () => {
+      try {
+        // Try the better-auth session endpoint
+        const response = await fetch('/api/auth/session', {
+          credentials: 'include', // Include cookies
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        console.log('Session response status:', response.status);
+        
+        if (response.ok) {
+          const session = await response.json();
+          console.log('Session data:', session);
+          
+          if (session.user) {
+            setIsAuthenticated(true);
+            setUserData(session.user);
+            // Pre-fill author information from session
+            if (session.user.name && !formData.authorName) {
+              setFormData(prev => ({ ...prev, authorName: session.user.name }));
+            }
+            if (session.user.email && !formData.authorEmail) {
+              setFormData(prev => ({ ...prev, authorEmail: session.user.email }));
+            }
+          } else {
+            console.log('No user in session');
+            setIsAuthenticated(false);
+          }
+        } else {
+          console.log('Session response not ok:', response.status);
+          setIsAuthenticated(false);
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
       }
-      if (!formData.authorEmail) {
-        setFormData(prev => ({ ...prev, authorEmail: "your.email@example.com" }));
-      }
-    }
-  }, [isAuthenticated]);
+    };
+
+    checkAuth();
+  }, []);
 
   const reviewSteps = ["Initial Review", "Quality Check", "Publication"];
 
@@ -171,6 +201,16 @@ export default function SubmitAppPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if user is authenticated
+    if (!isAuthenticated || !userData) {
+      setSubmitStatus({
+        type: 'error',
+        message: 'You must be logged in to submit an app. Please sign in first.'
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     setSubmitStatus({ type: null, message: '' });
     
@@ -208,6 +248,7 @@ export default function SubmitAppPage() {
         authorName: formData.authorName.trim(),
         authorEmail: formData.authorEmail.trim(),
         authorBio: formData.authorBio.trim(),
+        authorId: userData.id, // Add the authenticated user's ID
         isInternal: false, // Default to false for public submissions
       };
       
@@ -235,26 +276,26 @@ export default function SubmitAppPage() {
         message: 'App submitted successfully! We\'ll review it within 48-72 hours.'
       });
       
-              // Reset form after successful submission
-        setFormData({
-          name: "",
-          tagline: "",
-          description: "",
-          fullDescription: "",
-          website: "",
-          github: "",
-          category: "",
-          pricing: "",
-          tags: [], // Reset to empty array
-          techStack: [], // Reset to empty array
-          features: [], // Reset to empty array
-          authorName: "",
-          authorEmail: "",
-          authorBio: "",
-        });
-        setNewFeature(""); // Reset feature input
-        setNewTag(""); // Reset tag input
-        setNewTech(""); // Reset tech stack input
+      // Reset form after successful submission
+      setFormData({
+        name: "",
+        tagline: "",
+        description: "",
+        fullDescription: "",
+        website: "",
+        github: "",
+        category: "",
+        pricing: "",
+        tags: [], // Reset to empty array
+        techStack: [], // Reset to empty array
+        features: [], // Reset to empty array
+        authorName: "",
+        authorEmail: "",
+        authorBio: "",
+      });
+      setNewFeature(""); // Reset feature input
+      setNewTag(""); // Reset tag input
+      setNewTech(""); // Reset tech stack input
       
     } catch (error: any) {
       console.error('Submission error:', error);
@@ -290,6 +331,20 @@ export default function SubmitAppPage() {
         {isLoading && (
           <Alert severity="info" sx={{ mb: 3 }}>
             Checking authentication status...
+          </Alert>
+        )}
+        
+        {isAuthenticated && userData && (
+          <Alert severity="success" sx={{ mb: 3 }}>
+            Welcome back, {userData.name || userData.email}! You're logged in and ready to submit your app.
+            <Button 
+              variant="outlined" 
+              size="small" 
+              sx={{ ml: 2 }}
+              onClick={() => window.location.href = '/auth/signout'}
+            >
+              Sign Out
+            </Button>
           </Alert>
         )}
         
@@ -637,6 +692,15 @@ export default function SubmitAppPage() {
                 <Typography variant="h5" fontWeight={600} mb={3} display="flex" alignItems="center" gap={1}>
                   <User size={24} color={theme.palette.primary.main} />
                   Author Information
+                  {isAuthenticated && (
+                    <Chip 
+                      label="Pre-filled from your session" 
+                      size="small" 
+                      color="success" 
+                      variant="outlined"
+                      sx={{ ml: 2 }}
+                    />
+                  )}
                 </Typography>
               </Grid>
 
@@ -647,7 +711,8 @@ export default function SubmitAppPage() {
                   required
                   value={formData.authorName}
                   onChange={(e) => handleInputChange("authorName", e.target.value)}
-                  helperText="Your name or company name"
+                  helperText={isAuthenticated ? "Pre-filled from your profile" : "Your name or company name"}
+                  disabled={!isAuthenticated || isSubmitting}
                 />
               </Grid>
 
@@ -659,7 +724,8 @@ export default function SubmitAppPage() {
                   required
                   value={formData.authorEmail}
                   onChange={(e) => handleInputChange("authorEmail", e.target.value)}
-                  helperText="We'll use this to contact you about your submission"
+                  helperText={isAuthenticated ? "Pre-filled from your profile" : "We'll use this to contact you about your submission"}
+                  disabled={!isAuthenticated || isSubmitting}
                 />
               </Grid>
 
@@ -673,6 +739,7 @@ export default function SubmitAppPage() {
                   value={formData.authorBio}
                   onChange={(e) => handleInputChange("authorBio", e.target.value)}
                   helperText="A brief bio that will be displayed on your app page"
+                  disabled={!isAuthenticated || isSubmitting}
                 />
               </Grid>
 

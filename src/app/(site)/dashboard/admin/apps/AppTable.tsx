@@ -26,15 +26,13 @@ import {
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { useEffect, useState } from "react";
-import {
-  CheckCircle,
-  Warning,
-  Error,
-  Refresh,
-  Visibility,
-  Security,
-  FilterList,
-} from "@mui/icons-material";
+import CheckCircle from "@mui/icons-material/CheckCircle";
+import Warning from "@mui/icons-material/Warning";
+import Error from "@mui/icons-material/Error";
+import Refresh from "@mui/icons-material/Refresh";
+import Visibility from "@mui/icons-material/Visibility";
+import Security from "@mui/icons-material/Security";
+import Tune from "@mui/icons-material/Tune";
 // Remove direct import of verification service - use API calls instead
 
 interface AppItem {
@@ -391,7 +389,7 @@ export default function AppTable() {
       <Paper sx={{ p: 2, mb: 2 }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item>
-            <FilterList color="action" />
+            <Tune color="action" />
           </Grid>
           <Grid item>
             <FormControl size="small" sx={{ minWidth: 120 }}>
