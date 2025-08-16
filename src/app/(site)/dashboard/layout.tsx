@@ -25,6 +25,7 @@ import PeopleIcon from "@mui/icons-material/People";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import CategoryIcon from "@mui/icons-material/Category";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import BarChart from "@mui/icons-material/BarChart";
 
 export default function DashboardLayout({
   children,
@@ -35,6 +36,7 @@ export default function DashboardLayout({
   const { data: session, isPending } = authClient.useSession();
   const [adminMenuAnchor, setAdminMenuAnchor] = React.useState<null | HTMLElement>(null);
   const [submitMenuAnchor, setSubmitMenuAnchor] = React.useState<null | HTMLElement>(null);
+  const [legacyMenuAnchor, setLegacyMenuAnchor] = React.useState<null | HTMLElement>(null);
 
   const isAdmin = session?.user?.role === 'admin';
 
@@ -52,6 +54,10 @@ export default function DashboardLayout({
 
   const handleSubmitMenuClose = () => {
     setSubmitMenuAnchor(null);
+  };
+
+  const handleLegacyMenuClose = () => {
+    setLegacyMenuAnchor(null);
   };
 
   if (isPending) {
@@ -75,16 +81,15 @@ export default function DashboardLayout({
       {/* Enhanced Navigation Bar */}
       <Box
         component="nav"
-        sx={{
-          position: "sticky",
-          top: 0,
-          zIndex: 1100,
-          bgcolor: "background.paper",
-          borderBottom: "1px solid",
-          borderColor: "divider",
-          backdropFilter: "blur(20px)",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-        }}
+                 sx={{
+           position: "sticky",
+           top: 0,
+           zIndex: 1100,
+           bgcolor: "background.paper",
+           borderBottom: "1px solid",
+           borderColor: "divider",
+           boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+         }}
       >
         <Box
           sx={{
@@ -188,14 +193,17 @@ export default function DashboardLayout({
                 onClose={handleSubmitMenuClose}
                 anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
                 transformOrigin={{ vertical: "top", horizontal: "left" }}
-                PaperProps={{
-                  sx: {
-                    mt: 1,
-                    minWidth: 180,
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-                    borderRadius: 2,
-                  },
-                }}
+                                 PaperProps={{
+                   sx: {
+                     mt: 1,
+                     minWidth: 180,
+                     boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+                     borderRadius: 2,
+                     bgcolor: "background.paper",
+                     border: "1px solid",
+                     borderColor: "divider"
+                   },
+                 }}
               >
                 <MenuItem
                   component={Link}
@@ -259,14 +267,17 @@ export default function DashboardLayout({
                     onClose={handleAdminMenuClose}
                     anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
                     transformOrigin={{ vertical: "top", horizontal: "left" }}
-                    PaperProps={{
-                      sx: {
-                        mt: 1,
-                        minWidth: 220,
-                        boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-                        borderRadius: 2,
-                      },
-                    }}
+                                         PaperProps={{
+                       sx: {
+                         mt: 1,
+                         minWidth: 220,
+                         boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+                         borderRadius: 2,
+                         bgcolor: "background.paper",
+                         border: "1px solid",
+                         borderColor: "divider"
+                       },
+                     }}
                   >
                     <MenuItem
                       component={Link}
@@ -323,17 +334,125 @@ export default function DashboardLayout({
                       Manage Badges
                     </MenuItem>
                     <MenuItem
-                      component={Link}
-                      href="/dashboard/admin/legacy/admin"
-                      onClick={handleAdminMenuClose}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // Toggle legacy submenu
+                        setLegacyMenuAnchor(e.currentTarget);
+                      }}
                       sx={{ py: 1.5 }}
                     >
                       <AdminPanelSettingsIcon sx={{ mr: 1.5, fontSize: 20 }} />
                       Legacy Admin
-                    </MenuItem>
-                  </Menu>
-                </>
-              )}
+                      <Box sx={{ ml: 'auto' }}>▶</Box>
+                                         </MenuItem>
+                   </Menu>
+
+                   {/* Legacy Admin Submenu */}
+                   <Menu
+                     anchorEl={legacyMenuAnchor}
+                     open={Boolean(legacyMenuAnchor)}
+                     onClose={handleLegacyMenuClose}
+                     anchorOrigin={{ vertical: "top", horizontal: "right" }}
+                     transformOrigin={{ vertical: "top", horizontal: "left" }}
+                     PaperProps={{
+                       sx: {
+                         minWidth: 220,
+                         boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+                         borderRadius: 2,
+                         bgcolor: "background.paper",
+                         border: "1px solid",
+                         borderColor: "divider"
+                       },
+                     }}
+                   >
+                     <MenuItem
+                       component={Link}
+                       href="/dashboard/admin/legacy/admin"
+                       onClick={() => {
+                         handleLegacyMenuClose();
+                         handleAdminMenuClose();
+                       }}
+                       sx={{ py: 1.5 }}
+                     >
+                       <AdminPanelSettingsIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                       Legacy Admin Dashboard
+                     </MenuItem>
+                     <MenuItem
+                       component={Link}
+                       href="/dashboard/admin/legacy/admin/categories"
+                       onClick={() => {
+                         handleLegacyMenuClose();
+                         handleAdminMenuClose();
+                       }}
+                       sx={{ py: 1.5 }}
+                     >
+                       <CategoryIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                       Legacy Categories
+                     </MenuItem>
+                     <MenuItem
+                       component={Link}
+                       href="/dashboard/admin/legacy/admin/user-management"
+                       onClick={() => {
+                         handleLegacyMenuClose();
+                         handleAdminMenuClose();
+                       }}
+                       sx={{ py: 1.5 }}
+                     >
+                       <PeopleIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                       Legacy User Management
+                     </MenuItem>
+                     <MenuItem
+                       component={Link}
+                       href="/dashboard/admin/legacy/admin/badge-management"
+                       onClick={() => {
+                         handleLegacyMenuClose();
+                         handleAdminMenuClose();
+                       }}
+                       sx={{ py: 1.5 }}
+                     >
+                       <EmojiEventsIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                       Legacy Badge Management
+                     </MenuItem>
+                     <MenuItem
+                       component={Link}
+                       href="/dashboard/admin/legacy/content"
+                       onClick={() => {
+                         handleLegacyMenuClose();
+                         handleAdminMenuClose();
+                       }}
+                       sx={{ py: 1.5 }}
+                     >
+                       <ArticleIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                       Legacy Content
+                     </MenuItem>
+                     <MenuItem
+                       component={Link}
+                       href="/dashboard/admin/legacy/content-news"
+                       onClick={() => {
+                         handleLegacyMenuClose();
+                         handleAdminMenuClose();
+                       }}
+                       sx={{ py: 1.5 }}
+                     >
+                       <ArticleIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                       Legacy News Content
+                     </MenuItem>
+                     <MenuItem
+                       component={Link}
+                       href="/dashboard/admin/legacy/metrics"
+                       onClick={() => {
+                         handleLegacyMenuClose();
+                         handleAdminMenuClose();
+                       }}
+                       sx={{ py: 1.5 }}
+                     >
+                       <BarChart sx={{ mr: 1.5, fontSize: 20 }} />
+                       Legacy Metrics
+                     </MenuItem>
+                   </Menu>
+                 </>
+               )}
             </Stack>
 
             {/* Right Section - empty (main navbar handles user menu) */}
