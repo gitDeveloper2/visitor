@@ -22,9 +22,11 @@ import {
   CardContent,
   Divider,
 } from "@mui/material";
-import { Add as AddIcon, Delete as DeleteIcon, KeyboardArrowUp as UpIcon, KeyboardArrowDown as DownIcon, Star, Check } from "@mui/icons-material";
+import { Add as AddIcon, Delete as DeleteIcon, KeyboardArrowUp as UpIcon, KeyboardArrowDown as DownIcon, Check } from "@mui/icons-material";
+import { Star } from "lucide-react";
 import { useTheme } from "@mui/material/styles";
 import { useSearchParams } from 'next/navigation';
+import Link from "next/link";
 import { appTags, fetchCategoryNames } from "../../../../utils/categories";
 
 function SubmitAppPageContent() {
@@ -991,6 +993,19 @@ function SubmitAppPageContent() {
             sx={{ py: 1.5, px: 4, fontSize: '1.1rem' }}
           >
             {loading ? (isEditing ? "Updating..." : "Submitting...") : (isEditing ? "Update App" : "Submit App")}
+          </Button>
+        </Box>
+        
+        <Box sx={{ mt: 3, textAlign: 'center' }}>
+          <Button
+            component={Link}
+            href="/pricing"
+            variant="outlined"
+            size="medium"
+            startIcon={<Star size={20} />}
+            sx={{ borderRadius: 2 }}
+          >
+            View Premium Plans
           </Button>
         </Box>
       </Box>

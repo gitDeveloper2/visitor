@@ -157,7 +157,7 @@ export default async function BlogsPage() {
     const categoryChips = categories.map(category => ({
       category,
       count: categoryCounts[category] || 0
-    })).filter(({ count }) => count > 0); // Only show categories that have blogs
+    })); // Removed the filter - show all categories
 
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -175,16 +175,19 @@ export default async function BlogsPage() {
                 <Link href={`/blogs/category/${encodeURIComponent(category.toLowerCase().replace(/\s+/g, '-'))}`} style={{ textDecoration: 'none' }}>
                   <Chip
                     label={`${category} (${count})`}
-                    variant="outlined"
+                    variant={count > 0 ? "outlined" : "outlined"}
                     sx={{
                       fontWeight: 600,
                       fontSize: '0.9rem',
                       px: 2,
                       py: 1,
                       cursor: 'pointer',
+                      opacity: count > 0 ? 1 : 0.6, // Dim categories with no blogs
+                      borderColor: count > 0 ? 'primary.main' : 'text.disabled', // Different border color
+                      color: count > 0 ? 'text.primary' : 'text.secondary', // Different text color
                       '&:hover': {
-                        backgroundColor: 'primary.main',
-                        color: 'white',
+                        backgroundColor: count > 0 ? 'primary.main' : 'action.hover',
+                        color: count > 0 ? 'white' : 'text.secondary',
                       },
                     }}
                   />

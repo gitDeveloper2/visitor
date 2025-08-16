@@ -20,6 +20,7 @@ import {
   Code,
   FileText,
   Users,
+  Star,
 } from "lucide-react";
 import { commonStyles, getGlassStyles } from "../../utils/themeUtils";
 
@@ -30,6 +31,7 @@ const Footer = () => {
     product: [
       { name: "Tools", href: "/launch", icon: Code },
       { name: "Blog", href: "/blogs", icon: FileText },
+      { name: "Pricing", href: "/pricing", icon: Star },
       { name: "About", href: "/aboutus", icon: Users },
       { name: "Contact", href: "/contactus", icon: Mail },
     ],

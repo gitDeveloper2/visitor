@@ -1,7 +1,8 @@
 "use client";
 import { Box, Container, Typography, Stack, Button, Paper, Grid } from "@mui/material";
-import { ArrowRight, Code2, Sparkles } from "lucide-react";
+import { ArrowRight, Code2, Sparkles, Star } from "lucide-react";
 import { useTheme } from "@mui/material/styles";
+import Link from "next/link";
 import { commonStyles, typographyVariants, getGlassStyles } from "../../utils/themeUtils";
 
 const stats = [
@@ -159,6 +160,24 @@ const Hero = () => {
             }}
           >
             Read Articles
+          </Button>
+          <Button
+            component={Link}
+            href="/pricing"
+            variant="outlined"
+            size="large"
+            startIcon={<Star style={{ width: 22, height: 22 }} />}
+            sx={{
+              ...commonStyles.glassButton(theme),
+              color: theme.palette.warning.main,
+              borderColor: theme.palette.warning.main,
+              "&:hover": {
+                borderColor: theme.palette.warning.dark,
+                bgcolor: `${theme.palette.warning.main}10`,
+              },
+            }}
+          >
+            View Pricing
           </Button>
         </Stack>
 

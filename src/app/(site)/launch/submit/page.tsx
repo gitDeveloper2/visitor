@@ -22,6 +22,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
+import Link from "next/link";
 import { BadgeCheck, DollarSign, UploadCloud, Github, Globe, User, Code, Star, ArrowUp, ArrowDown, X } from "lucide-react";
 import { KeyboardArrowUp as UpIcon, KeyboardArrowDown as DownIcon, Delete as DeleteIcon } from "@mui/icons-material";
 import { getGlassStyles, getShadow, typographyVariants, commonStyles } from "@/utils/themeUtils";
@@ -828,12 +829,14 @@ export default function SubmitAppPage() {
                     Get a verified badge, priority placement, analytics insights, and faster review process for your app.
                   </Typography>
                   <Button
+                    component={Link}
+                    href="/pricing"
                     sx={{ mt: 2, borderRadius: "999px" }}
                     variant="outlined"
                     color="warning"
                     startIcon={<BadgeCheck />}
                   >
-                    Upgrade to Premium
+                    View Pricing Plans
                   </Button>
                 </Box>
               </Grid>

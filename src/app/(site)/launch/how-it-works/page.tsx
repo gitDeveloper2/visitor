@@ -177,8 +177,8 @@ export default function HowItWorksPage() {
                 ))}
               </List>
               <Box textAlign="center">
-                <Button variant="contained" size="large" sx={commonStyles.gradientButton(theme)} href="/launch/submit">
-                  Upgrade to Premium
+                <Button variant="contained" size="large" sx={commonStyles.gradientButton(theme)} href="/pricing">
+                  View Pricing Plans
                 </Button>
               </Box>
             </Paper>

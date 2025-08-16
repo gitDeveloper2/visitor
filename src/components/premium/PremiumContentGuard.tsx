@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { Lock, Crown, Star } from 'lucide-react';
 import { useTheme } from '@mui/material/styles';
+import Link from 'next/link';
 import PremiumBlogSubscription from './PremiumBlogSubscription';
 
 interface PremiumContentGuardProps {
@@ -119,6 +120,8 @@ export default function PremiumContentGuard({
           ) : (
             <Box textAlign="center">
               <Button
+                component={Link}
+                href="/pricing"
                 variant="contained"
                 color="warning"
                 size="large"

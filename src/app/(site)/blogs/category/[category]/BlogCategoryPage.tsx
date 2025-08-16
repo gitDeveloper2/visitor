@@ -18,9 +18,8 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { Search, Calendar, Clock, Eye, ThumbsUp } from 'lucide-react';
 import Link from 'next/link';
-import { getShadow, getGlassStyles } from '../../../../../../utils/themeUtils';
+import { getShadow, getGlassStyles } from '@/utils/themeUtils';
 import Badge from '@components/badges/Badge';
-import { blogTags } from '../../../../../../utils/categories';
 
 interface BlogPost {
   _id: string;
@@ -67,6 +66,12 @@ export default function BlogCategoryPage({
   const [currentPage, setCurrentPage] = useState(page);
   const [totalPages, setTotalPages] = useState(Math.ceil(totalBlogs / 12));
   const [totalBlogsCount, setTotalBlogsCount] = useState(totalBlogs);
+
+  // Get unique tags from the blogs in this category
+  const getUniqueTags = (blogs: BlogPost[]) => {
+    const allTags = blogs.flatMap(blog => blog.tags || []);
+    return [...new Set(allTags)].sort();
+  };
 
   // Fetch blogs for this category only if no initial data provided
   useEffect(() => {
@@ -179,19 +184,21 @@ export default function BlogCategoryPage({
           sx={{ mb: 2 }}
         />
 
-        {/* Available tags for this category */}
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-          {blogTags.map((tag) => (
-            <Chip
-              key={tag}
-              label={tag}
-              onClick={() => handleTagClick(tag)}
-              color={selectedTag === tag ? "primary" : "default"}
-              variant={selectedTag === tag ? "filled" : "outlined"}
-              size="small"
-            />
-          ))}
-        </Box>
+        {/* Available tags for this category - only show if there are tags */}
+        {getUniqueTags(blogs).length > 0 && (
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+            {getUniqueTags(blogs).map((tag) => (
+              <Chip
+                key={tag}
+                label={tag}
+                onClick={() => handleTagClick(tag)}
+                color={selectedTag === tag ? "primary" : "default"}
+                variant={selectedTag === tag ? "filled" : "outlined"}
+                size="small"
+              />
+            ))}
+          </Box>
+        )}
       </Box>
 
       {/* Results count */}

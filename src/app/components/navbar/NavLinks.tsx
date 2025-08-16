@@ -100,6 +100,14 @@ export default function NavLinks() {
       </Button>
       
       <Button
+        component={Link}
+        href="/pricing"
+        sx={{ color: "inherit", textDecoration: "none" }}
+      >
+        Pricing
+      </Button>
+      
+      <Button
         onClick={handleClick}
         endIcon={<KeyboardArrowDown />}
         sx={{ color: "inherit", textDecoration: "none" }}
