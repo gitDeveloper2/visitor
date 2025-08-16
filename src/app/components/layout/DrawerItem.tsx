@@ -1,44 +1,71 @@
-import React, { useState } from "react";
-import { ClickAwayListener, Divider, Drawer, IconButton, List, ListItem, ListItemIcon, Collapse, Typography } from "@mui/material";
-import { ChevronLeft, Menu as MenuIcon } from "@mui/icons-material";
-import { ExpandMore, ExpandLess } from "@mui/icons-material";
-import styled from '@emotion/styled';
+"use client";
+
+import React, { useState, useEffect } from "react";
+import {
+  Drawer,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Collapse,
+  styled,
+  Divider,
+} from "@mui/material";
+import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import Link from "next/link";
-import { links } from "../../data/HeaderData"; // Assuming your data is in this file
-import { Category } from "../../data/CatgoriesData";
+import { fetchCategoriesForNavigation } from "../../../utils/categories";
 
-const DrawerHeader = styled('div')({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'flex-end',
-  padding: '8px 8px',
-});
+interface Category {
+  name: string;
+  path: string;
+  subcategories?: Array<{ name: string; path: string }>;
+}
 
-const CategoryHeader = styled(Typography)({
-  fontSize: '18px',
-  fontWeight: 'bold',
-  padding: '12px 16px',
-  backgroundColor: '#f5f5f5',
-  borderBottom: '1px solid #ddd',
-});
-
-const SubcategoryList = styled(List)({
-  paddingLeft: '20px',
-  paddingTop: '8px',
-});
-
-const CategoryItem = styled(ListItem)({
-  padding: '10px 16px',
-  fontSize: '16px',
-  fontWeight: 600,
-  '&:hover': {
-    backgroundColor: '#f0f0f0',
+const CategoryItem = styled(ListItem)(({ theme }) => ({
+  padding: theme.spacing(1, 2),
+  cursor: "pointer",
+  "&:hover": {
+    backgroundColor: theme.palette.action.hover,
   },
-});
+}));
 
-const DrawerItem: React.FC<{ categories: Category[] }> = ({ categories }) => {
+const CategoryHeader = styled(ListItemText)(({ theme }) => ({
+  fontWeight: 600,
+  color: theme.palette.primary.main,
+  padding: theme.spacing(1, 2),
+}));
+
+const SubcategoryList = styled(List)(({ theme }) => ({
+  paddingLeft: theme.spacing(2),
+  backgroundColor: "#f0f0f0",
+}));
+
+const DrawerItem: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [openCategories, setOpenCategories] = useState<{ [key: string]: boolean }>({});
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const fetchedCategories = await fetchCategoriesForNavigation();
+        setCategories(fetchedCategories);
+      } catch (error) {
+        console.error('Error loading categories for drawer:', error);
+        // Fallback to minimal categories
+        setCategories([
+          { name: "Technology", path: "/categories/technology", subcategories: [] },
+          { name: "Development", path: "/categories/development", subcategories: [] },
+          { name: "Design", path: "/categories/design", subcategories: [] }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCategories();
+  }, []);
 
   const handleDrawerOpen = () => setOpen(true);
   const handleDrawerClose = () => setOpen(false);
@@ -50,80 +77,80 @@ const DrawerItem: React.FC<{ categories: Category[] }> = ({ categories }) => {
     }));
   };
 
+  if (loading) {
+    return (
+      <div>
+        <CategoryItem onClick={handleDrawerOpen}>
+          <ListItemText primary="Loading categories..." />
+        </CategoryItem>
+      </div>
+    );
+  }
+
   return (
     <>
-    
-            <Divider />
-            <List
-              sx={{
-                maxHeight: '400px',  // Make the categories scrollable if they exceed this height
-                overflowY: 'auto',
-              }}
-            >
-              {/* Apps Section */}
-              <List>
-                {links.apps.map((item, index) => (
-                  <CategoryItem  key={index} onClick={handleDrawerClose}>
-                    <ListItemIcon>{item.icon}</ListItemIcon>
-                    <Link href={item.path} style={{ textDecoration: 'none', color: 'inherit', width: '100%' }}>
-                      {item.name}
-                    </Link>
+      <CategoryItem onClick={handleDrawerOpen}>
+        <ListItemText primary="Categories" />
+      </CategoryItem>
+
+      <Drawer
+        anchor="left"
+        open={open}
+        onClose={handleDrawerClose}
+        PaperProps={{
+          sx: { width: 280 },
+        }}
+      >
+        <List>
+          <CategoryHeader primary="Categories" />
+          <Divider />
+          <List
+            sx={{
+              maxHeight: '400px',  // Make the categories scrollable if they exceed this height
+              overflowY: 'auto',
+            }}
+          >
+            {/* Categories Section */}
+            <List>
+              <CategoryHeader>Categories</CategoryHeader>
+              {categories.map((category) => (
+                <div key={category.path}>
+                  {/* Main Category Item */}
+                  <CategoryItem onClick={() => toggleCategory(category.name)}>
+                    <ListItemIcon>
+                      {/* Optional Icon here */}
+                    </ListItemIcon>
+                    <span>{category.name}</span>
+                    {openCategories[category.name] ? <ExpandLess /> : <ExpandMore />}
                   </CategoryItem>
-                ))}
-              </List>
 
-              {/* Learning Section */}
-              {/* <List>
-                {links.tutorials.map((item, index) => (
-                  <CategoryItem  key={index} onClick={handleDrawerClose}>
-                    <ListItemIcon>{item.icon}</ListItemIcon>
-                    <Link href={item.path} style={{ textDecoration: 'none', color: 'inherit', width: '100%' }}>
-                      {item.name}
-                    </Link>
-                  </CategoryItem>
-                ))}
-              </List> */}
-
-              {/* Categories Section */}
-              <List>
-                <CategoryHeader>Categories</CategoryHeader>
-                {categories.map((category) => (
-                  <div key={category.path}>
-                    {/* Main Category Item */}
-                    <CategoryItem  onClick={() => toggleCategory(category.name)}>
-                      <ListItemIcon>
-                        {/* Optional Icon here */}
-                      </ListItemIcon>
-                      <span>{category.name}</span>
-                      {openCategories[category.name] ? <ExpandLess /> : <ExpandMore />}
-                    </CategoryItem>
-
-                    {/* Subcategories List */}
-                    {category.subcategories && (
-                      <Collapse in={openCategories[category.name]} timeout="auto" unmountOnExit={false}>
-                        <SubcategoryList >
-                          {category.subcategories.map((subcat) => (
-                            <CategoryItem key={subcat.path} onClick={handleDrawerClose}>
-                              <Link
-                                href={subcat.path}
-                                style={{
-                                  textDecoration: 'none',
-                                  color: 'inherit',
-                                  width: '100%',
-                                }}
-                              >
-                                {subcat.name}
-                              </Link>
-                            </CategoryItem>
-                          ))}
-                        </SubcategoryList>
-                      </Collapse>
-                    )}
-                  </div>
-                ))}
-              </List>
+                  {/* Subcategories List */}
+                  {category.subcategories && category.subcategories.length > 0 && (
+                    <Collapse in={openCategories[category.name]} timeout="auto" unmountOnExit={false}>
+                      <SubcategoryList>
+                        {category.subcategories.map((subcat) => (
+                          <CategoryItem key={subcat.path} onClick={handleDrawerClose}>
+                            <Link
+                              href={subcat.path}
+                              style={{
+                                textDecoration: "none",
+                                color: "inherit",
+                                width: "100%",
+                              }}
+                            >
+                              {subcat.name}
+                            </Link>
+                          </CategoryItem>
+                        ))}
+                      </SubcategoryList>
+                    </Collapse>
+                  )}
+                </div>
+              ))}
             </List>
-          
+          </List>
+        </List>
+      </Drawer>
     </>
   );
 };

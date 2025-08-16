@@ -1,77 +1,132 @@
-import React, { useMemo, useState } from "react";
-import { Box } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
-import Link from "next/link";
-import { links } from "../../data/HeaderData";
-import { categories, Category } from "../../data/CatgoriesData";
-import DrawerItem from "@components/layout/DrawerItem";
-import { DropdownMenu } from "./DropDown";
-import CategoriesDropdown from "./CategoriesDropdown";
+"use client";
 
-interface NavLinkProps{
-  categories:Category[]
+import React, { useState, useEffect } from "react";
+import { Box, Button, Menu, MenuItem, Typography } from "@mui/material";
+import { KeyboardArrowDown } from "@mui/icons-material";
+import Link from "next/link";
+import { fetchCategoriesForNavigation } from "../../../utils/categories";
+
+interface Category {
+  name: string;
+  path: string;
+  subcategories?: Array<{ name: string; path: string }>;
 }
 
-const NavLinks: React.FC<NavLinkProps> = ({categories}) => {
-  const theme = useTheme();
+export default function NavLinks() {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
 
-  const [anchorEl, setAnchorEl] = useState<{
-    apps: HTMLElement | null;
-    tutorials: HTMLElement | null;
-    categories: HTMLElement | null;
-  }>({
-    apps: null,
-    tutorials: null,
-    categories: null,
-  });
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const fetchedCategories = await fetchCategoriesForNavigation();
+        setCategories(fetchedCategories);
+      } catch (error) {
+        console.error('Error loading categories for navigation:', error);
+        // Fallback to minimal categories
+        setCategories([
+          { name: "Technology", path: "/categories/technology", subcategories: [] },
+          { name: "Development", path: "/categories/development", subcategories: [] },
+          { name: "Design", path: "/categories/design", subcategories: [] }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleMenuClick = (
-    event: React.MouseEvent<HTMLElement>,
-    menu: "apps" | "tutorials" | "categories"
-  ) => {
-    setAnchorEl((prev) => ({ ...prev, [menu]: event.currentTarget }));
+    loadCategories();
+  }, []);
+
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
   };
 
-  const handleMenuClose = (menu: "apps" | "tutorials" | "categories") => {
-    setAnchorEl((prev) => ({ ...prev, [menu]: null }));
+  const handleClose = () => {
+    setAnchorEl(null);
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+        <Typography variant="body2" color="text.secondary">
+          Loading...
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
-    <Box sx={{ display: "flex", alignItems: "center", gap: 2,  flexDirection: { xs: "column", md: "row" },
-  }}>
-      <Link
-        href={links.home.path}
-        style={{ textDecoration: "none", color: "inherit" }}
+    <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+      <Button
+        component={Link}
+        href="/"
+        sx={{ color: "inherit", textDecoration: "none" }}
       >
-        {links.home.name}
-      </Link>
-
-      <Box sx={{ display: { xs: "block", sm: "none" } }}>
-       
-        <DrawerItem categories={categories} />
-      </Box>
-
-      <DropdownMenu
-        title="Apps"
-        menuItems={links.apps}
-        onMenuClose={() => handleMenuClose("apps")}
-        anchorEl={anchorEl.apps}
-        onMenuOpen={(e) => handleMenuClick(e, "apps")}
-      />
-
-      {/* <DropdownMenu
-        title="Learning"
-        menuItems={links.tutorials.filter((item) => item.name !== "Home")}
-        onMenuClose={() => handleMenuClose("tutorials")}
-        anchorEl={anchorEl.tutorials}
-        onMenuOpen={(e) => handleMenuClick(e, "tutorials")}
-      /> */}
-
-      {/* CategoriesDropdown */}
-      {/* <CategoriesDropdown categories={categories} /> */}
+        Home
+      </Button>
       
+      <Button
+        component={Link}
+        href="/launch"
+        sx={{ color: "inherit", textDecoration: "none" }}
+      >
+        Apps
+      </Button>
+      
+      <Button
+        component={Link}
+        href="/blogs"
+        sx={{ color: "inherit", textDecoration: "none" }}
+      >
+        Blogs
+      </Button>
+      
+      <Button
+        component={Link}
+        href="/aboutus"
+        sx={{ color: "inherit", textDecoration: "none" }}
+      >
+        About
+      </Button>
+      
+      <Button
+        component={Link}
+        href="/contactus"
+        sx={{ color: "inherit", textDecoration: "none" }}
+      >
+        Contact
+      </Button>
+      
+      <Button
+        onClick={handleClick}
+        endIcon={<KeyboardArrowDown />}
+        sx={{ color: "inherit", textDecoration: "none" }}
+      >
+        Categories
+      </Button>
+      
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+        MenuListProps={{
+          "aria-labelledby": "categories-button",
+        }}
+      >
+        {categories.map((category) => (
+          <MenuItem
+            key={category.path}
+            onClick={handleClose}
+            component={Link}
+            href={category.path}
+            sx={{ textDecoration: "none", color: "inherit" }}
+          >
+            {category.name}
+          </MenuItem>
+        ))}
+      </Menu>
     </Box>
   );
-};
-
-export default NavLinks;
+}

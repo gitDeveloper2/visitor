@@ -14,7 +14,6 @@ import {
 import withMetrics from "../../../lib/Metrics";
 import NavLogo from "@components/navbar/NavLogo";
 import NavLinks from "@components/navbar/NavLinks";
-import { Category } from "../../data/CatgoriesData";
 import { usePathname } from "next/navigation";
 import Auth from "./Auth";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -23,11 +22,7 @@ import { DonateButton } from "@/features/shared/components/PaypallDonation";
 import { BuyMeCoffee } from "@/features/shared/components/BuyMeCofee";
 import ThemeToggle from "@/app/components/ThemeToggle";
 
-interface NavBarProps {
-  categories: Category[];
-}
-
-const NavBar: React.FC<NavBarProps> = ({ categories }) => {
+const NavBar: React.FC = () => {
   const pathname = usePathname();
   const shouldHideNavbar = pathname.startsWith("/content/");
 
@@ -64,7 +59,7 @@ const NavBar: React.FC<NavBarProps> = ({ categories }) => {
                 </>
               ) : (
                 <>
-                  <NavLinks categories={categories} />
+                  <NavLinks />
                   <ThemeToggle />
                   <Auth isMobile={isMobile}/>
                 </>
@@ -88,7 +83,7 @@ const NavBar: React.FC<NavBarProps> = ({ categories }) => {
             </IconButton>
           </Box>
           <Box sx={{ mt: 4 }}>
-            <NavLinks categories={categories} />
+            <NavLinks />
             <Box sx={{ mt: 2 }}>
   {/* <BuyMeCoffee /> */}
 </Box>

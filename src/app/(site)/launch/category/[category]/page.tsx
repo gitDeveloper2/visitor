@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { Container, Typography, Box, CircularProgress } from '@mui/material';
-import { appCategories } from '../../../../../utils/categories';
+import { fetchCategoryNames, fetchCategoriesFromAPI } from '../../../../../utils/categories';
 import LaunchCategoryPage from './LaunchCategoryPage';
 import { connectToDatabase } from '../../../../../lib/mongodb';
 import { verifyAppPremiumStatus } from '../../../../../utils/premiumVerification';
@@ -29,7 +29,16 @@ function serializeMongoObject(obj: any): any {
 }
 
 export async function generateStaticParams() {
-  return appCategories.map((category) => ({ category: category.toLowerCase() }));
+  // For static generation, we'll use a predefined list of common category slugs
+  // This avoids API calls during build time which can be unreliable
+  const commonCategorySlugs = [
+    'productivity', 'development', 'design', 'marketing', 'analytics',
+    'communication', 'finance', 'education', 'entertainment', 'ai',
+    'web-development', 'mobile-development', 'data-science', 'business',
+    'startup', 'tools', 'utilities', 'productivity-tools'
+  ];
+  
+  return commonCategorySlugs.map((category) => ({ category }));
 }
 
 export default async function LaunchCategoryPageWrapper({ 
@@ -43,13 +52,46 @@ export default async function LaunchCategoryPageWrapper({
   const page = parseInt(searchParams.page || '1');
   const tag = searchParams.tag;
   
-  const validCategory = appCategories.find(c => c.toLowerCase() === category.toLowerCase());
+  // Define common category slugs for validation
+  const commonCategorySlugs = [
+    'productivity', 'development', 'design', 'marketing', 'analytics',
+    'communication', 'finance', 'education', 'entertainment', 'ai',
+    'web-development', 'mobile-development', 'data-science', 'business',
+    'startup', 'tools', 'utilities', 'productivity-tools'
+  ];
+  
+  // Fetch categories from API to validate (with fallback)
+  let validCategory: string | undefined;
+  let categoryName: string | undefined;
+  
+  try {
+    const categories = await fetchCategoriesFromAPI('app');
+    const matchedCategory = categories.find(c => c.slug === category);
+    if (matchedCategory) {
+      validCategory = matchedCategory.slug;
+      categoryName = matchedCategory.name;
+    }
+  } catch (error) {
+    console.error('Error fetching categories for validation:', error);
+    // Fallback to common categories
+    validCategory = commonCategorySlugs.find(c => c === category);
+    categoryName = validCategory; // Use slug as name for fallback
+  }
+  
+  // If still not found, check if it's a valid category from our common list
+  if (!validCategory) {
+    validCategory = commonCategorySlugs.find(c => c === category);
+    categoryName = validCategory; // Use slug as name for fallback
+  }
   
   if (!validCategory) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Typography variant="h4" color="error">
-          Category not found
+          Category not found: {category}
+        </Typography>
+        <Typography variant="body1" sx={{ mt: 2 }}>
+          Available categories: {commonCategorySlugs.join(', ')}
         </Typography>
       </Container>
     );
@@ -66,8 +108,8 @@ export default async function LaunchCategoryPageWrapper({
     const query: any = { 
       status: 'approved',
       $or: [
-        { category: validCategory },
-        { tags: validCategory }
+        { category: categoryName }, // Use category name for database query
+        { tags: categoryName }
       ]
     };
     
@@ -127,7 +169,7 @@ export default async function LaunchCategoryPageWrapper({
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Box sx={{ mb: 4 }}>
           <Typography variant="h3" component="h1" gutterBottom>
-            {validCategory} Apps
+            {categoryName} Apps
           </Typography>
           {tag && (
             <Typography variant="h6" color="text.secondary">
@@ -141,7 +183,7 @@ export default async function LaunchCategoryPageWrapper({
           </Box>
         }>
           <LaunchCategoryPage 
-            category={validCategory} 
+            category={categoryName} 
             page={page} 
             tag={tag}
             initialApps={serializedApps}
@@ -157,7 +199,7 @@ export default async function LaunchCategoryPageWrapper({
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Box sx={{ mb: 4 }}>
           <Typography variant="h3" component="h1" gutterBottom>
-            {validCategory} Apps
+            {categoryName} Apps
           </Typography>
         </Box>
         <Suspense fallback={
@@ -166,7 +208,7 @@ export default async function LaunchCategoryPageWrapper({
           </Box>
         }>
           <LaunchCategoryPage 
-            category={validCategory} 
+            category={categoryName} 
             page={page} 
             tag={tag}
             initialApps={[]}

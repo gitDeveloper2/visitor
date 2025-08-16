@@ -25,7 +25,18 @@ import {
 } from "../../../utils/themeUtils";
 import SubmitAppCTA from "./SubmitAppCTA";
 import { useEffect, useState } from "react";
-import { appCategories, appTags } from "../../../utils/categories";
+import { fetchCategoriesFromAPI } from "../../../utils/categories";
+
+// Categories will be fetched from API
+interface Category {
+  _id: string;
+  name: string;
+  slug: string;
+  type: 'app' | 'blog' | 'both';
+  description?: string;
+  icon?: string;
+  color?: string;
+}
 
 interface AppsMainPageProps {
   initialApps: any[];
@@ -49,6 +60,24 @@ export default function AppsMainPage({
   const [totalPages, setTotalPages] = useState(Math.ceil(initialTotalApps / 12));
   const [totalApps, setTotalApps] = useState(initialTotalApps);
   const [searchQuery, setSearchQuery] = useState("");
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const categoriesData = await fetchCategoriesFromAPI('app');
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   // Filter apps based on search query
   const filteredApps = apps.filter((app) => {
@@ -469,8 +498,8 @@ export default function AppsMainPage({
   );
   }
 
-  // Get unique tags for filter (combine app categories and tags)
-  const allFilters = ["All", ...appCategories, ...appTags.slice(0, 15)];
+  // Get unique filters (combine categories and common tags)
+  const allFilters = ["All", ...categories.map(cat => ({ name: cat.name, slug: cat.slug })), "Free", "Freemium", "Premium"];
 
   return (
     <Box component="main" sx={{ bgcolor: "background.default", py: 10 }}>
@@ -534,23 +563,48 @@ export default function AppsMainPage({
         </Grid>
         
         <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", justifyContent: "center", mt: 3 }}>
-          {allFilters.map((filter) => (
-            <Chip
-              key={filter}
-              label={filter}
-              onClick={() => {
-                if (filter === "All") {
-                  setSelectedFilter("All");
-                } else {
-                  // Navigate to category page
-                  window.location.href = `/launch/category/${filter.toLowerCase()}`;
-                }
-              }}
-              color={selectedFilter === filter ? "primary" : "default"}
-              variant={selectedFilter === filter ? "filled" : "outlined"}
-              sx={{ fontWeight: 500, cursor: "pointer" }}
-            />
-          ))}
+          {allFilters.map((filter) => {
+            // Handle different filter types
+            if (filter === "All") {
+              return (
+                <Chip
+                  key="All"
+                  label="All"
+                  onClick={() => setSelectedFilter("All")}
+                  color={selectedFilter === "All" ? "primary" : "default"}
+                  variant={selectedFilter === "All" ? "filled" : "outlined"}
+                  sx={{ fontWeight: 500, cursor: "pointer" }}
+                />
+              );
+            } else if (typeof filter === "string") {
+              // Handle pricing filters
+              return (
+                <Chip
+                  key={filter}
+                  label={filter}
+                  onClick={() => setSelectedFilter(filter)}
+                  color={selectedFilter === filter ? "primary" : "default"}
+                  variant={selectedFilter === filter ? "filled" : "outlined"}
+                  sx={{ fontWeight: 500, cursor: "pointer" }}
+                />
+              );
+            } else {
+              // Handle category filters
+              return (
+                <Chip
+                  key={filter.slug}
+                  label={filter.name}
+                  onClick={() => {
+                    // Navigate to category page using slug
+                    window.location.href = `/launch/category/${filter.slug}`;
+                  }}
+                  color={selectedFilter === filter.name ? "primary" : "default"}
+                  variant={selectedFilter === filter.name ? "filled" : "outlined"}
+                  sx={{ fontWeight: 500, cursor: "pointer" }}
+                />
+              );
+            }
+          })}
         </Box>
       </Paper>
 

@@ -8,7 +8,9 @@
     "sitemap": "next-sitemap --config next-sitemap-config.js",
     "start": "next start",
     "lint": "next lint",
-    "migrate:slugs": "node scripts/migrate-to-slugs.js"
+    "migrate:slugs": "node scripts/migrate-to-slugs.js",
+    "seed:categories": "node scripts/seed-categories.js",
+    "seed:categories:advanced": "node scripts/seed-categories-advanced.js"
   },
   "dependencies": {
     "@changey/react-leaflet-markercluster": "^4.0.0-rc1",

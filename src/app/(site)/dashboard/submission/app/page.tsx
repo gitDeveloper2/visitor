@@ -25,12 +25,35 @@ import {
 import { Add as AddIcon, Delete as DeleteIcon, KeyboardArrowUp as UpIcon, KeyboardArrowDown as DownIcon, Star, Check } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import { useSearchParams } from 'next/navigation';
-import { appCategories, appTags } from "../../../../utils/categories";
+import { appTags, fetchCategoryNames } from "../../../../utils/categories";
 
 function SubmitAppPageContent() {
   const theme = useTheme();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+
+  // Fetch categories from API on component mount
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const apiCategories = await fetchCategoryNames('app');
+        setCategories(apiCategories);
+      } catch (error) {
+        console.error('Error loading categories:', error);
+        // Fallback to minimal categories
+        setCategories([
+          "Productivity", "Development", "Design", "Marketing", 
+          "Analytics", "Communication", "Finance", "Education", "Entertainment"
+        ]);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+
+    loadCategories();
+  }, []);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
@@ -673,10 +696,15 @@ function SubmitAppPageContent() {
                   value={form.category}
                   label="Category"
                   onChange={(e) => handleChange("category", e.target.value)}
+                  disabled={categoriesLoading}
                 >
-                  {appCategories.map((category) => (
-                    <MenuItem key={category} value={category}>{category}</MenuItem>
-                  ))}
+                  {categoriesLoading ? (
+                    <MenuItem disabled>Loading categories...</MenuItem>
+                  ) : (
+                    categories.map((category) => (
+                      <MenuItem key={category} value={category}>{category}</MenuItem>
+                    ))
+                  )}
                 </Select>
               </FormControl>
             </Grid>

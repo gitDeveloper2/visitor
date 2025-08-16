@@ -47,21 +47,37 @@ interface BlogCategoryPageProps {
   category: string;
   page: number;
   tag?: string;
+  initialBlogs?: BlogPost[];
+  totalBlogs?: number;
 }
 
-export default function BlogCategoryPage({ category, page, tag }: BlogCategoryPageProps) {
+export default function BlogCategoryPage({ 
+  category, 
+  page, 
+  tag, 
+  initialBlogs = [], 
+  totalBlogs = 0 
+}: BlogCategoryPageProps) {
   const theme = useTheme();
-  const [blogs, setBlogs] = useState<BlogPost[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [blogs, setBlogs] = useState<BlogPost[]>(initialBlogs);
+  const [loading, setLoading] = useState(initialBlogs.length === 0);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState(tag || '');
   const [currentPage, setCurrentPage] = useState(page);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalBlogs, setTotalBlogs] = useState(0);
+  const [totalPages, setTotalPages] = useState(Math.ceil(totalBlogs / 12));
+  const [totalBlogsCount, setTotalBlogsCount] = useState(totalBlogs);
 
-  // Fetch blogs for this category
+  // Fetch blogs for this category only if no initial data provided
   useEffect(() => {
+    if (initialBlogs.length > 0) {
+      setBlogs(initialBlogs);
+      setTotalBlogsCount(totalBlogs);
+      setTotalPages(Math.ceil(totalBlogs / 12));
+      setLoading(false);
+      return;
+    }
+
     async function fetchBlogs() {
       setLoading(true);
       setError(null);
@@ -82,7 +98,7 @@ export default function BlogCategoryPage({ category, page, tag }: BlogCategoryPa
         const data = await res.json();
         setBlogs(data.blogs || []);
         setTotalPages(data.pagination?.totalPages || 1);
-        setTotalBlogs(data.pagination?.total || 0);
+        setTotalBlogsCount(data.pagination?.total || 0);
       } catch (err: any) {
         setError(err.message || 'Unknown error');
       } finally {
@@ -91,7 +107,7 @@ export default function BlogCategoryPage({ category, page, tag }: BlogCategoryPa
     }
 
     fetchBlogs();
-  }, [category, currentPage, selectedTag]);
+  }, [category, currentPage, selectedTag, initialBlogs.length, totalBlogs]);
 
   // Local search filtering
   const filteredBlogs = blogs.filter(blog => {
@@ -180,7 +196,7 @@ export default function BlogCategoryPage({ category, page, tag }: BlogCategoryPa
 
       {/* Results count */}
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        {filteredBlogs.length} of {totalBlogs} blogs in {category}
+        {filteredBlogs.length} of {totalBlogsCount} blogs in {category}
         {selectedTag && ` tagged with "${selectedTag}"`}
       </Typography>
 

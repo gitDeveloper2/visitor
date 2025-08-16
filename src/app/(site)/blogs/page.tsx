@@ -3,6 +3,7 @@ import { Container, Typography, Box, CircularProgress, Chip, Grid } from '@mui/m
 import BlogMainPage from './BlogMainPage';
 import { connectToDatabase } from '../../../lib/mongodb';
 import Link from 'next/link';
+import { fetchCategoryNames } from '../../../utils/categories';
 
 // Transform database document to BlogPost interface
 const transformBlogDocument = (doc: any) => ({
@@ -98,6 +99,33 @@ export default async function BlogsPage() {
     // Get blogs from the last 7 days for featured selection
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     
+    // Fetch categories for the "Browse by Topic" section
+    let categories: string[] = [];
+    try {
+      console.log('Fetching categories for blogs page...');
+      // Temporarily fetch all categories to see what's available
+      categories = await fetchCategoryNames(); // No type filter = all active categories
+      console.log('Categories fetched:', categories);
+      console.log('Number of categories:', categories.length);
+      
+      // Also try to fetch blog-specific categories
+      try {
+        const blogCategories = await fetchCategoryNames('blog');
+        console.log('Blog-specific categories:', blogCategories);
+        console.log('Number of blog categories:', blogCategories.length);
+      } catch (blogError) {
+        console.log('Could not fetch blog categories:', blogError);
+      }
+      
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      // Fallback categories if API fails
+      categories = [
+        "Technology", "Business", "Development", "Design", "Marketing",
+        "Startup", "Productivity", "AI", "Web Development", "Mobile Development"
+      ];
+    }
+    
     // Fetch all approved blogs
     const rawBlogs = await db.collection('userblogs')
       .find({ 
@@ -118,33 +146,35 @@ export default async function BlogsPage() {
     const founderStories = allBlogs.filter((blog: any) => blog.isFounderStory);
     console.log("founder ", founderStories);
 
-    // Get unique tags with counts from RAW database data
-    const tagCounts = rawBlogs.reduce((acc: any, blog) => {
-      const tags = blog.tags || [];
-      tags.forEach((tag: string) => {
-        acc[tag] = (acc[tag] || 0) + 1;
-      });
+    // Get category counts from blogs
+    const categoryCounts = rawBlogs.reduce((acc: any, blog) => {
+      const category = blog.category || 'Uncategorized';
+      acc[category] = (acc[category] || 0) + 1;
       return acc;
     }, {});
 
-    const popularTags = Object.entries(tagCounts)
-      .map(([tag, count]) => ({ tag, count: count as number }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 8); // Show top 8 tags
+    // Create category chips with counts
+    const categoryChips = categories.map(category => ({
+      category,
+      count: categoryCounts[category] || 0
+    })).filter(({ count }) => count > 0); // Only show categories that have blogs
 
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        {/* Popular Tags Section */}
+        {/* Browse by Category Section */}
         <Box sx={{ mb: 6 }}>
           <Typography variant="h5" sx={{ fontWeight: 700, mb: 3 }}>
-            Browse by Topic
+            Browse by Category
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Explore blogs organized by topic categories
           </Typography>
           <Grid container spacing={2}>
-            {popularTags.map(({ tag, count }) => (
-              <Grid item key={tag}>
-                <Link href={`/blogs/tag/${encodeURIComponent(tag)}`} style={{ textDecoration: 'none' }}>
+            {categoryChips.map(({ category, count }) => (
+              <Grid item key={category}>
+                <Link href={`/blogs/category/${encodeURIComponent(category.toLowerCase().replace(/\s+/g, '-'))}`} style={{ textDecoration: 'none' }}>
                   <Chip
-                    label={`#${tag} (${count})`}
+                    label={`${category} (${count})`}
                     variant="outlined"
                     sx={{
                       fontWeight: 600,

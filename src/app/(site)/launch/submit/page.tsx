@@ -19,6 +19,7 @@ import {
   Divider,
   Alert,
   IconButton,
+  CircularProgress,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { BadgeCheck, DollarSign, UploadCloud, Github, Globe, User, Code, Star, ArrowUp, ArrowDown, X } from "lucide-react";
@@ -26,12 +27,7 @@ import { KeyboardArrowUp as UpIcon, KeyboardArrowDown as DownIcon, Delete as Del
 import { getGlassStyles, getShadow, typographyVariants, commonStyles } from "@/utils/themeUtils";
 import { useState, useEffect } from "react";
 import PremiumAppListing from '@/components/premium/PremiumAppListing';
-
-// App categories for selection
-const categories = [
-  "Productivity", "Development", "Design", "Marketing", 
-  "Analytics", "Communication", "Finance", "Education", "Entertainment"
-];
+import { fetchCategoryNames } from "../../../../utils/categories";
 
 // Pricing options
 const pricingOptions = ["Free", "Freemium", "One-time", "Subscription", "Enterprise"];
@@ -45,6 +41,11 @@ const techStackSuggestions = [
 
 export default function SubmitAppPage() {
   const theme = useTheme();
+  
+  // App categories for selection - will be fetched from API
+  const [categories, setCategories] = useState<string[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [userData, setUserData] = useState<any>(null);
@@ -71,7 +72,7 @@ export default function SubmitAppPage() {
   const [newTag, setNewTag] = useState("");
   const [newTech, setNewTech] = useState("");
 
-  // Check authentication status on component mount
+  // Check authentication status and fetch categories on component mount
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -114,7 +115,24 @@ export default function SubmitAppPage() {
       }
     };
 
+    const fetchCategories = async () => {
+      try {
+        const apiCategories = await fetchCategoryNames('app');
+        setCategories(apiCategories);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        // Fallback to default categories if API fails
+        setCategories([
+          "Productivity", "Development", "Design", "Marketing", 
+          "Analytics", "Communication", "Finance", "Education", "Entertainment"
+        ]);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+
     checkAuth();
+    fetchCategories();
   }, []);
 
   const reviewSteps = ["Initial Review", "Quality Check", "Publication"];
@@ -424,11 +442,26 @@ export default function SubmitAppPage() {
                     value={formData.category}
                     label="Category"
                     onChange={(e) => handleInputChange("category", e.target.value)}
+                    disabled={!isAuthenticated || isSubmitting || categoriesLoading}
                   >
-                    {categories.map((category) => (
-                      <MenuItem key={category} value={category}>{category}</MenuItem>
-                    ))}
+                    {categoriesLoading ? (
+                      <MenuItem disabled>
+                        <CircularProgress size={20} sx={{ mr: 1 }} />
+                        Loading categories...
+                      </MenuItem>
+                    ) : (
+                      categories.map((category) => (
+                        <MenuItem key={category} value={category}>
+                          {category}
+                        </MenuItem>
+                      ))
+                    )}
                   </Select>
+                  {categoriesLoading && (
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                      Loading categories from database...
+                    </Typography>
+                  )}
                 </FormControl>
               </Grid>
 

@@ -8,8 +8,6 @@ import { ThemeProvider } from '../context/ThemeContext';
 import GlobalStyles from "@styles/globalStyles";
 import Script from "next/script";  // Import Script component
 import Navbar from "@components/layout/Navbar";
-import { Category } from "./data/CatgoriesData";
-import { fetchProcessedCategories } from "../lib/services/mongo/links";
 import "@styles/quilstyles.module.css"
 // Footer removed - now handled by individual pages
 import { Analytics } from "@vercel/analytics/next"
@@ -37,8 +35,6 @@ export const metadata: Metadata = {
 
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
- 
- const categories:Category[]=await fetchProcessedCategories()
  
  return (
     <html lang="en" suppressHydrationWarning>
@@ -80,7 +76,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <GlobalStyles />
                 <Analytics/>
                 <div style={{ minHeight: "90vh" }}>
-                  <Navbar categories={categories}  />
+                  <Navbar />
                   <DonateButton/>
                   <main id="main-content" tabIndex={-1}>
                     {children}

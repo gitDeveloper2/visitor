@@ -19,7 +19,7 @@ import {
   Paper,
 } from "@mui/material";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
-import { blogCategories, blogTags, type BlogCategory, type BlogTag } from "../../../../../utils/categories";
+import { blogTags, type BlogCategory, type BlogTag, fetchCategoryNames } from "../../../../../utils/categories";
 import { compressImage, validateImage, type CompressedImage } from "../../../../../utils/imageCompression";
 
 export type FounderDomainStatus = "unknown" | "checking" | "ok" | "taken" | "invalid";
@@ -59,6 +59,29 @@ function extractDomain(url: string) {
 
 export default function StepMetadata({ formData, setFormData }: StepMetadataProps) {
   const [imageError, setImageError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+
+  // Fetch categories from API on component mount
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const apiCategories = await fetchCategoryNames('blog');
+        setCategories(apiCategories);
+      } catch (error) {
+        console.error('Error loading categories:', error);
+        // Fallback to minimal categories
+        setCategories([
+          "Technology", "Business", "Development", "Design", 
+          "Marketing", "Productivity", "Startup", "Tutorial", "AI", "Web3"
+        ]);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+
+    loadCategories();
+  }, []);
   const [compressing, setCompressing] = useState(false);
 
   // Image upload handler
@@ -165,10 +188,15 @@ export default function StepMetadata({ formData, setFormData }: StepMetadataProp
               value={formData.category}
               label="Category"
               onChange={(e) => setFormData({ category: e.target.value as BlogCategory })}
+              disabled={categoriesLoading}
             >
-              {blogCategories.map((category) => (
-                <MenuItem key={category} value={category}>{category}</MenuItem>
-              ))}
+              {categoriesLoading ? (
+                <MenuItem disabled>Loading categories...</MenuItem>
+              ) : (
+                categories.map((category) => (
+                  <MenuItem key={category} value={category}>{category}</MenuItem>
+                ))
+              )}
             </Select>
           </FormControl>
         </Grid>

@@ -1,8 +1,20 @@
 import { docs } from "googleapis/build/src/apis/docs";
-import { Category, subcategory } from "../../../app/data/CatgoriesData";
 import logger from "../../../utils/logger/customLogger";
 import { connectToDatabase } from "../../mongodb";
 import { WithId, Document, ObjectId } from "mongodb"; // Import necessary types from mongodb
+
+// Define interfaces locally since we removed the hardcoded categories file
+interface subcategory {
+  name: string;
+  path: string;
+}
+
+interface Category {
+  name: string;
+  path: string;
+  subcategories?: subcategory[];
+}
+
 const BASEURL=process.env.NEXT_PUBLIC_BASE_URL||"https://basicutils.com";
 const documentId = new ObjectId("60d5f4837d5b1c6c8f1edb1a"); // Example ObjectId
 // Fetch data from the database
