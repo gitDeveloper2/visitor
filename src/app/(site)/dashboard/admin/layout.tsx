@@ -1,13 +1,9 @@
-import { getServerSession } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import { ServerAuthGuard } from "@/components/auth/ServerAuthGuard";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-	const session = await getServerSession();
-	if (!session) {
-		return redirect("/auth/signin");
-	}
-	if (session.user?.role !== 'admin') {
-		return redirect("/dashboard");
-	}
-	return <>{children}</>;
+	return (
+		<ServerAuthGuard requiredRole="admin" redirectTo="/auth/signin">
+			{children}
+		</ServerAuthGuard>
+	);
 }

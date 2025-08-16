@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import { useTheme } from "@mui/material/styles";
 import { authClient } from "@/app/auth-client";
+import { AuthGuard } from "@/components/auth/AuthGuard";
 
 // Icons
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -32,6 +33,14 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  return (
+    <AuthGuard redirectTo="/auth/signin">
+      <DashboardContent>{children}</DashboardContent>
+    </AuthGuard>
+  );
+}
+
+function DashboardContent({ children }: { children: React.ReactNode }) {
   const theme = useTheme();
   const { data: session, isPending } = authClient.useSession();
   const [adminMenuAnchor, setAdminMenuAnchor] = React.useState<null | HTMLElement>(null);
@@ -59,22 +68,6 @@ export default function DashboardLayout({
   const handleLegacyMenuClose = () => {
     setLegacyMenuAnchor(null);
   };
-
-  if (isPending) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-        <Typography>Loading...</Typography>
-      </Box>
-    );
-  }
-
-  if (!session?.user) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-        <Typography>Please sign in to access the dashboard</Typography>
-      </Box>
-    );
-  }
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
