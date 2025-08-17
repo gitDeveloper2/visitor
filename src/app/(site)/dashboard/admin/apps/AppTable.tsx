@@ -122,7 +122,7 @@ export default function AppTable() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch("/api/user-apps");
+        const res = await fetch("/api/admin/apps");
        
         if (!res.ok) throw new Error("Failed to fetch apps");
         const data = await res.json();
@@ -139,7 +139,7 @@ export default function AppTable() {
 
   const handleStatusUpdate = async (appId: string, newStatus: 'pending' | 'approved' | 'rejected') => {
     try {
-      const res = await fetch(`/api/user-apps/${appId}`, {
+      const res = await fetch(`/api/admin/apps/${appId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -189,7 +189,7 @@ export default function AppTable() {
       }
       
       // Refresh apps to show updated verification status
-      const res = await fetch("/api/user-apps");
+      const res = await fetch("/api/admin/apps");
       if (res.ok) {
         const data = await res.json();
         setApps(data.apps || []);

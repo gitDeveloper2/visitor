@@ -86,7 +86,7 @@ export default function BlogTable() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch("/api/user-blogs");
+        const res = await fetch("/api/admin/blogs");
         if (!res.ok) throw new Error("Failed to fetch blogs");
         const data = await res.json();
         setBlogs(data.blogs || []);
@@ -101,7 +101,7 @@ export default function BlogTable() {
 
   const handleStatusUpdate = async (blogId: string, newStatus: 'pending' | 'approved' | 'rejected') => {
     try {
-      const res = await fetch(`/api/user-blogs/admin/${blogId}`, {
+      const res = await fetch(`/api/admin/blogs/${blogId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

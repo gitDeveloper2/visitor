@@ -3,16 +3,32 @@
 // Force dynamic rendering to prevent build-time static generation issues
 export const dynamic = 'force-dynamic';
 
-import { Box, Container, Grid, Paper, Typography, Chip, Stack, Button } from "@mui/material";
+import { Box, Container, Grid, Paper, Typography, Chip, Stack, Button, CircularProgress } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { getGlassStyles, getShadow } from "../../../utils/themeUtils";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
-// Dummy counts – replace with real data later
-const stats = {
-  apps: { total: 24, pending: 5, approved: 15, rejected: 4, verification: { pending: 8, verified: 12, failed: 3 } },
-  blogs: { total: 12, pending: 3, approved: 7, rejected: 2 },
-};
+interface Stats {
+  apps: {
+    total: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+    verification: {
+      pending: number;
+      verified: number;
+      failed: number;
+      not_required: number;
+    };
+  };
+  blogs: {
+    total: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+  };
+}
 
 const StatCard = ({
   title,
@@ -21,6 +37,7 @@ const StatCard = ({
   approved,
   rejected,
   manageLink,
+  stats,
 }: {
   title: string;
   total: number;
@@ -28,6 +45,7 @@ const StatCard = ({
   approved: number;
   rejected: number;
   manageLink: string;
+  stats: Stats;
 }) => {
   const theme = useTheme();
 
@@ -76,6 +94,55 @@ const StatCard = ({
 
 export default function AdminDashboardPage() {
   const theme = useTheme();
+  const [stats, setStats] = useState<Stats>({
+    apps: { total: 0, pending: 0, approved: 0, rejected: 0, verification: { pending: 0, verified: 0, failed: 0, not_required: 0 } },
+    blogs: { total: 0, pending: 0, approved: 0, rejected: 0 }
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const res = await fetch('/api/admin/stats');
+        if (!res.ok) throw new Error('Failed to fetch stats');
+        const data = await res.json();
+        setStats(data);
+      } catch (err: any) {
+        setError(err.message || 'Failed to fetch stats');
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchStats();
+  }, []);
+
+  if (loading) {
+    return (
+      <Box component="main" sx={{ bgcolor: "background.default", py: 6 }}>
+        <Container maxWidth="lg">
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+            <CircularProgress />
+          </Box>
+        </Container>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box component="main" sx={{ bgcolor: "background.default", py: 6 }}>
+        <Container maxWidth="lg">
+          <Typography variant="h4" gutterBottom>
+            Admin Dashboard
+          </Typography>
+          <Typography variant="body1" color="error" mb={4}>
+            Error loading dashboard: {error}
+          </Typography>
+        </Container>
+      </Box>
+    );
+  }
 
   return (
     <Box component="main" sx={{ bgcolor: "background.default", py: 6 }}>
@@ -97,6 +164,7 @@ export default function AdminDashboardPage() {
               approved={stats.apps.approved}
               rejected={stats.apps.rejected}
               manageLink="/dashboard/admin/apps"
+              stats={stats}
             />
           </Grid>
 
@@ -108,6 +176,7 @@ export default function AdminDashboardPage() {
               approved={stats.blogs.approved}
               rejected={stats.blogs.rejected}
               manageLink="/dashboard/admin/blogs"
+              stats={stats}
             />
           </Grid>
         </Grid>
