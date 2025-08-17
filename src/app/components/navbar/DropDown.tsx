@@ -48,10 +48,12 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
           sx: {
             maxHeight: 48 * 4.5,
             width: "20ch",
-            bgcolor: theme.palette.background.default, // solid background color
-            color: theme.palette.text.primary,       // text color
-            boxShadow: theme.shadows[5],             // subtle shadow
+            bgcolor: 'background.paper',
+            color: 'text.primary',
+            boxShadow: (theme) => theme.shadows[8],
             borderRadius: 2,
+            border: '1px solid',
+            borderColor: 'divider',
           },
         }}
         MenuListProps={{

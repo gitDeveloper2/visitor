@@ -98,9 +98,16 @@ const Auth: React.FC<AuthProps> = ({ isMobile }) => {
         onClose={handleMenuClose}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         transformOrigin={{ vertical: "top", horizontal: "right" }}
-        slotProps={{
-          paper: {
-            sx: { minWidth: 220, p: 1 },
+        PaperProps={{
+          sx: {
+            minWidth: 220,
+            p: 1,
+            bgcolor: 'background.paper',
+            color: 'text.primary',
+            boxShadow: (theme) => theme.shadows[8],
+            borderRadius: 2,
+            border: '1px solid',
+            borderColor: 'divider',
           },
         }}
       >

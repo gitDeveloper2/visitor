@@ -1026,6 +1026,16 @@ export default function ManageAppsPage() {
           vertical: 'top',
           horizontal: 'left',
         }}
+        PaperProps={{
+          sx: {
+            bgcolor: 'background.paper',
+            color: 'text.primary',
+            boxShadow: (theme) => theme.shadows[8],
+            borderRadius: 2,
+            border: '1px solid',
+            borderColor: 'divider',
+          },
+        }}
       >
         <Box sx={{ p: 2, maxWidth: 300 }}>
           <Typography variant="body2">

@@ -190,19 +190,29 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               </AuthGuard>
 
               {/* Submit Menu */}
-              <Menu
-                anchorEl={submitMenuAnchor}
-                open={Boolean(submitMenuAnchor)}
-                onClose={handleSubmitMenuClose}
-                anchorOrigin={{
-                  vertical: "bottom",
-                  horizontal: "right",
-                }}
-                transformOrigin={{
-                  vertical: "top",
-                  horizontal: "right",
-                }}
-              >
+                             <Menu
+                 anchorEl={submitMenuAnchor}
+                 open={Boolean(submitMenuAnchor)}
+                 onClose={handleSubmitMenuClose}
+                 anchorOrigin={{
+                   vertical: "bottom",
+                   horizontal: "right",
+                 }}
+                 transformOrigin={{
+                   vertical: "top",
+                   horizontal: "right",
+                 }}
+                 PaperProps={{
+                   sx: {
+                     bgcolor: 'background.paper',
+                     color: 'text.primary',
+                     boxShadow: (theme) => theme.shadows[8],
+                     borderRadius: 2,
+                     border: '1px solid',
+                     borderColor: 'divider',
+                   },
+                 }}
+               >
                 <MenuItem
                   component={Link}
                   href="/launch/submit"
@@ -226,19 +236,29 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               </Menu>
 
               {/* Admin Menu */}
-              <Menu
-                anchorEl={adminMenuAnchor}
-                open={Boolean(adminMenuAnchor)}
-                onClose={handleAdminMenuClose}
-                anchorOrigin={{
-                  vertical: "bottom",
-                  horizontal: "right",
-                }}
-                transformOrigin={{
-                  vertical: "top",
-                  horizontal: "right",
-                }}
-              >
+                             <Menu
+                 anchorEl={adminMenuAnchor}
+                 open={Boolean(adminMenuAnchor)}
+                 onClose={handleAdminMenuClose}
+                 anchorOrigin={{
+                   vertical: "bottom",
+                   horizontal: "right",
+                 }}
+                 transformOrigin={{
+                   vertical: "top",
+                   horizontal: "right",
+                 }}
+                 PaperProps={{
+                   sx: {
+                     bgcolor: 'background.paper',
+                     color: 'text.primary',
+                     boxShadow: (theme) => theme.shadows[8],
+                     borderRadius: 2,
+                     border: '1px solid',
+                     borderColor: 'divider',
+                   },
+                 }}
+               >
                 <MenuItem
                   component={Link}
                   href="/dashboard/admin"

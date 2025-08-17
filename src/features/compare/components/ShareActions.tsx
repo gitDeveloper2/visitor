@@ -89,6 +89,12 @@ const shareMessage=`Compare GitHub stars and npm downloads for top packages. Vis
           sx: {
             py: 0.5, // reduce vertical padding
             px: 0,   // remove horizontal padding
+            bgcolor: 'background.paper',
+            color: 'text.primary',
+            boxShadow: (theme) => theme.shadows[8],
+            borderRadius: 2,
+            border: '1px solid',
+            borderColor: 'divider',
           },
         }}
       >

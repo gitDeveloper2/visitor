@@ -68,13 +68,22 @@ export function ShareActions({ chartRef }: { chartRef: React.RefObject<HTMLDivEl
         </Button>
       </Tooltip>
       <Menu
-      
         id="share-menu"
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         transformOrigin={{ vertical: "top", horizontal: "right" }}
+        PaperProps={{
+          sx: {
+            bgcolor: 'background.paper',
+            color: 'text.primary',
+            boxShadow: (theme) => theme.shadows[8],
+            borderRadius: 2,
+            border: '1px solid',
+            borderColor: 'divider',
+          },
+        }}
       >
         {/* <MenuItem onClick={() => copyToClipboard(`<iframe src=\"${embedUrl}\" width=\"100%\" height=\"100%\"></iframe>`) }>Copy Embed Code</MenuItem> */}
         {/* <MenuItem onClick={() => copyToClipboard(markdownImage)}>Copy Markdown Image</MenuItem> */}

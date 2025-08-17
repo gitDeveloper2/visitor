@@ -37,7 +37,7 @@ export const createAppTheme = (mode: "light" | "dark") => {
     },
     background: {
       default: "hsl(0 0% 100%)",
-      paper: "hsla(0 0% 100% 0.95)",
+      paper: "hsl(0 0% 100%)",
     },
     text: {
       primary: "hsl(240 10% 3.9%)",
@@ -84,7 +84,7 @@ export const createAppTheme = (mode: "light" | "dark") => {
     },
     background: {
       default: "hsl(240 10% 3.9%)",
-      paper: "hsla(240 10% 3.9% 0.95)",
+      paper: "hsl(240 10% 3.9%)",
     },
     text: {
       primary: "hsl(0 0% 98%)",

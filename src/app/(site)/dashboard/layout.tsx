@@ -222,6 +222,16 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           onClose={handleSubmitMenuClose}
           anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
           transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+          PaperProps={{
+            sx: {
+              bgcolor: 'background.paper',
+              color: 'text.primary',
+              boxShadow: (theme) => theme.shadows[8],
+              borderRadius: 2,
+              border: '1px solid',
+              borderColor: 'divider',
+            },
+          }}
         >
           {submitItems.map((item) => (
             <MenuItem
@@ -257,6 +267,16 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               onClose={handleAdminMenuClose}
               anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
               transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+              PaperProps={{
+                sx: {
+                  bgcolor: 'background.paper',
+                  color: 'text.primary',
+                  boxShadow: (theme) => theme.shadows[8],
+                  borderRadius: 2,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                },
+              }}
             >
               {adminItems.map((item) => (
                 <MenuItem
@@ -418,6 +438,16 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   onClose={handleSubmitMenuClose}
                   anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
                   transformOrigin={{ vertical: "top", horizontal: "right" }}
+                  PaperProps={{
+                    sx: {
+                      bgcolor: 'background.paper',
+                      color: 'text.primary',
+                      boxShadow: (theme) => theme.shadows[8],
+                      borderRadius: 2,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                    },
+                  }}
                 >
                   {submitItems.map((item) => (
                     <MenuItem
@@ -461,6 +491,16 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                       onClose={handleAdminMenuClose}
                       anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
                       transformOrigin={{ vertical: "top", horizontal: "right" }}
+                      PaperProps={{
+                        sx: {
+                          bgcolor: 'background.paper',
+                          color: 'text.primary',
+                          boxShadow: (theme) => theme.shadows[8],
+                          borderRadius: 2,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                        },
+                      }}
                     >
                       {adminItems.map((item) => (
                         <MenuItem
