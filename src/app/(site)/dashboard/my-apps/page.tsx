@@ -29,9 +29,10 @@ import {
   Card,
   CardContent,
   CardActions,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import { useTheme } from "@mui/material/styles";
 import { getShadow } from "../../../../utils/themeUtils";
 import { InfoOutlined } from "@mui/icons-material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -82,6 +83,10 @@ interface AppItem {
   verificationStatus?: 'verified' | 'pending' | 'needs_review' | 'failed';
   verificationScore?: number;
   verificationAttempts?: number;
+  verificationBadgeHtml?: string;
+  verificationBadgeVariations?: string[];
+  verificationBadgeText?: string;
+  verificationBadgeClass?: string;
 }
 
 interface AppDraft {
@@ -109,14 +114,16 @@ interface AppDraft {
 
 export default function ManageAppsPage() {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const router = useRouter();
   const [apps, setApps] = useState<AppItem[]>([]);
-  const [drafts, setDrafts] = useState<AppDraft[]>([]);
+  const [drafts, setDrafts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState(0);
+  const [selectedDraftForPayment, setSelectedDraftForPayment] = useState<any>(null);
   const [popoverAnchor, setPopoverAnchor] = React.useState<HTMLElement | null>(null);
   const openInfoPopover = (e: React.MouseEvent<HTMLElement>) => {
     setPopoverAnchor(e.currentTarget);
@@ -389,9 +396,9 @@ export default function ManageAppsPage() {
 
   if (loading) {
     return (
-      <Box sx={{ textAlign: 'center', py: 4 }}>
-        <CircularProgress size={60} sx={{ mb: 2 }} />
-        <Typography variant="h6" gutterBottom>
+      <Box sx={{ textAlign: 'center', py: { xs: 2, sm: 4 } }}>
+        <CircularProgress size={isMobile ? 40 : 60} sx={{ mb: 2 }} />
+        <Typography variant={isMobile ? "h6" : "h6"} gutterBottom>
           Loading Apps...
         </Typography>
       </Box>
@@ -400,9 +407,9 @@ export default function ManageAppsPage() {
 
   if (error) {
     return (
-      <Box sx={{ textAlign: 'center', py: 4 }}>
+      <Box sx={{ textAlign: 'center', py: { xs: 2, sm: 4 } }}>
         <Alert severity="error" sx={{ mb: 3, maxWidth: 600, mx: 'auto' }}>
-          <Typography variant="h6" gutterBottom>
+          <Typography variant={isMobile ? "h6" : "h6"} gutterBottom>
             Failed to Load Apps
           </Typography>
           <Typography variant="body2" sx={{ mb: 2 }}>
@@ -412,6 +419,7 @@ export default function ManageAppsPage() {
             variant="contained" 
             onClick={handleRetry}
             disabled={loading}
+            size={isMobile ? "small" : "medium"}
           >
             Retry
           </Button>
@@ -422,120 +430,214 @@ export default function ManageAppsPage() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h5">
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' },
+        justifyContent: 'space-between', 
+        alignItems: { xs: 'stretch', sm: 'center' }, 
+        mb: { xs: 2, sm: 3 },
+        gap: { xs: 2, sm: 0 }
+      }}>
+        <Typography variant={isMobile ? "h5" : "h5"} sx={{ fontWeight: 600 }}>
           Manage Submitted Apps
         </Typography>
-        <Stack direction="row" spacing={1} alignItems="center">
+        <Stack 
+          direction="row" 
+          spacing={1} 
+          alignItems="center"
+          sx={{ 
+            flexDirection: { xs: 'column', sm: 'row' },
+            width: { xs: '100%', sm: 'auto' }
+          }}
+        >
           <Button
             variant="outlined"
             startIcon={refreshing ? <CircularProgress size={16} /> : <Refresh />}
             onClick={() => fetchApps(true)}
             disabled={refreshing}
             size="small"
+            fullWidth={isSmallMobile}
           >
             {refreshing ? 'Refreshing...' : 'Refresh'}
           </Button>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={async () => {
-              if (apps.length > 0) {
-                const app = apps[0];
-                try {
-                  const res = await fetch(`/api/debug/verification-status?appId=${app._id}`);
-                  const data = await res.json();
-                  console.log('🔍 Debug verification status:', data);
-                  setSnack({
-                    open: true,
-                    message: `Debug: ${app.name} - Status: ${data.app?.verificationStatus || 'unknown'}`,
-                    severity: 'info'
-                  });
-                } catch (err) {
-                  console.error('Debug error:', err);
+          {!isSmallMobile && (
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={async () => {
+                if (apps.length > 0) {
+                  const app = apps[0];
+                  try {
+                    const res = await fetch(`/api/debug/verification-status?appId=${app._id}`);
+                    const data = await res.json();
+                    console.log('🔍 Debug verification status:', data);
+                    setSnack({
+                      open: true,
+                      message: `Debug: ${app.name} - Status: ${data.app?.verificationStatus || 'unknown'}`,
+                      severity: 'info'
+                    });
+                  } catch (err) {
+                    console.error('Debug error:', err);
+                  }
                 }
-              }
-            }}
-          >
-            Debug
-          </Button>
+              }}
+            >
+              Debug
+            </Button>
+          )}
         </Stack>
       </Box>
 
       {/* Statistics Cards */}
-      <Box sx={{ mb: 4 }}>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={3}>
+      <Box sx={{ mb: { xs: 3, sm: 4 } }}>
+        <Grid container spacing={{ xs: 1, sm: 2 }}>
+          <Grid item xs={6} sm={6} md={3}>
             <Paper
               sx={{
-                p: 3,
+                p: { xs: 2, sm: 3 },
                 borderRadius: 3,
                 textAlign: 'center',
                 boxShadow: getShadow(theme, "elegant"),
+                minHeight: { xs: 100, sm: 120 },
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
               }}
             >
-              <BookOpen sx={{ color: theme.palette.primary.main }} />
-              <Typography variant="h4" sx={{ fontWeight: 700, mt: 1, color: theme.palette.primary.main }}>
+              <BookOpen sx={{ 
+                color: theme.palette.primary.main,
+                fontSize: { xs: 24, sm: 32 }
+              }} />
+              <Typography 
+                variant={isMobile ? "h5" : "h4"} 
+                sx={{ 
+                  fontWeight: 700, 
+                  mt: 1, 
+                  color: theme.palette.primary.main,
+                  fontSize: { xs: '1.5rem', sm: '2.125rem' }
+                }}
+              >
                 {totalApps}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+              >
                 Total Apps
               </Typography>
             </Paper>
           </Grid>
           
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={6} sm={6} md={3}>
             <Paper
               sx={{
-                p: 3,
+                p: { xs: 2, sm: 3 },
                 borderRadius: 3,
                 textAlign: 'center',
                 boxShadow: getShadow(theme, "elegant"),
+                minHeight: { xs: 100, sm: 120 },
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
               }}
             >
-              <CheckCircle sx={{ color: theme.palette.success.main }} />
-              <Typography variant="h4" sx={{ fontWeight: 700, mt: 1, color: theme.palette.success.main }}>
+              <CheckCircle sx={{ 
+                color: theme.palette.success.main,
+                fontSize: { xs: 24, sm: 32 }
+              }} />
+              <Typography 
+                variant={isMobile ? "h5" : "h4"} 
+                sx={{ 
+                  fontWeight: 700, 
+                  mt: 1, 
+                  color: theme.palette.success.main,
+                  fontSize: { xs: '1.5rem', sm: '2.125rem' }
+                }}
+              >
                 {approvedApps}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+              >
                 Published
               </Typography>
             </Paper>
           </Grid>
           
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={6} sm={6} md={3}>
             <Paper
               sx={{
-                p: 3,
+                p: { xs: 2, sm: 3 },
                 borderRadius: 3,
                 textAlign: 'center',
-                ...getShadow(theme, "elegant"),
+                boxShadow: getShadow(theme, "elegant"),
+                minHeight: { xs: 100, sm: 120 },
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
               }}
             >
-              <Clock sx={{ color: theme.palette.warning.main }} />
-              <Typography variant="h4" sx={{ fontWeight: 700, mt: 1, color: theme.palette.warning.main }}>
+              <Clock sx={{ 
+                color: theme.palette.warning.main,
+                fontSize: { xs: 24, sm: 32 }
+              }} />
+              <Typography 
+                variant={isMobile ? "h5" : "h4"} 
+                sx={{ 
+                  fontWeight: 700, 
+                  mt: 1, 
+                  color: theme.palette.warning.main,
+                  fontSize: { xs: '1.5rem', sm: '2.125rem' }
+                }}
+              >
                 {pendingApps}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+              >
                 Pending Review
               </Typography>
             </Paper>
           </Grid>
           
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={6} sm={6} md={3}>
             <Paper
               sx={{
-                p: 3,
+                p: { xs: 2, sm: 3 },
                 borderRadius: 3,
                 textAlign: 'center',
-                ...getShadow(theme, "elegant"),
+                boxShadow: getShadow(theme, "elegant"),
+                minHeight: { xs: 100, sm: 120 },
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
               }}
             >
-              <EditIcon sx={{ color: theme.palette.info.main }} />
-              <Typography variant="h4" sx={{ fontWeight: 700, mt: 1, color: theme.palette.info.main }}>
+              <EditIcon sx={{ 
+                color: theme.palette.info.main,
+                fontSize: { xs: 24, sm: 32 }
+              }} />
+              <Typography 
+                variant={isMobile ? "h5" : "h4"} 
+                sx={{ 
+                  fontWeight: 700, 
+                  mt: 1, 
+                  color: theme.palette.info.main,
+                  fontSize: { xs: '1.5rem', sm: '2.125rem' }
+                }}
+              >
                 {drafts.length}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+              >
                 Drafts
               </Typography>
             </Paper>
@@ -552,21 +654,21 @@ export default function ManageAppsPage() {
             <Button 
               color="inherit" 
               size="small" 
-              onClick={fetchApps}
+              onClick={() => fetchApps()}
               disabled={loading}
+              sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
             >
               Refresh Now
             </Button>
           }
         >
-          <Typography variant="body2">
+          <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
             <strong>Verification Status:</strong> If you've recently submitted an app for verification or an admin has updated your verification status, 
-            click the Refresh button above to see the latest updates.
+            {!isSmallMobile && ' click the Refresh button above to see the latest updates.'}
+            {isSmallMobile && ' refresh the page to see the latest updates.'}
           </Typography>
         </Alert>
       )}
-
-
 
       {/* Tabs */}
       <Paper
@@ -584,46 +686,94 @@ export default function ManageAppsPage() {
             borderColor: 'divider',
             backgroundColor: theme.palette.background.paper,
           }}
+          variant={isMobile ? "fullWidth" : "standard"}
         >
           <Tab 
             label={
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <span>Published Apps ({apps.length})</span>
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 1,
+                flexDirection: { xs: 'column', sm: 'row' },
+                fontSize: { xs: '0.75rem', sm: '0.875rem' }
+              }}>
+                <span>Published Apps</span>
+                <Chip 
+                  label={apps.length} 
+                  size="small" 
+                  sx={{ 
+                    height: 20, 
+                    fontSize: '0.7rem',
+                    minWidth: 20
+                  }} 
+                />
               </Box>
             } 
           />
           <Tab 
             label={
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <span>Drafts ({drafts.length})</span>
-                {drafts.filter(d => d.premiumReady).length > 0 && (
-                  <Chip
-                    label={`${drafts.filter(d => d.premiumReady).length} Premium`}
-                    color="success"
-                    size="small"
-                    variant="filled"
-                    icon={<span style={{ fontSize: '12px' }}>💎</span>}
-                    sx={{ height: '20px', fontSize: '0.7rem' }}
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 1,
+                flexDirection: { xs: 'column', sm: 'row' },
+                fontSize: { xs: '0.75rem', sm: '0.875rem' }
+              }}>
+                <span>Drafts</span>
+                <Stack direction="row" spacing={0.5} alignItems="center">
+                  <Chip 
+                    label={drafts.length} 
+                    size="small" 
+                    sx={{ 
+                      height: 20, 
+                      fontSize: '0.7rem',
+                      minWidth: 20
+                    }} 
                   />
-                )}
-      </Box>
+                  {drafts.filter(d => d.premiumReady).length > 0 && (
+                    <Chip
+                      label={`${drafts.filter(d => d.premiumReady).length} Premium`}
+                      color="success"
+                      size="small"
+                      variant="filled"
+                      icon={<span style={{ fontSize: '12px' }}>💎</span>}
+                      sx={{ height: 20, fontSize: '0.7rem' }}
+                    />
+                  )}
+                </Stack>
+              </Box>
             } 
           />
         </Tabs>
 
         {/* Tab Content */}
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ p: { xs: 2, sm: 3 } }}>
           {activeTab === 0 && (
             // Published Apps Tab
             apps.length === 0 ? (
-              <Box sx={{ textAlign: 'center', py: 6 }}>
-                <BookOpen sx={{ fontSize: 48, color: theme.palette.text.secondary }} />
-                <Typography variant="h6" color="text.secondary" gutterBottom sx={{ mt: 2 }}>
+              <Box sx={{ textAlign: 'center', py: { xs: 4, sm: 6 } }}>
+                <BookOpen sx={{ 
+                  fontSize: { xs: 36, sm: 48 }, 
+                  color: theme.palette.text.secondary 
+                }} />
+                <Typography 
+                  variant={isMobile ? "h6" : "h6"} 
+                  color="text.secondary" 
+                  gutterBottom 
+                  sx={{ mt: 2 }}
+                >
                   No apps yet
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary" 
+                  sx={{ 
+                    mb: 3,
+                    fontSize: { xs: '0.875rem', sm: '1rem' }
+                  }}
+                >
                   Start creating your first app to showcase your work to the community.
-      </Typography>
+                </Typography>
                 <Button
                   component={Link}
                   href="/dashboard/submission/app"
@@ -631,41 +781,68 @@ export default function ManageAppsPage() {
                   color="primary"
                   startIcon={<Plus fontSize="small" />}
                   sx={{ fontWeight: 600 }}
+                  size={isMobile ? "medium" : "large"}
                 >
                   Create Your First App
                 </Button>
               </Box>
             ) : (
-              <Grid container spacing={3}>
-        {apps.map((app) => (
-          <Grid item xs={12} md={6} key={app._id}>
+              <Grid container spacing={{ xs: 2, sm: 3 }}>
+                {apps.map((app) => (
+                  <Grid item xs={12} sm={6} md={6} key={app._id}>
                     <Card
-              sx={{
+                      sx={{
                         height: '100%',
                         display: 'flex',
                         flexDirection: 'column',
-                borderRadius: 3,
-                boxShadow: getShadow(theme, "elegant"),
+                        borderRadius: 3,
+                        boxShadow: getShadow(theme, "elegant"),
                         transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
                         "&:hover": {
                           transform: "translateY(-2px)",
                           boxShadow: getShadow(theme, "neon"),
                         },
+                        minHeight: { xs: 280, sm: 320 },
                       }}
                     >
-                      <CardContent sx={{ flex: 1, p: 3 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                          <Typography variant="h6" sx={{ flex: 1, mr: 2, lineHeight: 1.3 }}>
-                {app.name}
+                      <CardContent sx={{ 
+                        flex: 1, 
+                        p: { xs: 2, sm: 3 },
+                        '&:last-child': { pb: { xs: 2, sm: 3 } }
+                      }}>
+                        <Box sx={{ 
+                          display: 'flex', 
+                          flexDirection: { xs: 'column', sm: 'row' },
+                          justifyContent: 'space-between', 
+                          alignItems: { xs: 'flex-start', sm: 'flex-start' }, 
+                          mb: 2,
+                          gap: { xs: 1, sm: 0 }
+                        }}>
+                          <Typography 
+                            variant={isMobile ? "h6" : "h6"} 
+                            sx={{ 
+                              flex: 1, 
+                              mr: { xs: 0, sm: 2 }, 
+                              lineHeight: 1.3,
+                              fontSize: { xs: '1rem', sm: '1.25rem' }
+                            }}
+                          >
+                            {app.name}
                           </Typography>
-                          <Box sx={{ display: 'flex', gap: 1 }}>
-                                            {app.isPremium && (
+                          <Box sx={{ 
+                            display: 'flex', 
+                            gap: 1,
+                            flexWrap: 'wrap',
+                            justifyContent: { xs: 'flex-start', sm: 'flex-end' }
+                          }}>
+                            {app.isPremium && (
                               <Chip
                                 label="Premium"
                                 color="default"
                                 size="small"
                                 variant="outlined"
                                 icon={<span style={{ fontSize: '12px' }}>💎</span>}
+                                sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
                               />
                             )}
                             <Chip
@@ -673,11 +850,17 @@ export default function ManageAppsPage() {
                               color={getStatusColor(app.status) as any}
                               size="small"
                               variant="outlined"
+                              sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
                             />
                             {/* Verification status for free apps */}
                             {app.pricing === 'Free' && app.verificationStatus && (
-                              <Box sx={{ mb: 1 }}>
-                                <Stack direction="row" spacing={1} alignItems="center">
+                              <Box sx={{ mb: 1, width: '100%' }}>
+                                <Stack 
+                                  direction="row" 
+                                  spacing={1} 
+                                  alignItems="center"
+                                  sx={{ flexWrap: 'wrap' }}
+                                >
                                   <Tooltip title={
                                     app.verificationStatus === 'verified' 
                                       ? 'This app has been verified and displays a verification badge'
@@ -701,41 +884,47 @@ export default function ManageAppsPage() {
                                       size="small"
                                       variant="outlined"
                                       icon={app.verificationStatus === 'verified' ? <CheckCircle fontSize="small" /> : undefined}
+                                      sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
                                     />
                                   </Tooltip>
-                                {/* Show verification score if available */}
-                                {app.verificationScore && app.verificationStatus !== 'verified' && (
-                                  <Chip
-                                    label={`${app.verificationScore}/100`}
-                                    color="default"
-                                    size="small"
-                                    variant="outlined"
-                                    sx={{ fontSize: '0.7rem', height: '20px' }}
-                                  />
-                                )}
-                                {/* Show verification attempts if multiple */}
-                                {app.verificationAttempts && app.verificationAttempts > 1 && (
-                                  <Chip
-                                    label={`${app.verificationAttempts} attempts`}
-                                    color="default"
-                                    size="small"
-                                    variant="outlined"
-                                    sx={{ fontSize: '0.7rem', height: '20px' }}
-                                  />
-                                )}
-                              </Stack>
+                                  {/* Show verification score if available */}
+                                  {app.verificationScore && app.verificationStatus !== 'verified' && (
+                                    <Chip
+                                      label={`${app.verificationScore}/100`}
+                                      color="default"
+                                      size="small"
+                                      variant="outlined"
+                                      sx={{ fontSize: '0.7rem', height: '20px' }}
+                                    />
+                                  )}
+                                  {/* Show verification attempts if multiple */}
+                                  {app.verificationAttempts && app.verificationAttempts > 1 && (
+                                    <Chip
+                                      label={`${app.verificationAttempts} attempts`}
+                                      color="default"
+                                      size="small"
+                                      variant="outlined"
+                                      sx={{ fontSize: '0.7rem', height: '20px' }}
+                                    />
+                                  )}
+                                </Stack>
                               </Box>
                             )}
                           </Box>
                         </Box>
 
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                          sx={{ mb: 2, flex: 1 }}
-              >
-                          {app.description?.slice(0, 150)}...
-              </Typography>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ 
+                            mb: 2, 
+                            flex: 1,
+                            fontSize: { xs: '0.875rem', sm: '1rem' },
+                            lineHeight: 1.5
+                          }}
+                        >
+                          {app.description?.slice(0, isMobile ? 100 : 150)}...
+                        </Typography>
 
                         {/* Categories and Subcategories */}
                         <Box sx={{ mb: 2 }}>
@@ -750,13 +939,13 @@ export default function ManageAppsPage() {
                                   fontWeight: 600,
                                   color: theme.palette.primary.contrastText,
                                   backgroundColor: theme.palette.primary.main,
-                                  fontSize: "0.7rem",
+                                  fontSize: { xs: "0.65rem", sm: "0.7rem" },
                                 }}
                               />
                             )}
                             
                             {/* Additional Categories (Subcategories) */}
-                            {app.subcategories?.slice(0, 2).map((subcat, i) => (
+                            {app.subcategories?.slice(0, isMobile ? 1 : 2).map((subcat, i) => (
                               <Chip 
                                 key={`subcat-${i}`} 
                                 size="small" 
@@ -767,23 +956,23 @@ export default function ManageAppsPage() {
                                   color: theme.palette.text.primary,
                                   borderColor: theme.palette.divider,
                                   backgroundColor: theme.palette.background.paper,
-                                  fontSize: "0.7rem",
+                                  fontSize: { xs: "0.65rem", sm: "0.7rem" },
                                 }}
                               />
                             ))}
                             
                             {/* Show total count if there are more subcategories */}
-                            {app.subcategories && app.subcategories.length > 2 && (
+                            {app.subcategories && app.subcategories.length > (isMobile ? 1 : 2) && (
                               <Chip 
                                 size="small" 
-                                label={`+${app.subcategories.length - 2}`} 
+                                label={`+${app.subcategories.length - (isMobile ? 1 : 2)}`} 
                                 variant="outlined"
                                 sx={{
                                   fontWeight: 500,
                                   color: theme.palette.text.secondary,
                                   borderColor: theme.palette.divider,
                                   backgroundColor: theme.palette.background.paper,
-                                  fontSize: "0.7rem",
+                                  fontSize: { xs: "0.65rem", sm: "0.7rem" },
                                 }}
                               />
                             )}
@@ -793,36 +982,47 @@ export default function ManageAppsPage() {
                         {/* Tags - Show separately if exists */}
                         {app.tags && app.tags.length > 0 && (
                           <Box sx={{ mb: 2 }}>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1, fontWeight: 600 }}>
+                            <Typography 
+                              variant="caption" 
+                              color="text.secondary" 
+                              sx={{ 
+                                display: "block", 
+                                mb: 1, 
+                                fontWeight: 600,
+                                fontSize: { xs: '0.7rem', sm: '0.75rem' }
+                              }}
+                            >
                               Tags
                             </Typography>
                             <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-                              {app.tags.slice(0, 3).map((tag, i) => (
+                              {app.tags.slice(0, isMobile ? 2 : 3).map((tag, i) => (
                                 <Chip 
                                   key={`tag-${i}`} 
                                   size="small" 
                                   label={tag} 
                                   variant="outlined"
                                   sx={{
-                                    fontWeight: 500,
+                                    fontWeight: 400,
                                     color: theme.palette.text.secondary,
                                     borderColor: theme.palette.divider,
                                     backgroundColor: theme.palette.background.paper,
-                                    fontSize: "0.7rem",
+                                    fontSize: { xs: "0.6rem", sm: "0.7rem" },
                                   }}
                                 />
                               ))}
-                              {app.tags.length > 3 && (
+                              
+                              {/* Show total count if there are more tags */}
+                              {app.tags.length > (isMobile ? 2 : 3) && (
                                 <Chip 
                                   size="small" 
-                                  label={`+${app.tags.length - 3}`} 
+                                  label={`+${app.tags.length - (isMobile ? 2 : 3)}`} 
                                   variant="outlined"
                                   sx={{
-                                    fontWeight: 500,
+                                    fontWeight: 400,
                                     color: theme.palette.text.secondary,
                                     borderColor: theme.palette.divider,
                                     backgroundColor: theme.palette.background.paper,
-                                    fontSize: "0.7rem",
+                                    fontSize: { xs: "0.6rem", sm: "0.7rem" },
                                   }}
                                 />
                               )}
@@ -830,118 +1030,117 @@ export default function ManageAppsPage() {
                           </Box>
                         )}
 
-              {/* Premium Status */}
-              {app.isPremium && (
-                <Box sx={{ mb: 2 }}>
-                  <Chip
-                    label={`Premium: ${app.premiumPlan || 'Standard'}`}
-                    color="default"
-                    size="small"
-                    variant="outlined"
-                    icon={<span style={{ fontSize: '12px' }}>💎</span>}
-                  />
-                  {app.premiumStatus && (
-                    <Chip
-                      label={app.premiumStatus}
-                      color="default"
-                      size="small"
-                      variant="outlined"
-                      sx={{ ml: 1 }}
-                    />
-                  )}
-                </Box>
-              )}
-
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, color: 'text.secondary', fontSize: '0.75rem' }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <Calendar fontSize="small" />
-                            {new Date(app.createdAt).toLocaleDateString()}
-                          </Box>
-                          {app.views && (
+                        {/* App Stats */}
+                        <Box sx={{ 
+                          display: 'flex', 
+                          gap: 2, 
+                          mb: 2,
+                          flexWrap: 'wrap'
+                        }}>
+                          {app.views !== undefined && (
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                              <span>•</span>
-                              {app.views} views
+                              <VisibilityIcon sx={{ fontSize: { xs: 16, sm: 18 }, color: 'text.secondary' }} />
+                              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+                                {app.views} views
+                              </Typography>
+                            </Box>
+                          )}
+                          {app.likes !== undefined && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              <CheckCircle sx={{ fontSize: { xs: 16, sm: 18 }, color: 'text.secondary' }} />
+                              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+                                {app.likes} likes
+                              </Typography>
                             </Box>
                           )}
                         </Box>
-                      </CardContent>
 
-                      <Divider />
-
-                      <CardActions sx={{ p: 2, pt: 1 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                          <Typography variant="caption" color="text.secondary">
-                            {app.authorName || app.authorEmail}
-                </Typography>
+                        {/* Action Buttons */}
+                        <CardActions sx={{ 
+                          p: 0, 
+                          mt: 'auto',
+                          flexDirection: { xs: 'column', sm: 'row' },
+                          gap: { xs: 1, sm: 1 }
+                        }}>
+                          <Button
+                            component={Link}
+                            href={`/dashboard/apps/${app._id}`}
+                            variant="outlined"
+                            size={isMobile ? "small" : "medium"}
+                            startIcon={<VisibilityIcon />}
+                            fullWidth={isMobile}
+                            sx={{ 
+                              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                              minWidth: { xs: '100%', sm: 'auto' }
+                            }}
+                          >
+                            View Details
+                          </Button>
                           
-                          <Stack direction="row" spacing={1}>
-                            {canEdit(app) && (
-                              <Tooltip title="Edit App">
-                                <IconButton
-                                  component={Link}
-                                  href={`/dashboard/submission/app?appId=${app._id}`}
-                                  size="small"
-                                  color="primary"
-                                >
-                                  <EditIcon />
-                                </IconButton>
-                              </Tooltip>
-                            )}
-                            {/* Verification button for free apps */}
-                            {app.pricing === 'Free' && app.verificationStatus !== 'verified' && (
-                              <Tooltip title="Submit for Verification">
-                                <IconButton
-                                  onClick={() => openSubmitModal(app)}
-                                  size="small"
-                                  color="info"
-                                >
-                                  <CheckCircle />
-                                </IconButton>
-                              </Tooltip>
-                            )}
-                            {app.isPremium && (
-                              <Tooltip title="Manage Premium">
-                                <IconButton
-                                  onClick={() => handlePremiumManagement(app)}
-                                  size="small"
-                                  color="warning"
-                                >
-                                  <CreditCard />
-                                </IconButton>
-                              </Tooltip>
-                            )}
-                            <Tooltip title="View App">
-                              <IconButton
-                                component={Link}
-                                href={`/launch/${app.slug}`}
-                                size="small"
-                                color="primary"
-                              >
-                                <VisibilityIcon />
-                              </IconButton>
-                            </Tooltip>
-                          </Stack>
-              </Box>
-                      </CardActions>
+                          {canEdit(app) && (
+                            <Button
+                              component={Link}
+                              href={`/dashboard/apps/${app._id}/edit`}
+                              variant="outlined"
+                              size={isMobile ? "small" : "medium"}
+                              startIcon={<EditIcon />}
+                              fullWidth={isMobile}
+                              sx={{ 
+                                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                minWidth: { xs: '100%', sm: 'auto' }
+                              }}
+                            >
+                              Edit
+                            </Button>
+                          )}
+
+                          {/* Verification button for free apps */}
+                          {app.pricing === 'Free' && app.verificationStatus && app.verificationStatus !== 'verified' && (
+                            <Button
+                              variant="outlined"
+                              size={isMobile ? "small" : "medium"}
+                              startIcon={<CheckCircle />}
+                              onClick={() => openSubmitModal(app)}
+                              fullWidth={isMobile}
+                              sx={{ 
+                                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                minWidth: { xs: '100%', sm: 'auto' }
+                              }}
+                            >
+                              Verify
+                            </Button>
+                          )}
+
+                          {/* Premium management for premium apps */}
+                          {app.isPremium && (
+                            <Button
+                              variant="outlined"
+                              size={isMobile ? "small" : "medium"}
+                              startIcon={<CreditCard />}
+                              onClick={() => handlePremiumManagement(app)}
+                              fullWidth={isMobile}
+                              sx={{ 
+                                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                minWidth: { xs: '100%', sm: 'auto' }
+                              }}
+                            >
+                              Manage Premium
+                            </Button>
+                          )}
+                        </CardActions>
+                      </CardContent>
                     </Card>
-          </Grid>
-        ))}
-      </Grid>
+                  </Grid>
+                ))}
+              </Grid>
             )
           )}
 
           {activeTab === 1 && (
             // Drafts Tab
             <AppDraftManager 
-              onEditDraft={(draft) => {
-                // Navigate to app submission page with draft data using router
-                router.push(`/dashboard/submission/app?draftId=${draft._id}`);
-              }}
-              onDeleteDraft={(draftId) => {
-                // Refresh drafts after deletion
-                fetchDrafts();
-              }}
-              refreshTrigger={0}
+              onDeleteDraft={handleDeleteDraft}
+              refreshTrigger={drafts.length}
             />
           )}
         </Box>

@@ -11,11 +11,15 @@ import {
   Alert,
   CircularProgress,
   Grid,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import { useAuthState } from '@/hooks/useAuth';
 import { getShadow, getGlassStyles } from '@/utils/themeUtils';
 
 export default function ProfilePage() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { user } = useAuthState();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,13 +100,39 @@ export default function ProfilePage() {
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      <Paper sx={{ p: 4, borderRadius: 3, ...getGlassStyles(), ...getShadow() }}>
-        <Typography variant="h4" gutterBottom align="center">
+    <Container maxWidth="md" sx={{ py: { xs: 2, sm: 4 } }}>
+      <Paper sx={{ 
+        p: { xs: 2, sm: 4 }, 
+        borderRadius: 3, 
+        background: theme?.custom?.glass?.background || 'hsla(0, 0%, 100%, 0.85)',
+        border: `1px solid ${theme?.custom?.glass?.border || theme?.palette?.divider || '#e0e0e0'}`,
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        boxShadow: theme?.custom?.shadows?.elegant || '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+      }}>
+        <Typography 
+          variant={isMobile ? "h5" : "h4"} 
+          gutterBottom 
+          align="center"
+          sx={{ 
+            fontSize: { xs: '1.75rem', sm: '2.125rem' },
+            fontWeight: 600,
+            mb: { xs: 2, sm: 3 }
+          }}
+        >
           Profile Settings
         </Typography>
         
-        <Typography variant="body1" color="text.secondary" align="center" sx={{ mb: 4 }}>
+        <Typography 
+          variant="body1" 
+          color="text.secondary" 
+          align="center" 
+          sx={{ 
+            mb: { xs: 3, sm: 4 },
+            fontSize: { xs: '0.875rem', sm: '1rem' },
+            px: { xs: 1, sm: 0 }
+          }}
+        >
           Update your profile information. This will be used to auto-fill forms when submitting apps and blogs.
         </Typography>
 
@@ -119,7 +149,7 @@ export default function ProfilePage() {
         )}
 
         <form onSubmit={handleSubmit}>
-          <Grid container spacing={3}>
+          <Grid container spacing={{ xs: 2, sm: 3 }}>
             <Grid item xs={12}>
               <TextField
                 label="Bio"
@@ -183,15 +213,19 @@ export default function ProfilePage() {
             </Grid>
           </Grid>
 
-          <Box sx={{ mt: 4, textAlign: 'center' }}>
+          <Box sx={{ mt: { xs: 3, sm: 4 }, textAlign: 'center' }}>
             <Button
               type="submit"
               variant="contained"
-              size="large"
+              size={isMobile ? "medium" : "large"}
               disabled={loading}
-              sx={{ px: 4 }}
+              sx={{ 
+                px: { xs: 3, sm: 4 },
+                py: { xs: 1, sm: 1.5 },
+                fontSize: { xs: '0.875rem', sm: '1rem' }
+              }}
             >
-              {loading ? <CircularProgress size={24} /> : 'Update Profile'}
+              {loading ? <CircularProgress size={isMobile ? 20 : 24} /> : 'Update Profile'}
             </Button>
           </Box>
         </form>

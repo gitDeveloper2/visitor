@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { Container, Typography, Box, CircularProgress, Chip, Grid } from '@mui/material';
+import { Container, Typography, Box, CircularProgress, Chip, Grid, useTheme, useMediaQuery } from '@mui/material';
 import BlogMainPage from './BlogMainPage';
 import { connectToDatabase } from '../../../lib/mongodb';
 import Link from 'next/link';
@@ -160,16 +160,30 @@ export default async function BlogsPage() {
     })); // Removed the filter - show all categories
 
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
         {/* Browse by Category Section */}
-        <Box sx={{ mb: 6 }}>
-          <Typography variant="h5" sx={{ fontWeight: 700, mb: 3 }}>
+        <Box sx={{ mb: { xs: 4, sm: 6 } }}>
+          <Typography 
+            variant="h5" 
+            sx={{ 
+              fontWeight: 700, 
+              mb: { xs: 2, sm: 3 },
+              fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' }
+            }}
+          >
             Browse by Category
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          <Typography 
+            variant="body2" 
+            color="text.secondary" 
+            sx={{ 
+              mb: { xs: 2, sm: 3 },
+              fontSize: { xs: '0.875rem', sm: '1rem' }
+            }}
+          >
             Explore blogs organized by topic categories
           </Typography>
-          <Grid container spacing={2}>
+          <Grid container spacing={{ xs: 1, sm: 2 }}>
             {categoryChips.map(({ category, count }) => (
               <Grid item key={category}>
                 <Link href={`/blogs/category/${encodeURIComponent(category.toLowerCase().replace(/\s+/g, '-'))}`} style={{ textDecoration: 'none' }}>
@@ -178,9 +192,9 @@ export default async function BlogsPage() {
                     variant={count > 0 ? "outlined" : "outlined"}
                     sx={{
                       fontWeight: 600,
-                      fontSize: '0.9rem',
-                      px: 2,
-                      py: 1,
+                      fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                      px: { xs: 1.5, sm: 2 },
+                      py: { xs: 0.75, sm: 1 },
                       cursor: 'pointer',
                       opacity: count > 0 ? 1 : 0.6, // Dim categories with no blogs
                       borderColor: count > 0 ? 'primary.main' : 'text.disabled', // Different border color
@@ -198,7 +212,7 @@ export default async function BlogsPage() {
         </Box>
 
         <Suspense fallback={
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: { xs: 4, sm: 8 } }}>
             <CircularProgress />
           </Box>
         }>
@@ -214,9 +228,9 @@ export default async function BlogsPage() {
     console.error('Error fetching blog data:', error);
     // Fallback with empty data
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
         <Suspense fallback={
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: { xs: 4, sm: 8 } }}>
             <CircularProgress />
           </Box>
         }>

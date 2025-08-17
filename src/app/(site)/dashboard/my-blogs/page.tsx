@@ -24,6 +24,7 @@ import {
   Avatar,
   Badge as MuiBadge,
   Container,
+  useMediaQuery,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { getShadow, getGlassStyles, typographyVariants, commonStyles } from "@/utils/themeUtils";
@@ -42,6 +43,8 @@ import { VARIANT_IDS } from "@/lib/lemonsqueezy";
 
 export default function ManageBlogsPage() {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const router = useRouter();
   const [blogs, setBlogs] = useState<any[]>([]);
   const [drafts, setDrafts] = useState<any[]>([]);

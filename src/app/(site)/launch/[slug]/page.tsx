@@ -25,7 +25,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
   const publicUrl = `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/apps/${app.slug}`;
 
   return (
-    <main>
+    <main style={{ minHeight: '100vh' }}>
       <AppClient
         id={app.id}
         slug={app.slug}

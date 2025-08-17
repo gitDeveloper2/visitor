@@ -15,6 +15,7 @@ import {
   CircularProgress,
   Alert,
   Pagination,
+  useMediaQuery,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import {
@@ -67,7 +68,8 @@ interface FeaturedBlogCardProps {
 
 function FeaturedBlogCard({ blog, isFounderStory = false }: FeaturedBlogCardProps) {
   const theme = useTheme();
-  const excerpt = blog.content.replace(/<[^>]*>/g, '').slice(0, 150) + '...';
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const excerpt = blog.content.replace(/<[^>]*>/g, '').slice(0, isMobile ? 120 : 150) + '...';
   const readTime = blog.readTime || Math.ceil(blog.content.replace(/<[^>]*>/g, '').split(' ').length / 200);
 
   return (
@@ -91,7 +93,7 @@ function FeaturedBlogCard({ blog, isFounderStory = false }: FeaturedBlogCardProp
         <Box sx={{ position: "relative" }}>
           <Box
             sx={{
-              height: 200,
+              height: { xs: 160, sm: 200 },
               backgroundImage: `url('${blog.imageUrl}')`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
@@ -101,166 +103,175 @@ function FeaturedBlogCard({ blog, isFounderStory = false }: FeaturedBlogCardProp
           />
           {isFounderStory && (
             <Box sx={{ position: "absolute", top: 12, left: 12 }}>
-              <Badge variant="founder" label="Founder Story" />
+              <Chip
+                label="Founder Story"
+                size="small"
+                sx={{ 
+                  fontWeight: 600,
+                  backgroundColor: theme.palette.secondary.main,
+                  color: theme.palette.secondary.contrastText,
+                  boxShadow: getShadow(theme, "elegant"),
+                  fontSize: { xs: '0.7rem', sm: '0.75rem' }
+                }}
+              />
             </Box>
           )}
         </Box>
       )}
 
-      <Box sx={{ p: 3, flex: 1, display: "flex", flexDirection: "column" }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
-          <Avatar alt={blog.author} sx={{ width: 36, height: 36 }} />
-          <Box>
-            <Typography variant="body2" fontWeight={600}>{blog.author}</Typography>
-            <Typography variant="caption" color="text.secondary">{blog.role}</Typography>
-          </Box>
-        </Box>
-
+      <Box sx={{ p: { xs: 2, sm: 3 }, flex: 1, display: "flex", flexDirection: "column" }}>
+        {/* Founder Story Badge for cards without images */}
         {!blog.imageUrl && isFounderStory && (
           <Box sx={{ mb: 2 }}>
-            <Badge variant="founder" label="Founder Story" />
+            <Chip
+              label="Founder Story"
+              size="small"
+              sx={{ 
+                fontWeight: 600,
+                backgroundColor: theme.palette.secondary.main,
+                color: theme.palette.secondary.contrastText,
+                boxShadow: getShadow(theme, "elegant"),
+                fontSize: { xs: '0.7rem', sm: '0.75rem' }
+              }}
+            />
           </Box>
         )}
 
-        <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, lineHeight: 1.3 }}>
+        {/* Blog Header with Author */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.5, sm: 2 }, mb: 2 }}>
+          <Avatar sx={{ width: { xs: 28, sm: 32 }, height: { xs: 28, sm: 32 }, bgcolor: theme.palette.primary.main }}>
+            <BookOpen size={isMobile ? 14 : 16} />
+          </Avatar>
+          <Box sx={{ flex: 1 }}>
+            <Typography 
+              variant="body2" 
+              fontWeight={600} 
+              color="text.primary"
+              sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
+            >
+              {blog.authorName || blog.author}
+            </Typography>
+            <Typography 
+              variant="caption" 
+              color="text.secondary"
+              sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+            >
+              {blog.role || 'Author'}
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* Blog Title */}
+        <Typography 
+          variant={isMobile ? "h6" : "h6"} 
+          sx={{ 
+            fontWeight: 700, 
+            mb: 1, 
+            lineHeight: 1.3, 
+            color: "text.primary",
+            fontSize: { xs: '1rem', sm: '1.25rem' }
+          }}
+        >
           {blog.title}
         </Typography>
-        <Typography variant="body2" sx={{ color: "text.secondary", mb: 2, flex: 1 }}>
+
+        {/* Blog Excerpt */}
+        <Typography
+          variant="body2"
+          sx={{ 
+            color: "text.secondary", 
+            mb: 3, 
+            flex: 1, 
+            lineHeight: 1.5,
+            fontSize: { xs: '0.8rem', sm: '0.875rem' }
+          }}
+        >
           {excerpt}
         </Typography>
 
-                 {/* Categories and Subcategories */}
-         <Box sx={{ mb: 2 }}>
-           <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-             {/* Main Category */}
-             {blog.category && (
-               <Chip 
-                 size="small" 
-                 label={blog.category} 
-                 variant="filled"
-                 sx={{
-                   fontWeight: 600,
-                   color: theme.palette.primary.contrastText,
-                   backgroundColor: theme.palette.primary.main,
-                   fontSize: "0.7rem",
-                 }}
-               />
-             )}
-             
-             {/* Additional Categories (Subcategories) */}
-             {blog.subcategories?.slice(0, 2).map((subcat, i) => (
-               <Chip 
-                 key={`subcat-${i}`} 
-                 size="small" 
-                 label={subcat} 
-                 variant="outlined"
-                 sx={{
-                   fontWeight: 500,
-                   color: theme.palette.text.primary,
-                   borderColor: theme.palette.divider,
-                   backgroundColor: theme.palette.background.paper,
-                   fontSize: "0.7rem",
-                 }}
-               />
-             ))}
-             
-             {/* Show total count if there are more subcategories */}
-             {blog.subcategories && blog.subcategories.length > 2 && (
-               <Chip 
-                 size="small" 
-                 label={`+${blog.subcategories.length - 2}`} 
-                 variant="outlined"
-                 sx={{
-                   fontWeight: 500,
-                   color: theme.palette.text.secondary,
-                   borderColor: theme.palette.divider,
-                   backgroundColor: theme.palette.background.paper,
-                   fontSize: "0.7rem",
-                 }}
-               />
-             )}
-           </Box>
-         </Box>
-
-         {/* Tags - Show separately if exists */}
-         {blog.tags && blog.tags.length > 0 && (
-           <Box sx={{ mb: 2 }}>
-             <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1, fontWeight: 600 }}>
-               Tags
-             </Typography>
-             <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-               {blog.tags.slice(0, 3).map((tag, i) => (
-                 <Link key={`tag-${i}`} href={`/blogs/tag/${encodeURIComponent(tag)}`} style={{ textDecoration: 'none' }}>
-                   <Chip
-                     key={`tag-${i}`}
-                     label={tag}
-                     size="small"
-                     variant="outlined"
-                     sx={{
-                       fontWeight: 500,
-                       color: theme.palette.text.secondary,
-                       borderColor: theme.palette.divider,
-                       backgroundColor: theme.palette.background.paper,
-                       cursor: 'pointer',
-                       "&:hover": {
-                         backgroundColor: theme.palette.action.hover,
-                         borderColor: theme.palette.primary.main,
-                         color: theme.palette.primary.main,
-                       },
-                     }}
-                   />
-                 </Link>
-               ))}
-               {blog.tags.length > 3 && (
-                 <Chip 
-                   size="small" 
-                   label={`+${blog.tags.length - 3}`} 
-                   variant="outlined"
-                   sx={{
-                     fontWeight: 500,
-                     color: theme.palette.text.secondary,
-                     borderColor: theme.palette.divider,
-                     backgroundColor: theme.palette.background.paper,
-                     fontSize: "0.7rem",
-                   }}
-                 />
-               )}
-             </Box>
-           </Box>
-         )}
-
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            color: "text.secondary",
-            fontSize: "0.75rem",
-            mt: "auto",
-          }}
-        >
-          <Box sx={{ display: "flex", gap: 3 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <Calendar size={14} />
-              {new Date(blog.createdAt).toLocaleDateString()}
-            </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <Clock size={14} />
-              {readTime} min read
-            </Box>
-          </Box>
-          <Box sx={{ display: "flex", gap: 2 }}>
-            {blog.views && (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <Eye size={14} />
-                {blog.views}
-              </Box>
+        {/* Category and Tags */}
+        <Box sx={{ mb: 3 }}>
+          <Typography 
+            variant="caption" 
+            color="text.secondary" 
+            sx={{ 
+              display: "block", 
+              mb: 1, 
+              fontWeight: 600,
+              fontSize: { xs: '0.7rem', sm: '0.75rem' }
+            }}
+          >
+            Category
+          </Typography>
+          <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+            {blog.category && (
+              <Chip 
+                size="small" 
+                label={blog.category} 
+                variant="filled"
+                sx={{
+                  fontWeight: 600,
+                  color: theme.palette.primary.contrastText,
+                  backgroundColor: theme.palette.primary.main,
+                  fontSize: { xs: "0.65rem", sm: "0.7rem" },
+                }}
+              />
             )}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <ThumbsUp size={14} />
-              {blog.likes || 0}
-            </Box>
           </Box>
+        </Box>
+
+        {/* Blog Stats */}
+        <Box sx={{ 
+          display: 'flex', 
+          gap: { xs: 1, sm: 2 }, 
+          mb: 2,
+          flexWrap: 'wrap',
+          color: "text.secondary",
+          fontSize: { xs: "0.7rem", sm: "0.75rem" },
+        }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <Clock size={isMobile ? 12 : 14} />
+            <Typography variant="caption">
+              {readTime} min read
+            </Typography>
+          </Box>
+          {blog.views && (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <Eye size={isMobile ? 12 : 14} />
+              <Typography variant="caption">
+                {blog.views} views
+              </Typography>
+            </Box>
+          )}
+          {blog.likes && (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <ThumbsUp size={isMobile ? 12 : 14} />
+              <Typography variant="caption">
+                {blog.likes} likes
+              </Typography>
+            </Box>
+          )}
+        </Box>
+
+        {/* Action Buttons */}
+        <Box sx={{ display: "flex", gap: 1, width: "100%" }}>
+          <Button
+            component={Link}
+            href={`/blogs/${blog.slug}`}
+            variant="contained"
+            size={isMobile ? "small" : "small"}
+            sx={{ 
+              flex: 1, 
+              fontWeight: 600,
+              backgroundColor: theme.palette.primary.main,
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              "&:hover": {
+                backgroundColor: theme.palette.primary.dark,
+              }
+            }}
+          >
+            Read More
+          </Button>
         </Box>
       </Box>
     </Paper>
@@ -354,6 +365,8 @@ export default function BlogMainPage({
   initialFounderStories 
 }: BlogMainPageProps) {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [blogs, setBlogs] = useState<BlogPost[]>(initialBlogs);
   const [featuredBlogs, setFeaturedBlogs] = useState<BlogPost[]>(initialFeaturedBlogs);
   const [founderStories, setFounderStories] = useState<BlogPost[]>(initialFounderStories);
@@ -616,23 +629,33 @@ export default function BlogMainPage({
   }
 
   return (
-    <Box component="main" sx={{ bgcolor: "background.default", py: 10 }}>
+    <Box component="main" sx={{ bgcolor: "background.default", py: { xs: 4, sm: 6, md: 10 } }}>
       {/* Hero Section */}
-      <Box sx={{ textAlign: "center", mb: 8 }}>
-        <Typography variant="h1" sx={typographyVariants.heroTitle}>
+      <Box sx={{ textAlign: "center", mb: { xs: 4, sm: 6, md: 8 } }}>
+        <Typography 
+          variant={isMobile ? "h3" : "h1"} 
+          sx={{
+            ...typographyVariants.heroTitle,
+            fontSize: { xs: '2rem', sm: '2.5rem', md: '3.5rem', lg: '4rem' },
+            lineHeight: { xs: 1.2, sm: 1.1 },
+            mb: { xs: 2, sm: 3 }
+          }}
+        >
           Developer{" "}
           <Box component="span" sx={commonStyles.textGradient(theme)}>
             Blog
           </Box>
         </Typography>
         <Typography
-          variant="h5"
+          variant={isMobile ? "h6" : "h5"}
           sx={{
             color: "text.secondary",
-            mt: 3,
+            mt: { xs: 2, sm: 3 },
             maxWidth: 720,
             mx: "auto",
             lineHeight: 1.5,
+            fontSize: { xs: '1rem', sm: '1.25rem' },
+            px: { xs: 2, sm: 0 }
           }}
         >
           Discover insights, tutorials, and stories from developers building the future of technology.
@@ -643,9 +666,9 @@ export default function BlogMainPage({
       <Paper
         elevation={0}
         sx={{
-          mb: 6,
-          px: 3,
-          py: 4,
+          mb: { xs: 4, sm: 6 },
+          px: { xs: 2, sm: 3 },
+          py: { xs: 3, sm: 4 },
           borderRadius: "1rem",
           ...getGlassStyles(theme),
           boxShadow: getShadow(theme, "elegant"),
@@ -655,14 +678,14 @@ export default function BlogMainPage({
           <Grid item xs={12}>
             <TextField
               fullWidth
-              size="medium"
+              size={isMobile ? "small" : "medium"}
               placeholder="Search blogs, tags, or authors..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <Search size={20} />
+                    <Search size={isMobile ? 18 : 20} />
                   </InputAdornment>
                 ),
               }}
@@ -678,15 +701,23 @@ export default function BlogMainPage({
 
       {/* Featured Articles Section */}
       {featuredBlogs.length > 0 && (
-        <Box sx={{ mb: 6 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 3, color: "text.primary" }}>
+        <Box sx={{ mb: { xs: 4, sm: 6 } }}>
+          <Typography 
+            variant={isMobile ? "h6" : "h6"} 
+            sx={{ 
+              fontWeight: 700, 
+              mb: { xs: 2, sm: 3 }, 
+              color: "text.primary",
+              fontSize: { xs: '1.1rem', sm: '1.25rem' }
+            }}
+          >
             <Box component="span" sx={{ color: theme.palette.primary.main }}>
               Featured
             </Box>{" "}
             Articles
           </Typography>
 
-          <Grid container spacing={3}>
+          <Grid container spacing={{ xs: 2, sm: 3 }}>
             {featuredBlogs.map((blog) => (
               <Grid item xs={12} md={6} key={blog._id}>
                 <Link href={`/blogs/${blog.slug || blog._id}`} style={{ textDecoration: 'none' }}>
@@ -700,15 +731,22 @@ export default function BlogMainPage({
 
       {/* Founder Stories Section */}
       {founderStories.length > 0 && (
-        <Box sx={{ mb: 6 }}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+        <Box sx={{ mb: { xs: 4, sm: 6 } }}>
+          <Box sx={{ 
+            display: "flex", 
+            flexDirection: { xs: 'column', sm: 'row' },
+            justifyContent: "space-between", 
+            alignItems: { xs: 'flex-start', sm: 'center' }, 
+            mb: 3,
+            gap: { xs: 2, sm: 0 }
+          }}>
             <Typography
-              variant="h6"
+              variant={isMobile ? "h6" : "h6"}
               sx={{
                 fontWeight: 700,
                 color: theme.palette.text.primary,
                 textTransform: "uppercase",
-                fontSize: 13,
+                fontSize: { xs: 12, sm: 13 },
                 letterSpacing: 1,
               }}
             >
@@ -719,14 +757,17 @@ export default function BlogMainPage({
               href="/blogs/founder-stories"
               variant="outlined"
               color="primary"
-              size="small"
-              sx={{ fontWeight: 600 }}
+              size={isMobile ? "small" : "small"}
+              sx={{ 
+                fontWeight: 600,
+                fontSize: { xs: '0.75rem', sm: '0.875rem' }
+              }}
             >
               View All Stories
             </Button>
           </Box>
 
-          <Grid container spacing={3}>
+          <Grid container spacing={{ xs: 2, sm: 3 }}>
             {founderStories.slice(0, 3).map((story) => (
               <Grid item xs={12} sm={6} md={4} key={story._id}>
                 <Link href={`/blogs/${story.slug || story._id}`} style={{ textDecoration: 'none' }}>
@@ -739,13 +780,21 @@ export default function BlogMainPage({
       )}
 
       {/* All Articles Section */}
-      <Box sx={{ mt: 6, mb: 3 }}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+      <Box sx={{ mt: { xs: 4, sm: 6 }, mb: { xs: 2, sm: 3 } }}>
+        <Box sx={{ 
+          display: "flex", 
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: "space-between", 
+          alignItems: { xs: 'flex-start', sm: 'center' }, 
+          mb: 3,
+          gap: { xs: 2, sm: 0 }
+        }}>
           <Typography
-            variant="h6"
+            variant={isMobile ? "h6" : "h6"}
             sx={{
               fontWeight: 700,
               color: theme.palette.text.primary,
+              fontSize: { xs: '1.1rem', sm: '1.25rem' }
             }}
           >
             All Articles
@@ -755,8 +804,12 @@ export default function BlogMainPage({
             href="/dashboard/submission/blog"
             variant="contained"
             color="primary"
-            startIcon={<Plus size={18} />}
-            sx={{ fontWeight: 600 }}
+            startIcon={<Plus size={isMobile ? 16 : 18} />}
+            size={isMobile ? "small" : "medium"}
+            sx={{ 
+              fontWeight: 600,
+              fontSize: { xs: '0.75rem', sm: '0.875rem' }
+            }}
           >
             Write Blog
           </Button>
@@ -766,7 +819,7 @@ export default function BlogMainPage({
       {/* Blog Grid */}
       {filteredBlogs.length > 0 ? (
         <>
-          <Grid container spacing={4}>
+          <Grid container spacing={{ xs: 2, sm: 3, md: 4 }}>
             {paginatedBlogs.map((blog) => (
               <Grid item xs={12} sm={6} md={4} key={blog._id}>
                 <Link href={`/blogs/${blog.slug || blog._id}`} style={{ textDecoration: 'none' }}>
@@ -778,22 +831,36 @@ export default function BlogMainPage({
           
           {/* Pagination */}
           {totalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: { xs: 4, sm: 6 } }}>
               <Pagination 
                 count={totalPages} 
                 page={currentPage} 
                 onChange={handlePageChange} 
-                color="primary" 
+                color="primary"
+                size={isMobile ? "medium" : "large"}
               />
             </Box>
           )}
         </>
       ) : (
-        <Box sx={{ textAlign: 'center', py: 8 }}>
-          <Typography variant="h6" color="text.secondary" gutterBottom>
+        <Box sx={{ textAlign: 'center', py: { xs: 4, sm: 8 } }}>
+          <Typography 
+            variant={isMobile ? "h6" : "h6"} 
+            color="text.secondary" 
+            gutterBottom
+            sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}
+          >
             No blogs found
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          <Typography 
+            variant="body2" 
+            color="text.secondary" 
+            sx={{ 
+              mb: 3,
+              fontSize: { xs: '0.875rem', sm: '1rem' },
+              px: { xs: 2, sm: 0 }
+            }}
+          >
             {searchQuery 
               ? "Try adjusting your search criteria."
               : "Be the first to share your knowledge with the community!"
@@ -805,8 +872,12 @@ export default function BlogMainPage({
               href="/dashboard/submission/blog"
               variant="contained"
               color="primary"
-              startIcon={<Plus size={18} />}
-              sx={{ fontWeight: 600 }}
+              startIcon={<Plus size={isMobile ? 16 : 18} />}
+              size={isMobile ? "small" : "medium"}
+              sx={{ 
+                fontWeight: 600,
+                fontSize: { xs: '0.75rem', sm: '0.875rem' }
+              }}
             >
               Write Your First Blog
             </Button>

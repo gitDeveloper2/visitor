@@ -13,6 +13,7 @@ import {
   Alert,
   TextField,
   InputAdornment,
+  useMediaQuery,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { AppWindow, BadgeCheck, DollarSign, Plus, Search } from "lucide-react";
@@ -50,6 +51,8 @@ export default function AppsMainPage({
   initialTotalApps 
 }: AppsMainPageProps) {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [apps, setApps] = useState(initialApps);
   const [featuredApps, setFeaturedApps] = useState(initialFeaturedApps);
@@ -232,7 +235,7 @@ export default function AppsMainPage({
         <Box sx={{ position: "relative" }}>
           <Box
             sx={{
-              height: 160,
+              height: { xs: 140, sm: 160 },
               backgroundImage: `url('${app.imageUrl}')`,
               backgroundSize: "cover",
               backgroundPosition: "center",
@@ -248,6 +251,7 @@ export default function AppsMainPage({
                   backgroundColor: theme.palette.primary.main,
                   color: theme.palette.primary.contrastText,
                   boxShadow: getShadow(theme, "elegant"),
+                  fontSize: { xs: '0.7rem', sm: '0.75rem' }
                 }}
               />
             </Box>
@@ -255,7 +259,7 @@ export default function AppsMainPage({
         </Box>
       )}
 
-      <Box sx={{ p: 3, flex: 1, display: "flex", flexDirection: "column" }}>
+      <Box sx={{ p: { xs: 2, sm: 3 }, flex: 1, display: "flex", flexDirection: "column" }}>
         {/* Premium Badge for cards without images */}
         {!app.imageUrl && app.isPremium && (
           <Box sx={{ mb: 2 }}>
@@ -267,42 +271,76 @@ export default function AppsMainPage({
                 backgroundColor: theme.palette.primary.main,
                 color: theme.palette.primary.contrastText,
                 boxShadow: getShadow(theme, "elegant"),
+                fontSize: { xs: '0.7rem', sm: '0.75rem' }
               }}
             />
           </Box>
         )}
 
         {/* App Header with Author */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
-          <Avatar sx={{ width: 32, height: 32, bgcolor: theme.palette.primary.main }}>
-            <AppWindow size={16} />
+        <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.5, sm: 2 }, mb: 2 }}>
+          <Avatar sx={{ width: { xs: 28, sm: 32 }, height: { xs: 28, sm: 32 }, bgcolor: theme.palette.primary.main }}>
+            <AppWindow size={isMobile ? 14 : 16} />
           </Avatar>
           <Box sx={{ flex: 1 }}>
-            <Typography variant="body2" fontWeight={600} color="text.primary">
+            <Typography 
+              variant="body2" 
+              fontWeight={600} 
+              color="text.primary"
+              sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
+            >
               {app.authorName || app.author}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography 
+              variant="caption" 
+              color="text.secondary"
+              sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+            >
               Developer
             </Typography>
           </Box>
         </Box>
 
         {/* App Title */}
-        <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, lineHeight: 1.3, color: "text.primary" }}>
+        <Typography 
+          variant={isMobile ? "h6" : "h6"} 
+          sx={{ 
+            fontWeight: 700, 
+            mb: 1, 
+            lineHeight: 1.3, 
+            color: "text.primary",
+            fontSize: { xs: '1rem', sm: '1.25rem' }
+          }}
+        >
           {app.name}
         </Typography>
 
         {/* App Description */}
         <Typography
           variant="body2"
-          sx={{ color: "text.secondary", mb: 3, flex: 1, lineHeight: 1.5 }}
+          sx={{ 
+            color: "text.secondary", 
+            mb: 3, 
+            flex: 1, 
+            lineHeight: 1.5,
+            fontSize: { xs: '0.8rem', sm: '0.875rem' }
+          }}
         >
           {app.description}
         </Typography>
 
         {/* Category and Additional Categories */}
         <Box sx={{ mb: 3 }}>
-          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1, fontWeight: 600 }}>
+          <Typography 
+            variant="caption" 
+            color="text.secondary" 
+            sx={{ 
+              display: "block", 
+              mb: 1, 
+              fontWeight: 600,
+              fontSize: { xs: '0.7rem', sm: '0.75rem' }
+            }}
+          >
             Categories
           </Typography>
           <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
@@ -316,13 +354,13 @@ export default function AppsMainPage({
                   fontWeight: 600,
                   color: theme.palette.primary.contrastText,
                   backgroundColor: theme.palette.primary.main,
-                  fontSize: "0.7rem",
+                  fontSize: { xs: "0.65rem", sm: "0.7rem" },
                 }}
               />
             )}
             
             {/* Additional Categories (Subcategories) */}
-            {app.subcategories?.slice(0, 3).map((subcat, i) => (
+            {app.subcategories?.slice(0, isMobile ? 2 : 3).map((subcat, i) => (
               <Chip 
                 key={`subcat-${i}`} 
                 size="small" 
@@ -333,7 +371,7 @@ export default function AppsMainPage({
                   color: theme.palette.text.primary,
                   borderColor: theme.palette.divider,
                   backgroundColor: theme.palette.background.paper,
-                  fontSize: "0.7rem",
+                  fontSize: { xs: "0.65rem", sm: "0.7rem" },
                   "&:hover": {
                     backgroundColor: theme.palette.action.hover,
                     borderColor: theme.palette.primary.main,
@@ -343,17 +381,17 @@ export default function AppsMainPage({
             ))}
             
             {/* Show total count if there are more subcategories */}
-            {app.subcategories && app.subcategories.length > 3 && (
+            {app.subcategories && app.subcategories.length > (isMobile ? 2 : 3) && (
               <Chip 
                 size="small" 
-                label={`+${app.subcategories.length - 3}`} 
+                label={`+${app.subcategories.length - (isMobile ? 2 : 3)}`} 
                 variant="outlined"
                 sx={{
                   fontWeight: 500,
                   color: theme.palette.text.secondary,
                   borderColor: theme.palette.divider,
                   backgroundColor: theme.palette.background.paper,
-                  fontSize: "0.7rem",
+                  fontSize: { xs: "0.65rem", sm: "0.7rem" },
                 }}
               />
             )}
@@ -363,11 +401,20 @@ export default function AppsMainPage({
         {/* Tech Stack - Show separately if exists */}
         {app.techStack?.length > 0 && (
           <Box sx={{ mb: 3 }}>
-            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1, fontWeight: 600 }}>
+            <Typography 
+              variant="caption" 
+              color="text.secondary" 
+              sx={{ 
+                display: "block", 
+                mb: 1, 
+                fontWeight: 600,
+                fontSize: { xs: '0.7rem', sm: '0.75rem' }
+              }}
+            >
               Technologies
             </Typography>
             <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-              {app.techStack?.slice(0, 3).map((tech, i) => (
+              {app.techStack?.slice(0, isMobile ? 2 : 3).map((tech, i) => (
                 <Chip 
                   key={`tech-${i}`} 
                   size="small" 
@@ -378,7 +425,7 @@ export default function AppsMainPage({
                     color: theme.palette.secondary.main,
                     borderColor: theme.palette.secondary.main,
                     backgroundColor: theme.palette.secondary.light + '10',
-                    fontSize: "0.7rem",
+                    fontSize: { xs: "0.65rem", sm: "0.7rem" },
                     "&:hover": {
                       backgroundColor: theme.palette.secondary.main,
                       color: theme.palette.secondary.contrastText,
@@ -386,17 +433,17 @@ export default function AppsMainPage({
                   }}
                 />
               ))}
-              {app.techStack && app.techStack.length > 3 && (
+              {app.techStack && app.techStack.length > (isMobile ? 2 : 3) && (
                 <Chip 
                   size="small" 
-                  label={`+${app.techStack.length - 3}`} 
+                  label={`+${app.techStack.length - (isMobile ? 2 : 3)}`} 
                   variant="outlined"
                   sx={{
                     fontWeight: 500,
                     color: theme.palette.text.secondary,
                     borderColor: theme.palette.divider,
                     backgroundColor: theme.palette.background.paper,
-                    fontSize: "0.7rem",
+                    fontSize: { xs: "0.65rem", sm: "0.7rem" },
                   }}
                 />
               )}
@@ -410,16 +457,16 @@ export default function AppsMainPage({
           justifyContent: 'space-between', 
           alignItems: 'center', 
           color: "text.secondary",
-          fontSize: "0.75rem",
+          fontSize: { xs: "0.7rem", sm: "0.75rem" },
           mt: "auto",
           mb: 2,
-          p: 1.5,
+          p: { xs: 1, sm: 1.5 },
           bgcolor: theme.palette.action.hover,
           borderRadius: 1,
         }}>
-          <Box sx={{ display: "flex", gap: 2 }}>
+          <Box sx={{ display: "flex", gap: { xs: 1, sm: 2 } }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <DollarSign size={14} />
+              <DollarSign size={isMobile ? 12 : 14} />
               <Typography variant="caption" fontWeight={600}>
                 {app.isPremium ? 'Premium' : (app.pricing || 'Free')}
               </Typography>
@@ -450,11 +497,12 @@ export default function AppsMainPage({
               target="_blank"
               rel="noopener noreferrer"
               variant="outlined"
-              size="small"
+              size={isMobile ? "small" : "small"}
               sx={{ 
                 flex: 1,
                 fontWeight: 600,
                 borderColor: theme.palette.divider,
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
                 "&:hover": {
                   borderColor: theme.palette.primary.main,
                   backgroundColor: theme.palette.primary.main,
@@ -473,11 +521,12 @@ export default function AppsMainPage({
               target="_blank"
               rel="noopener noreferrer"
               variant="outlined"
-              size="small"
+              size={isMobile ? "small" : "small"}
               sx={{ 
                 flex: 1,
                 fontWeight: 600,
                 borderColor: theme.palette.divider,
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
                 "&:hover": {
                   borderColor: theme.palette.primary.main,
                   backgroundColor: theme.palette.primary.main,
@@ -495,11 +544,12 @@ export default function AppsMainPage({
               component={Link}
               href={`/launch/${app.slug}`}
               variant="contained"
-              size="small"
+              size={isMobile ? "small" : "small"}
               sx={{ 
                 flex: 1, 
                 fontWeight: 600,
                 backgroundColor: theme.palette.primary.main,
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
                 "&:hover": {
                   backgroundColor: theme.palette.primary.dark,
                 }
@@ -525,6 +575,7 @@ export default function AppsMainPage({
                 backgroundColor: theme.palette.success.main,
                 color: theme.palette.success.contrastText,
                 boxShadow: getShadow(theme, "elegant"),
+                fontSize: { xs: '0.7rem', sm: '0.75rem' }
               }}
             />
           </Box>
@@ -538,23 +589,33 @@ export default function AppsMainPage({
   const allFilters = ["All", ...categories.map(cat => ({ name: cat.name, slug: cat.slug })), "Free", "Freemium", "Premium"];
 
   return (
-    <Box component="main" sx={{ bgcolor: "background.default", py: 10 }}>
+    <Box component="main" sx={{ bgcolor: "background.default", py: { xs: 4, sm: 6, md: 10 } }}>
       {/* Hero */}
-      <Box sx={{ textAlign: "center", mb: 8 }}>
-        <Typography variant="h1" sx={typographyVariants.heroTitle}>
+      <Box sx={{ textAlign: "center", mb: { xs: 4, sm: 6, md: 8 } }}>
+        <Typography 
+          variant={isMobile ? "h3" : "h1"} 
+          sx={{
+            ...typographyVariants.heroTitle,
+            fontSize: { xs: '2rem', sm: '2.5rem', md: '3.5rem', lg: '4rem' },
+            lineHeight: { xs: 1.2, sm: 1.1 },
+            mb: { xs: 2, sm: 3 }
+          }}
+        >
           Discover{" "}
           <Box component="span" sx={commonStyles.textGradient(theme)}>
             Innovative Apps
           </Box>
         </Typography>
         <Typography
-          variant="h5"
+          variant={isMobile ? "h6" : "h5"}
           sx={{
             color: "text.secondary",
-            mt: 3,
+            mt: { xs: 2, sm: 3 },
             maxWidth: 700,
             mx: "auto",
             lineHeight: 1.5,
+            fontSize: { xs: '1rem', sm: '1.25rem' },
+            px: { xs: 2, sm: 0 }
           }}
         >
           Explore featured tools and user-submitted apps that boost
@@ -566,9 +627,9 @@ export default function AppsMainPage({
       <Paper
         elevation={0}
         sx={{
-          mb: 6,
-          px: 3,
-          py: 4,
+          mb: { xs: 4, sm: 6 },
+          px: { xs: 2, sm: 3 },
+          py: { xs: 3, sm: 4 },
           borderRadius: "1rem",
           ...getGlassStyles(theme),
           boxShadow: getShadow(theme, "elegant"),
@@ -578,14 +639,14 @@ export default function AppsMainPage({
           <Grid item xs={12}>
             <TextField
               fullWidth
-              size="medium"
+              size={isMobile ? "small" : "medium"}
               placeholder="Search apps, tags, or authors..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <Search size={20} />
+                    <Search size={isMobile ? 18 : 20} />
                   </InputAdornment>
                 ),
               }}
@@ -598,7 +659,13 @@ export default function AppsMainPage({
           </Grid>
         </Grid>
         
-        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", justifyContent: "center", mt: 3 }}>
+        <Box sx={{ 
+          display: "flex", 
+          gap: { xs: 0.5, sm: 1 }, 
+          flexWrap: "wrap", 
+          justifyContent: "center", 
+          mt: { xs: 2, sm: 3 } 
+        }}>
           {allFilters.map((filter) => {
             // Handle different filter types
             if (filter === "All") {
@@ -609,7 +676,12 @@ export default function AppsMainPage({
                   onClick={() => setSelectedFilter("All")}
                   color={selectedFilter === "All" ? "primary" : "default"}
                   variant={selectedFilter === "All" ? "filled" : "outlined"}
-                  sx={{ fontWeight: 500, cursor: "pointer" }}
+                  size={isMobile ? "small" : "medium"}
+                  sx={{ 
+                    fontWeight: 500, 
+                    cursor: "pointer",
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                  }}
                 />
               );
             } else if (typeof filter === "string") {
@@ -621,7 +693,12 @@ export default function AppsMainPage({
                   onClick={() => setSelectedFilter(filter)}
                   color={selectedFilter === filter ? "primary" : "default"}
                   variant={selectedFilter === filter ? "filled" : "outlined"}
-                  sx={{ fontWeight: 500, cursor: "pointer" }}
+                  size={isMobile ? "small" : "medium"}
+                  sx={{ 
+                    fontWeight: 500, 
+                    cursor: "pointer",
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                  }}
                 />
               );
             } else {
@@ -636,7 +713,12 @@ export default function AppsMainPage({
                   }}
                   color={selectedFilter === filter.name ? "primary" : "default"}
                   variant={selectedFilter === filter.name ? "filled" : "outlined"}
-                  sx={{ fontWeight: 500, cursor: "pointer" }}
+                  size={isMobile ? "small" : "medium"}
+                  sx={{ 
+                    fontWeight: 500, 
+                    cursor: "pointer",
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                  }}
                 />
               );
             }
@@ -646,22 +728,35 @@ export default function AppsMainPage({
 
       <SubmitAppCTA />
 
-             {/* Featured Apps */}
-       {featuredApps.length > 0 && (
-         <Box sx={{ mb: 6 }}>
-           <Typography
-             variant="h6"
-             sx={{ fontWeight: 700, mb: 3, color: "text.primary" }}
-           >
-             <Box component="span" sx={{ color: theme.palette.primary.main }}>
-               Featured
-             </Box>{" "}
-             Apps{" "}
-             <Typography component="span" variant="body2" color="text.secondary" sx={{ fontWeight: 400 }}>
-               (Paid apps from the last 7 days)
-             </Typography>
-           </Typography>
-          <Grid container spacing={3}>
+      {/* Featured Apps */}
+      {featuredApps.length > 0 && (
+        <Box sx={{ mb: { xs: 4, sm: 6 } }}>
+          <Typography
+            variant={isMobile ? "h6" : "h6"}
+            sx={{ 
+              fontWeight: 700, 
+              mb: { xs: 2, sm: 3 }, 
+              color: "text.primary",
+              fontSize: { xs: '1.1rem', sm: '1.25rem' }
+            }}
+          >
+            <Box component="span" sx={{ color: theme.palette.primary.main }}>
+              Featured
+            </Box>{" "}
+            Apps{" "}
+            <Typography 
+              component="span" 
+              variant="body2" 
+              color="text.secondary" 
+              sx={{ 
+                fontWeight: 400,
+                fontSize: { xs: '0.75rem', sm: '0.875rem' }
+              }}
+            >
+              (Paid apps from the last 7 days)
+            </Typography>
+          </Typography>
+          <Grid container spacing={{ xs: 2, sm: 3 }}>
             {featuredApps.map((app) => (
               <Grid item xs={12} sm={6} md={4} key={app._id?.toString() || app._id}>
                 {renderAppCard(app)}
@@ -672,13 +767,14 @@ export default function AppsMainPage({
       )}
 
       {/* All Apps Section */}
-      <Box sx={{ mt: 6, mb: 3 }}>
+      <Box sx={{ mt: { xs: 4, sm: 6 }, mb: { xs: 2, sm: 3 } }}>
         <Typography
-          variant="h6"
+          variant={isMobile ? "h6" : "h6"}
           sx={{
             fontWeight: 700,
             color: theme.palette.text.primary,
-            mb: 3,
+            mb: { xs: 2, sm: 3 },
+            fontSize: { xs: '1.1rem', sm: '1.25rem' }
           }}
         >
           All Apps
@@ -687,8 +783,8 @@ export default function AppsMainPage({
 
       {/* Apps Grid */}
       {loading && (
-        <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-          <CircularProgress />
+        <Box sx={{ display: "flex", justifyContent: "center", py: { xs: 3, sm: 4 } }}>
+          <CircularProgress size={isMobile ? 40 : 60} />
         </Box>
       )}
 
@@ -702,7 +798,7 @@ export default function AppsMainPage({
         <>
           {filteredApps.length > 0 ? (
             <>
-              <Grid container spacing={4}>
+              <Grid container spacing={{ xs: 2, sm: 3, md: 4 }}>
                 {filteredApps.map((app) => (
                   <Grid item xs={12} sm={6} md={4} key={app._id?.toString() || app._id}>
                     {renderAppCard(app)}
@@ -712,23 +808,35 @@ export default function AppsMainPage({
               
               {/* Pagination */}
               {totalPages > 1 && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: { xs: 4, sm: 6 } }}>
                   <Pagination 
                     count={totalPages} 
                     page={currentPage} 
                     onChange={handlePageChange} 
                     color="primary"
-                    size="large"
+                    size={isMobile ? "medium" : "large"}
                   />
                 </Box>
               )}
             </>
           ) : (
-            <Box sx={{ textAlign: 'center', py: 8 }}>
-              <Typography variant="h6" color="text.secondary">
+            <Box sx={{ textAlign: 'center', py: { xs: 4, sm: 8 } }}>
+              <Typography 
+                variant={isMobile ? "h6" : "h6"} 
+                color="text.secondary"
+                sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}
+              >
                 No apps found
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              <Typography 
+                variant="body2" 
+                color="text.secondary" 
+                sx={{ 
+                  mb: 3,
+                  fontSize: { xs: '0.875rem', sm: '1rem' },
+                  px: { xs: 2, sm: 0 }
+                }}
+              >
                 {searchQuery || selectedFilter !== "All" 
                   ? "Try adjusting your search or filter criteria."
                   : "Be the first to submit your app to the community!"

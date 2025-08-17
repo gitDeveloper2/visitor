@@ -166,19 +166,33 @@ export default async function LaunchCategoryPageWrapper({
     const serializedFeaturedApps = serializeMongoObject(featuredApps);
 
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h3" component="h1" gutterBottom>
+      <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
+        <Box sx={{ mb: { xs: 3, sm: 4 } }}>
+          <Typography 
+            variant="h3" 
+            component="h1" 
+            gutterBottom
+            sx={{ 
+              fontSize: { xs: '1.75rem', sm: '2.125rem', md: '3rem' },
+              lineHeight: { xs: 1.2, sm: 1.1 }
+            }}
+          >
             {categoryName} Apps
           </Typography>
           {tag && (
-            <Typography variant="h6" color="text.secondary">
+            <Typography 
+              variant="h6" 
+              color="text.secondary"
+              sx={{ 
+                fontSize: { xs: '1rem', sm: '1.25rem' }
+              }}
+            >
               Tagged with "{tag}"
             </Typography>
           )}
         </Box>
         <Suspense fallback={
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: { xs: 3, sm: 4 } }}>
             <CircularProgress />
           </Box>
         }>
@@ -196,14 +210,22 @@ export default async function LaunchCategoryPageWrapper({
   } catch (error) {
     console.error('Error fetching category data:', error);
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h3" component="h1" gutterBottom>
+      <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
+        <Box sx={{ mb: { xs: 3, sm: 4 } }}>
+          <Typography 
+            variant="h3" 
+            component="h1" 
+            gutterBottom
+            sx={{ 
+              fontSize: { xs: '1.75rem', sm: '2.125rem', md: '3rem' },
+              lineHeight: { xs: 1.2, sm: 1.1 }
+            }}
+          >
             {categoryName} Apps
           </Typography>
         </Box>
         <Suspense fallback={
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: { xs: 3, sm: 4 } }}>
             <CircularProgress />
           </Box>
         }>

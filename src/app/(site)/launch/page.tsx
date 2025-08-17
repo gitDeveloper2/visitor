@@ -83,9 +83,9 @@ export default async function LaunchPage() {
     const serializedFeaturedApps = serializeMongoObject(featuredApps);
 
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
         <Suspense fallback={
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: { xs: 4, sm: 8 } }}>
             <CircularProgress />
           </Box>
         }>
@@ -101,9 +101,9 @@ export default async function LaunchPage() {
     console.error('Error fetching app data:', error);
     // Fallback with empty data
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
         <Suspense fallback={
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: { xs: 4, sm: 8 } }}>
             <CircularProgress />
           </Box>
         }>
