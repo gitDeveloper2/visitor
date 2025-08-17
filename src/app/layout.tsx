@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { inter, poppins, outfit, plusJakartaSans, albertSans, fontClasses } from "./styles/fonts";
 import "./globals.css";
+import "./styles/responsive.css";
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v13-appRouter';
@@ -70,20 +71,23 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <AuthProvider>
                 <GlobalStyles />
                 <Analytics/>
-                <div style={{ minHeight: "90vh" }}>
+                <div style={{ 
+                  minHeight: "100vh",
+                  display: "flex", 
+                  flexDirection: "column",
+                  overflow: "hidden" // Prevent horizontal scroll
+                }}>
                   <Navbar />
                   <DonateButton/>
-                  <main id="main-content" tabIndex={-1}>
+                  <main id="main-content" tabIndex={-1} style={{ flex: 1 }}>
                     {children}
                   </main>
-                   <div style={{ width: '100%', maxWidth: '300px', margin: '10px auto', textAlign: 'center' }}>
+                  <div style={{ width: '100%', maxWidth: '300px', margin: '10px auto', textAlign: 'center' }}>
           
-          </div>
-
-                  
-                    {/* Footer removed - now handled by individual pages */}
-                    <Footer/>
                   </div>
+                  {/* Footer removed - now handled by individual pages */}
+                  <Footer/>
+                </div>
               </AuthProvider>
             </ThemeProvider>
         </AppRouterCacheProvider>

@@ -35,12 +35,6 @@ const Footer = () => {
       { name: "About", href: "/aboutus", icon: Users },
       { name: "Contact", href: "/contactus", icon: Mail },
     ],
-    resources: [
-      { name: "Documentation", href: "/docs", icon: FileText },
-      { name: "API Reference", href: "/api", icon: Code },
-      { name: "Community", href: "/community", icon: Users },
-      { name: "Support", href: "/support", icon: Mail },
-    ],
     social: [
       { name: "GitHub", href: "https://github.com", icon: Github },
       { name: "Twitter", href: "https://twitter.com", icon: Twitter },
@@ -122,10 +116,10 @@ const Footer = () => {
         },
       }}
     >
-      <Container maxWidth="lg" sx={{ py: { xs: 6, md: 8 } }}>
-        <Grid container spacing={6}>
+      <Container maxWidth="lg" sx={{ py: { xs: 6, md: 8 }, px: { xs: 2, sm: 3 } }}>
+        <Grid container spacing={{ xs: 4, sm: 6 }}>
           {/* Brand Section */}
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={6}>
             <Box sx={{ mb: 4 }}>
               <Box display="flex" alignItems="center" gap={1.5} sx={{ mb: 3 }}>
                 <Box
@@ -191,7 +185,7 @@ const Footer = () => {
           </Grid>
 
           {/* Product Links */}
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid item xs={12} md={6}>
             <Typography
               variant="subtitle1"
               sx={{
@@ -224,52 +218,17 @@ const Footer = () => {
               ))}
             </Box>
           </Grid>
-
-          {/* Resources Links */}
-          <Grid item xs={12} sm={6} md={4}>
-            <Typography
-              variant="subtitle1"
-              sx={{
-                fontWeight: 600,
-                color: theme.palette.text.primary,
-                mb: 2,
-              }}
-            >
-              Resources
-            </Typography>
-            <Box component="ul" sx={{ listStyle: "none", p: 0, m: 0 }}>
-              {footerLinks.resources.map((link) => (
-                <Box component="li" key={link.name} sx={{ mb: 1 }}>
-                  <RenderLink
-                    href={link.href}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
-                      color: theme.palette.text.secondary,
-                      textDecoration: "none",
-                      transition: "color 0.2s",
-                      "&:hover": { color: theme.palette.primary.main },
-                    }}
-                  >
-                    <link.icon size={16} />
-                    {link.name}
-                  </RenderLink>
-                </Box>
-              ))}
-            </Box>
-          </Grid>
         </Grid>
 
         {/* Bottom Section */}
-        <Box sx={{ pt: 8, borderTop: `1px solid ${theme.custom.glass.border}` }}>
+        <Box sx={{ pt: { xs: 6, sm: 8 }, borderTop: `1px solid ${theme.custom.glass.border}` }}>
           <Box
             sx={{
               display: "flex",
               flexDirection: { xs: "column", sm: "row" },
               alignItems: { xs: "flex-start", sm: "center" },
               justifyContent: "space-between",
-              gap: 2,
+              gap: { xs: 1.5, sm: 2 },
             }}
           >
             <Typography

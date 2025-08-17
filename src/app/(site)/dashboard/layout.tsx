@@ -44,6 +44,8 @@ import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import BarChart from "@mui/icons-material/BarChart";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
+import ViewListIcon from "@mui/icons-material/ViewList"; // Different icon for dashboard menu
+import AccountCircleIcon from "@mui/icons-material/AccountCircle"; // Different icon for dashboard
 
 export default function DashboardLayout({
   children,
@@ -180,7 +182,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between">
           <Typography variant="h6" fontWeight={600}>
-            Dashboard
+            Dashboard Menu
           </Typography>
           <IconButton onClick={handleMobileMenuClose}>
             <CloseIcon />
@@ -191,29 +193,15 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       <List sx={{ pt: 1 }}>
         {/* Main Navigation */}
         {navigationItems.map((item) => (
-          <ListItem key={item.title} disablePadding>
+          <ListItem key={item.href} disablePadding>
             <ListItemButton
               component={Link}
               href={item.href}
               onClick={handleMobileMenuClose}
-              sx={{
-                py: 1.5,
-                px: 2,
-                '&:hover': {
-                  bgcolor: 'action.hover',
-                },
-              }}
+              sx={{ py: 1.5 }}
             >
-              <ListItemIcon sx={{ minWidth: 40, color: item.primary ? 'primary.main' : 'text.secondary' }}>
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText 
-                primary={item.title}
-                primaryTypographyProps={{
-                  fontWeight: item.primary ? 600 : 500,
-                  color: item.primary ? 'primary.main' : 'text.primary',
-                }}
-              />
+              {item.icon}
+              <Typography sx={{ ml: 1.5 }}>{item.title}</Typography>
             </ListItemButton>
           </ListItem>
         ))}
@@ -222,50 +210,22 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
         {/* Submit Section */}
         <ListItem disablePadding>
-          <ListItemButton
-            onClick={handleSubmitMenuOpen}
-            sx={{
-              py: 1.5,
-              px: 2,
-              '&:hover': {
-                bgcolor: 'action.hover',
-              },
-            }}
-          >
-            <ListItemIcon sx={{ minWidth: 40, color: 'primary.main' }}>
-              <AddIcon />
-            </ListItemIcon>
-            <ListItemText 
-              primary="Submit"
-              primaryTypographyProps={{
-                fontWeight: 600,
-                color: 'primary.main',
-              }}
-            />
+          <ListItemButton onClick={handleSubmitMenuOpen}>
+            <AddIcon />
+            <Typography sx={{ ml: 1.5 }}>Submit</Typography>
           </ListItemButton>
         </ListItem>
 
-        {/* Submit Menu */}
         <Menu
           anchorEl={submitMenuAnchor}
           open={Boolean(submitMenuAnchor)}
           onClose={handleSubmitMenuClose}
-          anchorOrigin={{ vertical: "top", horizontal: "right" }}
-          transformOrigin={{ vertical: "top", horizontal: "left" }}
-          PaperProps={{
-            sx: {
-              minWidth: 180,
-              boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-              borderRadius: 2,
-              bgcolor: "background.paper",
-              border: "1px solid",
-              borderColor: "divider"
-            },
-          }}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
         >
           {submitItems.map((item) => (
             <MenuItem
-              key={item.title}
+              key={item.href}
               component={Link}
               href={item.href}
               onClick={() => {
@@ -285,64 +245,22 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           <>
             <Divider sx={{ my: 1 }} />
             <ListItem disablePadding>
-              <ListItemButton
-                onClick={handleAdminMenuOpen}
-                sx={{
-                  py: 1.5,
-                  px: 2,
-                  '&:hover': {
-                    bgcolor: 'action.hover',
-                  },
-                }}
-              >
-                <ListItemIcon sx={{ minWidth: 40, color: 'secondary.main' }}>
-                  <AdminPanelSettingsIcon />
-                </ListItemIcon>
-                <ListItemText 
-                  primary={
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <span>Admin</span>
-                      <Chip
-                        label="Admin"
-                        size="small"
-                        color="secondary"
-                        sx={{
-                          height: 18,
-                          fontSize: "0.7rem",
-                          fontWeight: 600,
-                        }}
-                      />
-                    </Stack>
-                  }
-                  primaryTypographyProps={{
-                    fontWeight: 600,
-                    color: 'secondary.main',
-                  }}
-                />
+              <ListItemButton onClick={handleAdminMenuOpen}>
+                <AdminPanelSettingsIcon />
+                <Typography sx={{ ml: 1.5 }}>Admin</Typography>
               </ListItemButton>
             </ListItem>
 
-            {/* Admin Menu */}
             <Menu
               anchorEl={adminMenuAnchor}
               open={Boolean(adminMenuAnchor)}
               onClose={handleAdminMenuClose}
-              anchorOrigin={{ vertical: "top", horizontal: "right" }}
-              transformOrigin={{ vertical: "top", horizontal: "left" }}
-              PaperProps={{
-                sx: {
-                  minWidth: 220,
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-                  borderRadius: 2,
-                  bgcolor: "background.paper",
-                  border: "1px solid",
-                  borderColor: "divider"
-                },
-              }}
+              anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'left' }}
             >
               {adminItems.map((item) => (
                 <MenuItem
-                  key={item.title}
+                  key={item.href}
                   component={Link}
                   href={item.href}
                   onClick={() => {
@@ -379,11 +297,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             <IconButton
               edge="start"
               color="inherit"
-              aria-label="menu"
+              aria-label="dashboard menu"
               onClick={handleMobileMenuToggle}
               sx={{ mr: 2 }}
             >
-              <MenuIcon />
+              <ViewListIcon /> {/* Different icon to distinguish from main nav */}
             </IconButton>
             <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
               Dashboard
@@ -449,7 +367,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   startIcon={<AppsIcon />}
                   variant="text"
                   sx={{
-                    fontWeight: 500,
                     textTransform: "none",
                     color: "text.secondary",
                     "&:hover": {
@@ -468,7 +385,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   startIcon={<ArticleIcon />}
                   variant="text"
                   sx={{
-                    fontWeight: 500,
                     textTransform: "none",
                     color: "text.secondary",
                     "&:hover": {
@@ -479,50 +395,33 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 >
                   My Blogs
                 </Button>
+              </Stack>
 
-                <Divider orientation="vertical" flexItem sx={{ height: 24 }} />
-
-                {/* Submit Section */}
+              {/* Right Section - Actions */}
+              <Stack direction="row" spacing={1} alignItems="center">
+                {/* Submit Menu */}
                 <Button
                   startIcon={<AddIcon />}
-                  variant="contained"
-                  color="primary"
-                  size="small"
+                  variant="outlined"
                   onClick={handleSubmitMenuOpen}
                   sx={{
-                    fontWeight: 600,
                     textTransform: "none",
                     borderRadius: 2,
-                    px: 2,
-                    "&:hover": {
-                      transform: "translateY(-1px)",
-                      boxShadow: 2,
-                    },
                   }}
                 >
                   Submit
                 </Button>
+
                 <Menu
                   anchorEl={submitMenuAnchor}
                   open={Boolean(submitMenuAnchor)}
                   onClose={handleSubmitMenuClose}
-                  anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-                  transformOrigin={{ vertical: "top", horizontal: "left" }}
-                  PaperProps={{
-                    sx: {
-                      mt: 1,
-                      minWidth: 180,
-                      boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-                      borderRadius: 2,
-                      bgcolor: "background.paper",
-                      border: "1px solid",
-                      borderColor: "divider"
-                    },
-                  }}
+                  anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                  transformOrigin={{ vertical: "top", horizontal: "right" }}
                 >
                   {submitItems.map((item) => (
                     <MenuItem
-                      key={item.title}
+                      key={item.href}
                       component={Link}
                       href={item.href}
                       onClick={handleSubmitMenuClose}
@@ -534,63 +433,38 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   ))}
                 </Menu>
 
-                {/* Admin Section - Only visible to admins */}
+                {/* Admin Menu */}
                 {isAdmin && (
                   <>
-                    <Divider orientation="vertical" flexItem sx={{ height: 24 }} />
                     <Button
                       startIcon={<AdminPanelSettingsIcon />}
                       variant="outlined"
-                      color="secondary"
-                      size="small"
                       onClick={handleAdminMenuOpen}
                       sx={{
-                        fontWeight: 600,
                         textTransform: "none",
                         borderRadius: 2,
-                        px: 2,
-                        borderColor: "secondary.main",
-                        color: "secondary.main",
+                        borderColor: "warning.main",
+                        color: "warning.main",
                         "&:hover": {
-                          bgcolor: "secondary.main",
+                          borderColor: "warning.dark",
+                          bgcolor: "warning.main",
                           color: "white",
                         },
                       }}
                     >
                       Admin
-                      <Chip
-                        label="Admin"
-                        size="small"
-                        color="secondary"
-                        sx={{
-                          ml: 1,
-                          height: 18,
-                          fontSize: "0.7rem",
-                          fontWeight: 600,
-                        }}
-                      />
                     </Button>
+
                     <Menu
                       anchorEl={adminMenuAnchor}
                       open={Boolean(adminMenuAnchor)}
                       onClose={handleAdminMenuClose}
-                      anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-                      transformOrigin={{ vertical: "top", horizontal: "left" }}
-                      PaperProps={{
-                        sx: {
-                          mt: 1,
-                          minWidth: 220,
-                          boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-                          borderRadius: 2,
-                          bgcolor: "background.paper",
-                          border: "1px solid",
-                          borderColor: "divider"
-                        },
-                      }}
+                      anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                      transformOrigin={{ vertical: "top", horizontal: "right" }}
                     >
                       {adminItems.map((item) => (
                         <MenuItem
-                          key={item.title}
+                          key={item.href}
                           component={Link}
                           href={item.href}
                           onClick={handleAdminMenuClose}
@@ -604,9 +478,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   </>
                 )}
               </Stack>
-
-              {/* Right Section - empty (main navbar handles user menu) */}
-              <Box />
             </Stack>
           </Box>
         </Box>
@@ -615,14 +486,14 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       {/* Mobile Menu */}
       <MobileMenu />
 
-      {/* Page Content */}
-      <Box sx={{ 
-        maxWidth: "1400px", 
-        mx: "auto", 
-        px: { xs: 2, sm: 3, md: 4 }, 
-        py: { xs: 2, sm: 3 },
-        minHeight: isMobile ? 'calc(100vh - 64px)' : 'auto'
-      }}>
+      {/* Main Content */}
+      <Box
+        component="main"
+        sx={{
+          flex: 1,
+          minHeight: isMobile ? 'calc(100vh - 64px)' : 'auto'
+        }}
+      >
         {children}
       </Box>
     </Box>

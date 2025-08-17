@@ -1,0 +1,120 @@
+/* Additional responsive improvements for homepage */
+
+/* Ensure proper touch targets on mobile */
+@media (max-width: 768px) {
+  .MuiButton-root {
+    min-height: 44px; /* Minimum touch target size */
+  }
+  
+  .MuiIconButton-root {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* Improve text readability on small screens */
+@media (max-width: 480px) {
+  .MuiTypography-h1,
+  .MuiTypography-h2,
+  .MuiTypography-h3 {
+    word-break: break-word;
+    hyphens: auto;
+  }
+}
+
+/* Better spacing for mobile navigation */
+@media (max-width: 768px) {
+  .MuiContainer-root {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+/* Improve card layouts on mobile */
+@media (max-width: 600px) {
+  .MuiCard-root {
+    margin-bottom: 16px;
+  }
+  
+  .MuiGrid-item {
+    margin-bottom: 16px;
+  }
+}
+
+/* Better button stacking on mobile */
+@media (max-width: 768px) {
+  .MuiStack-root {
+    width: 100%;
+  }
+  
+  .MuiStack-root .MuiButton-root {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+}
+
+/* Improve image responsiveness */
+.MuiBox-root img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Better spacing for testimonials on mobile */
+@media (max-width: 768px) {
+  .testimonial-carousel {
+    padding: 0 16px;
+  }
+}
+
+/* Improve form elements on mobile */
+@media (max-width: 768px) {
+  .MuiTextField-root {
+    width: 100%;
+  }
+  
+  .MuiInputBase-root {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+}
+
+/* Better handling of long text on mobile */
+@media (max-width: 768px) {
+  .MuiTypography-body1,
+  .MuiTypography-body2 {
+    line-height: 1.6;
+  }
+}
+
+/* Improve glass effect on mobile */
+@media (max-width: 768px) {
+  .glass-effect {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+}
+
+/* Better grid spacing on mobile */
+@media (max-width: 600px) {
+  .MuiGrid-container {
+    margin: 0;
+  }
+  
+  .MuiGrid-item {
+    padding: 8px;
+  }
+}
+
+/* Improve navigation accessibility */
+@media (max-width: 768px) {
+  .MuiIconButton-root:focus {
+    outline: 2px solid #1976d2;
+    outline-offset: 2px;
+  }
+}
+
+/* Better handling of overflow on mobile */
+@media (max-width: 768px) {
+  .MuiBox-root {
+    overflow-x: hidden;
+  }
+} 

@@ -18,13 +18,15 @@ const Hero = () => {
     <Box
       id="home"
       sx={{
-        minHeight: "100vh",
+        minHeight: { xs: "calc(100vh - 64px)", sm: "100vh" }, // Account for navbar height on mobile
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         position: "relative",
         overflow: "hidden",
-        pt: 10,
+        pt: { xs: 4, sm: 6, md: 8 },
+        pb: { xs: 4, sm: 6 },
+        px: { xs: 1, sm: 2 }, // Add horizontal padding to prevent edge overflow
         bgcolor: theme.palette.background.default
       }}
     >
@@ -42,9 +44,9 @@ const Hero = () => {
         sx={{
           position: "absolute",
           top: "25%",
-          left: "25%",
-          width: 288,
-          height: 288,
+          left: { xs: "5%", sm: "25%" }, // Reduced left position on mobile
+          width: { xs: 150, sm: 288 }, // Smaller size on mobile
+          height: { xs: 150, sm: 288 },
           bgcolor: theme.palette.primary.main,
           opacity: theme.palette.mode === 'light' ? 0.10 : 0.2,
           borderRadius: "50%",
@@ -56,9 +58,9 @@ const Hero = () => {
         sx={{
           position: "absolute",
           bottom: "25%",
-          right: "25%",
-          width: 384,
-          height: 384,
+          right: { xs: "5%", sm: "25%" }, // Reduced right position on mobile
+          width: { xs: 180, sm: 384 }, // Smaller size on mobile
+          height: { xs: 180, sm: 384 },
           bgcolor: theme.palette.primary.main,
           opacity: theme.palette.mode === 'light' ? 0.06 : 0.1,
           borderRadius: "50%",
@@ -68,7 +70,16 @@ const Hero = () => {
         }}
       />
 
-      <Container maxWidth="md" sx={{ textAlign: "center", position: "relative", zIndex: 1 }}>
+      <Container 
+        maxWidth="md" 
+        sx={{ 
+          textAlign: "center", 
+          position: "relative", 
+          zIndex: 1,
+          px: { xs: 1, sm: 2 }, // Ensure container doesn't overflow
+          width: "100%"
+        }}
+      >
         {/* Badge */}
         <Paper
           elevation={3}
@@ -76,9 +87,9 @@ const Hero = () => {
             display: "inline-flex",
             alignItems: "center",
             gap: 1,
-            px: 4,
-            py: 2,
-            mb: 8,
+            px: { xs: 2, sm: 4 }, // Reduced padding on mobile
+            py: { xs: 1, sm: 2 },
+            mb: { xs: 4, sm: 6, md: 8 }, // Reduced margin on mobile
             borderRadius: "999px",
             ...getGlassStyles(theme),
             boxShadow: theme.custom.shadows.elegant
@@ -91,7 +102,7 @@ const Hero = () => {
             sx={{ 
               color: theme.palette.text.primary,
               fontFamily: '"Inter", "Plus Jakarta Sans", sans-serif',
-              fontSize: '0.875rem',
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
               letterSpacing: '0.025em'
             }}
           >
@@ -103,16 +114,17 @@ const Hero = () => {
         <Typography
           component="h1"
           sx={{
-            fontSize: { xs: '2.5rem', sm: '3.25rem', md: '4rem', lg: '4.5rem' },
+            fontSize: { xs: '1.75rem', sm: '2.5rem', md: '3.5rem', lg: '4rem' }, // Reduced font size on mobile
             fontWeight: 800,
-            lineHeight: { xs: 1.1, md: 1.05 },
+            lineHeight: { xs: 1.2, md: 1.05 },
             letterSpacing: { xs: '-0.02em', md: '-0.03em' },
             color: theme.palette.text.primary,
-            mb: 4,
+            mb: { xs: 2, sm: 3, md: 4 }, // Reduced margin on mobile
             fontFamily: '"Outfit", "Poppins", sans-serif',
             textAlign: 'center',
             maxWidth: '100%',
             mx: 'auto',
+            px: { xs: 0.5, sm: 0 } // Minimal padding on mobile
           }}
         >
           Discover{" "}
@@ -133,24 +145,30 @@ const Hero = () => {
         <Typography
           variant="h6"
           sx={{
-            mb: 8,
+            mb: { xs: 4, sm: 6, md: 8 }, // Reduced margin on mobile
             maxWidth: 700,
             mx: "auto",
-            lineHeight: { xs: 1.6, md: 1.7 },
+            lineHeight: { xs: 1.5, md: 1.7 },
             color: theme.palette.text.secondary,
-            fontSize: { xs: '1.125rem', sm: '1.25rem', md: '1.375rem' },
+            fontSize: { xs: '0.875rem', sm: '1rem', md: '1.25rem' }, // Smaller font on mobile
             fontWeight: 400,
             fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif',
             letterSpacing: '0.01em',
             textAlign: 'center',
-            px: { xs: 2, sm: 0 }
+            px: { xs: 1, sm: 0 } // Minimal padding on mobile
           }}
         >
           Stay inspired with articles exploring unique programming concepts and actionable knowledge. From understanding Zod enums to tracking npm package trends with NpmStars, and using free tools like Pic2Map and Geotag Photos Online — BasicUtils helps you learn, analyze, and create smarter.
         </Typography>
 
         {/* CTA Buttons */}
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={4} justifyContent="center" alignItems="center" sx={{ mb: 12 }}>
+        <Stack 
+          direction={{ xs: "column", sm: "row" }} 
+          spacing={{ xs: 2, sm: 4 }} 
+          justifyContent="center" 
+          alignItems="center" 
+          sx={{ mb: { xs: 6, sm: 8, md: 12 } }} // Reduced margin on mobile
+        >
           <Button
             variant="contained"
             size="large"
@@ -164,6 +182,8 @@ const Hero = () => {
             }
             sx={{
               ...commonStyles.gradientButton(theme),
+              width: { xs: '100%', sm: 'auto' },
+              minWidth: { xs: 'auto', sm: 200 },
               "&:hover .arrow-right-icon": {
                 transform: "translateX(4px)"
               }
@@ -177,6 +197,8 @@ const Hero = () => {
             startIcon={<Code2 style={{ width: 22, height: 22 }} />}
             sx={{
               ...commonStyles.glassButton(theme),
+              width: { xs: '100%', sm: 'auto' },
+              minWidth: { xs: 'auto', sm: 160 },
               // improve contrast in light mode
               color: theme.palette.mode === 'light' ? theme.palette.primary.dark : theme.palette.primary.main,
               borderColor: theme.palette.mode === 'light' ? `${theme.palette.primary.main}66` : theme.palette.primary.main,
@@ -192,6 +214,8 @@ const Hero = () => {
             startIcon={<Star style={{ width: 22, height: 22 }} />}
             sx={{
               ...commonStyles.glassButton(theme),
+              width: { xs: '100%', sm: 'auto' },
+              minWidth: { xs: 'auto', sm: 160 },
               color: theme.palette.warning.main,
               borderColor: theme.palette.warning.main,
               "&:hover": {
@@ -205,13 +229,13 @@ const Hero = () => {
         </Stack>
 
         {/* Stats */}
-        <Grid container spacing={8} justifyContent="center" sx={{ maxWidth: 900, mx: "auto" }}>
+        <Grid container spacing={{ xs: 2, sm: 4, md: 6 }} justifyContent="center" sx={{ maxWidth: 900, mx: "auto" }}>
           {stats.map((stat, index) => (
-            <Grid xs={12} md={4} key={stat.label}>
+            <Grid xs={12} sm={6} md={4} key={stat.label}>
               <Paper
                 elevation={2}
                 sx={{
-                  p: 6,
+                  p: { xs: 3, sm: 4, md: 6 }, // Reduced padding on mobile
                   borderRadius: "2rem",
                   ...getGlassStyles(theme),
                   textAlign: "center",
@@ -229,7 +253,7 @@ const Hero = () => {
                     color: theme.palette.primary.main, 
                     mb: 2,
                     fontFamily: '"Outfit", "Poppins", sans-serif',
-                    fontSize: { xs: '2rem', md: '2.5rem' }
+                    fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2.5rem' } // Smaller font on mobile
                   }}
                 >
                   {stat.number}
@@ -238,7 +262,7 @@ const Hero = () => {
                   sx={{ 
                     color: theme.palette.text.secondary,
                     fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif',
-                    fontSize: '1rem',
+                    fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1rem' }, // Smaller font on mobile
                     fontWeight: 500
                   }}
                 >

@@ -51,7 +51,11 @@ export default async function Page() {
         />
       )}
       
-      <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
+      <Box sx={{ 
+        minHeight: "100vh", 
+        bgcolor: "background.default",
+        overflow: "hidden" // Prevent horizontal scroll
+      }}>
         <DonateButton />
         <Box component="main">
           <Hero />

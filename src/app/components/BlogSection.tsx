@@ -74,15 +74,16 @@ const BlogSection = () => {
       id="blog"
       component="section"
       sx={{
-        py: 10,
+        py: { xs: 8, sm: 10 },
+        px: { xs: 2, sm: 3 },
         position: "relative",
         "&::before": {
           content: '""',
           position: "absolute",
           top: 0,
           left: "33%",
-          width: 288,
-          height: 288,
+          width: { xs: 200, sm: 288 },
+          height: { xs: 200, sm: 288 },
           bgcolor: `${theme.palette.primary.main}05`,
           borderRadius: "50%",
           filter: "blur(48px)",
@@ -93,16 +94,16 @@ const BlogSection = () => {
     >
       <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1 }}>
         {/* Section Header */}
-        <Box sx={{ textAlign: "center", mb: 8 }}>
+        <Box sx={{ textAlign: "center", mb: { xs: 6, sm: 8 } }}>
           <Paper
             elevation={0}
             sx={{
               display: "inline-flex",
               alignItems: "center",
               gap: 1,
-              px: 4,
-              py: 2,
-              mb: 3,
+              px: { xs: 3, sm: 4 },
+              py: { xs: 1.5, sm: 2 },
+              mb: { xs: 2, sm: 3 },
               borderRadius: "999px",
               ...getGlassStyles(theme),
             }}
@@ -110,12 +111,24 @@ const BlogSection = () => {
             <BookOpen
               style={{ width: 16, height: 16, color: theme.palette.primary.main }}
             />
-            <Typography variant="body2" fontWeight={500}>
+            <Typography 
+              variant="body2" 
+              fontWeight={500}
+              sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+            >
               Developer Blog
             </Typography>
           </Paper>
 
-          <Typography variant="h2" sx={{ ...typographyVariants.sectionTitle, mb: 2 }}>
+          <Typography 
+            variant="h2" 
+            sx={{ 
+              ...typographyVariants.sectionTitle, 
+              mb: { xs: 1.5, sm: 2 },
+              fontSize: { xs: '2rem', sm: '2.5rem', md: '3.5rem' },
+              px: { xs: 1, sm: 0 }
+            }}
+          >
             <Box component="span" sx={{ color: theme.palette.text.primary }}>
               Latest
             </Box>
@@ -131,6 +144,8 @@ const BlogSection = () => {
               color: theme.palette.text.secondary,
               maxWidth: 600,
               mx: "auto",
+              fontSize: { xs: '1rem', sm: '1.125rem' },
+              px: { xs: 2, sm: 0 }
             }}
           >
             Stay inspired with articles exploring unique programming concepts and
@@ -142,7 +157,7 @@ const BlogSection = () => {
         </Box>
 
         {/* Featured Post */}
-        <Box sx={{ mb: 6 }}>
+        <Box sx={{ mb: { xs: 4, sm: 6 } }}>
           <Card
             sx={{
               ...getGlassStyles(theme),
@@ -162,7 +177,7 @@ const BlogSection = () => {
                   alt={blogPosts[0].title}
                   sx={{
                     width: "100%",
-                    height: { xs: 256, md: "100%" },
+                    height: { xs: 200, sm: 256, md: "100%" },
                     objectFit: "cover",
                   }}
                 />
@@ -170,7 +185,7 @@ const BlogSection = () => {
               <Grid item xs={12} md={6}>
                 <Box
                   sx={{
-                    p: 4,
+                    p: { xs: 3, sm: 4 },
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "center",
@@ -185,6 +200,7 @@ const BlogSection = () => {
                         bgcolor: `${theme.palette.primary.main}20`,
                         color: theme.palette.primary.main,
                         borderColor: `${theme.palette.primary.main}30`,
+                        fontSize: { xs: '0.7rem', sm: '0.75rem' }
                       }}
                     />
                     {blogPosts[0].trending && (
@@ -196,6 +212,7 @@ const BlogSection = () => {
                           background: theme.custom.gradients.primary,
                           color: "white",
                           border: "none",
+                          fontSize: { xs: '0.7rem', sm: '0.75rem' }
                         }}
                       />
                     )}
@@ -211,6 +228,7 @@ const BlogSection = () => {
                       cursor: "pointer",
                       transition: "color 0.2s",
                       "&:hover": { color: theme.palette.primary.main },
+                      fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' }
                     }}
                   >
                     {blogPosts[0].title}
@@ -221,7 +239,8 @@ const BlogSection = () => {
                     sx={{
                       color: theme.palette.text.secondary,
                       mb: 3,
-                      fontSize: "1.125rem",
+                      fontSize: { xs: '1rem', sm: '1.125rem' },
+                      lineHeight: 1.6
                     }}
                   >
                     {blogPosts[0].excerpt}
@@ -230,16 +249,19 @@ const BlogSection = () => {
                   <Box
                     sx={{
                       display: "flex",
-                      alignItems: "center",
+                      flexDirection: { xs: "column", sm: "row" },
+                      alignItems: { xs: "flex-start", sm: "center" },
                       justifyContent: "space-between",
+                      gap: { xs: 2, sm: 0 }
                     }}
                   >
                     <Stack
                       direction="row"
-                      spacing={2}
+                      spacing={{ xs: 1, sm: 2 }}
                       sx={{
                         color: theme.palette.text.secondary,
-                        fontSize: "0.875rem",
+                        fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                        flexWrap: "wrap"
                       }}
                     >
                       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
@@ -276,9 +298,9 @@ const BlogSection = () => {
         </Box>
 
         {/* Blog Grid */}
-        <Grid container spacing={3} sx={{ mb: 6 }}>
+        <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: { xs: 4, sm: 6 } }}>
           {blogPosts.slice(1).map((post) => (
-            <Grid item xs={12} md={4} key={post.title}>
+            <Grid item xs={12} sm={6} lg={4} key={post.title}>
               <Card
                 sx={{
                   ...getGlassStyles(theme),
@@ -309,7 +331,7 @@ const BlogSection = () => {
                   />
                 </Box>
 
-                <CardHeader sx={{ pb: 2 }}>
+                <CardHeader sx={{ pb: 2, px: { xs: 2, sm: 3 } }}>
                   <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
                     <Chip
                       label={post.category}
@@ -318,6 +340,7 @@ const BlogSection = () => {
                         bgcolor: `${theme.palette.primary.main}20`,
                         color: theme.palette.primary.main,
                         borderColor: `${theme.palette.primary.main}30`,
+                        fontSize: { xs: '0.65rem', sm: '0.75rem' }
                       }}
                     />
                     {post.trending && (
@@ -329,6 +352,7 @@ const BlogSection = () => {
                           background: theme.custom.gradients.primary,
                           color: "white",
                           border: "none",
+                          fontSize: { xs: '0.65rem', sm: '0.75rem' }
                         }}
                       />
                     )}
@@ -344,6 +368,7 @@ const BlogSection = () => {
                       transition: "color 0.2s",
                       "&:hover": { color: theme.palette.primary.main },
                       mb: 1,
+                      fontSize: { xs: '1.125rem', sm: '1.25rem' }
                     }}
                   >
                     {post.title}
@@ -351,19 +376,26 @@ const BlogSection = () => {
 
                   <Typography
                     variant="body2"
-                    sx={{ color: theme.palette.text.secondary, mb: 2 }}
+                    sx={{ 
+                      color: theme.palette.text.secondary, 
+                      mb: 2,
+                      fontSize: { xs: '0.875rem', sm: '1rem' },
+                      lineHeight: 1.5
+                    }}
                   >
                     {post.excerpt}
                   </Typography>
                 </CardHeader>
 
-                <CardContent sx={{ pt: 0, mt: "auto" }}>
+                <CardContent sx={{ pt: 0, mt: "auto", px: { xs: 2, sm: 3 } }}>
                   <Box
                     sx={{
                       display: "flex",
-                      alignItems: "center",
+                      flexDirection: { xs: "column", sm: "row" },
+                      alignItems: { xs: "flex-start", sm: "center" },
                       justifyContent: "space-between",
                       mb: 2,
+                      gap: { xs: 1, sm: 0 }
                     }}
                   >
                     <Stack
@@ -371,7 +403,8 @@ const BlogSection = () => {
                       spacing={1}
                       sx={{
                         color: theme.palette.text.secondary,
-                        fontSize: "0.75rem",
+                        fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                        flexWrap: "wrap"
                       }}
                     >
                       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
@@ -413,9 +446,10 @@ const BlogSection = () => {
             endIcon={<ArrowRight style={{ width: 20, height: 20 }} />}
             sx={{
               ...commonStyles.gradientButton(theme),
-              px: 4,
-              py: 1.5,
+              px: { xs: 3, sm: 4 },
+              py: { xs: 1.25, sm: 1.5 },
               borderRadius: 2,
+              fontSize: { xs: '0.875rem', sm: '1rem' }
             }}
             href="/home"
           >

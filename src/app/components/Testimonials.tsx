@@ -67,14 +67,32 @@ const Testimonials = () => {
   };
 
   return (
-    <Box sx={{ py: { xs: 6, md: 8 }, bgcolor: theme.palette.background.default }}>
+    <Box sx={{ 
+      py: { xs: 6, sm: 8 }, 
+      px: { xs: 2, sm: 3 },
+      bgcolor: theme.palette.background.default 
+    }}>
       <Container maxWidth="lg">
-        <Grid container spacing={4}>
+        <Grid container spacing={{ xs: 4, sm: 6 }}>
           <Grid xs={12} md={5}>
-            <Typography variant="h3" component="h2" sx={{ fontWeight: "bold", mb: 2 }}>
+            <Typography 
+              variant="h3" 
+              component="h2" 
+              sx={{ 
+                fontWeight: "bold", 
+                mb: { xs: 1.5, sm: 2 },
+                fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' }
+              }}
+            >
               What Our Clients Say
             </Typography>
-            <Typography sx={{ color: theme.palette.text.secondary }}>
+            <Typography 
+              sx={{ 
+                color: theme.palette.text.secondary,
+                fontSize: { xs: '1rem', sm: '1.125rem' },
+                lineHeight: 1.6
+              }}
+            >
               Our clients are happy about our services and we love them back.
               Here are some of their views about our products.
             </Typography>
@@ -82,7 +100,12 @@ const Testimonials = () => {
           <Grid xs={12} md={7}>
             <Box sx={{ width: "100%", position: "relative" }}>
               {/* Carousel Container */}
-              <Box sx={{ position: "relative", overflow: "hidden", minHeight: 300 }}>
+              <Box sx={{ 
+                position: "relative", 
+                overflow: "hidden", 
+                minHeight: { xs: 250, sm: 300 },
+                borderRadius: 2
+              }}>
                 <Box
                   sx={{
                     display: "flex",
@@ -100,12 +123,12 @@ const Testimonials = () => {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        px: 2,
+                        px: { xs: 1, sm: 2 },
                       }}
                     >
                       <Paper
                         sx={{
-                          p: 4,
+                          p: { xs: 3, sm: 4 },
                           textAlign: "center",
                           ...getGlassStyles(theme),
                           width: "100%",
@@ -122,7 +145,7 @@ const Testimonials = () => {
                             lineHeight: 1, 
                             mb: -2, 
                             textAlign: 'left', 
-                            fontSize: 72,
+                            fontSize: { xs: 48, sm: 72 },
                             color: theme.palette.primary.main
                           }}
                         >
@@ -134,7 +157,7 @@ const Testimonials = () => {
                           sx={{ 
                             fontStyle: "italic", 
                             mb: 3,
-                            fontSize: "1.1rem",
+                            fontSize: { xs: '1rem', sm: '1.1rem' },
                             lineHeight: 1.6,
                             color: theme.palette.text.primary
                           }}
@@ -145,7 +168,10 @@ const Testimonials = () => {
                         <Typography 
                           variant="subtitle1" 
                           fontWeight="bold"
-                          sx={{ color: theme.palette.text.primary }}
+                          sx={{ 
+                            color: theme.palette.text.primary,
+                            fontSize: { xs: '1rem', sm: '1.125rem' }
+                          }}
                         >
                           {testimonial.name}
                         </Typography>
@@ -153,7 +179,8 @@ const Testimonials = () => {
                           variant="body2" 
                           sx={{ 
                             color: theme.palette.text.secondary,
-                            mt: 0.5
+                            mt: 0.5,
+                            fontSize: { xs: '0.875rem', sm: '1rem' }
                           }}
                         >
                           {testimonial.position}
@@ -169,12 +196,14 @@ const Testimonials = () => {
                 onClick={prevTestimonial}
                 sx={{
                   position: "absolute",
-                  left: -20,
+                  left: { xs: -10, sm: -20 },
                   top: "50%",
                   transform: "translateY(-50%)",
                   bgcolor: theme.palette.background.paper,
                   border: `1px solid ${theme.palette.mode === 'light' ? theme.palette.divider : theme.custom.glass.border}`,
                   zIndex: 2,
+                  width: { xs: 40, sm: 48 },
+                  height: { xs: 40, sm: 48 },
                   "&:hover": {
                     bgcolor: theme.palette.primary.main,
                     color: "white",
@@ -188,12 +217,14 @@ const Testimonials = () => {
                 onClick={nextTestimonial}
                 sx={{
                   position: "absolute",
-                  right: -20,
+                  right: { xs: -10, sm: -20 },
                   top: "50%",
                   transform: "translateY(-50%)",
                   bgcolor: theme.palette.background.paper,
                   border: `1px solid ${theme.palette.mode === 'light' ? theme.palette.divider : theme.custom.glass.border}`,
                   zIndex: 2,
+                  width: { xs: 40, sm: 48 },
+                  height: { xs: 40, sm: 48 },
                   "&:hover": {
                     bgcolor: theme.palette.primary.main,
                     color: "white",
@@ -204,14 +235,19 @@ const Testimonials = () => {
               </IconButton>
 
               {/* Dots Indicator */}
-              <Box sx={{ display: "flex", justifyContent: "center", mt: 3, gap: 1 }}>
+              <Box sx={{ 
+                display: "flex", 
+                justifyContent: "center", 
+                mt: { xs: 2, sm: 3 }, 
+                gap: 1 
+              }}>
                 {testimonialData.map((_, index) => (
                   <Box
                     key={index}
                     onClick={() => setCurrentIndex(index)}
                     sx={{
-                      width: 8,
-                      height: 8,
+                      width: { xs: 6, sm: 8 },
+                      height: { xs: 6, sm: 8 },
                       borderRadius: "50%",
                       bgcolor: index === currentIndex ? theme.palette.primary.main : theme.palette.grey[400],
                       cursor: "pointer",

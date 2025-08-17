@@ -56,7 +56,8 @@ const ToolsSection = () => {
     <Box
       id="tools"
       sx={{
-        py: { xs: 10, md: 10 },
+        py: { xs: 8, sm: 10, md: 10 },
+        px: { xs: 2, sm: 3 },
         position: "relative",
         bgcolor: "transparent"
       }}
@@ -68,8 +69,8 @@ const ToolsSection = () => {
           position: "absolute",
           top: "50%",
           left: 0,
-          width: 256,
-          height: 256,
+          width: { xs: 200, sm: 256 },
+          height: { xs: 200, sm: 256 },
           bgcolor: theme.palette.primary.main,
           opacity: theme.palette.mode === 'light' ? 0.04 : 0.05,
           borderRadius: "50%",
@@ -82,8 +83,8 @@ const ToolsSection = () => {
           position: "absolute",
           bottom: 0,
           right: 0,
-          width: 384,
-          height: 384,
+          width: { xs: 250, sm: 384 },
+          height: { xs: 250, sm: 384 },
           bgcolor: theme.palette.primary.main,
           opacity: theme.palette.mode === 'light' ? 0.04 : 0.05,
           borderRadius: "50%",
@@ -95,7 +96,7 @@ const ToolsSection = () => {
       <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1 }}>
         {/* Section Header */}
         <Box
-          sx={{ textAlign: "center", marginBottom: "4rem" }}
+          sx={{ textAlign: "center", marginBottom: { xs: "3rem", sm: "4rem" } }}
         >
           <Paper
             elevation={0}
@@ -103,9 +104,9 @@ const ToolsSection = () => {
               display: "inline-flex",
               alignItems: "center",
               gap: 1,
-              px: 4,
-              py: 2,
-              mb: 3,
+              px: { xs: 3, sm: 4 },
+              py: { xs: 1.5, sm: 2 },
+              mb: { xs: 2, sm: 3 },
               borderRadius: "999px",
               ...getGlassStyles(theme),
               boxShadow: getShadow(theme, 'elegant')
@@ -115,7 +116,10 @@ const ToolsSection = () => {
             <Typography
               variant="body2"
               fontWeight={500}
-              sx={{ color: theme.palette.text.primary }}
+              sx={{ 
+                color: theme.palette.text.primary,
+                fontSize: { xs: '0.75rem', sm: '0.875rem' }
+              }}
             >
               Development Tools
             </Typography>
@@ -125,7 +129,9 @@ const ToolsSection = () => {
             variant="h2"
             sx={{
               ...typographyVariants.sectionTitle,
-              mb: 2,
+              mb: { xs: 1.5, sm: 2 },
+              fontSize: { xs: '2rem', sm: '2.5rem', md: '3.5rem' },
+              px: { xs: 1, sm: 0 }
             }}
           >
             <Box
@@ -154,7 +160,9 @@ const ToolsSection = () => {
               color: theme.palette.text.secondary,
               maxWidth: 600,
               mx: "auto",
-              mb: 2
+              mb: 2,
+              fontSize: { xs: '1rem', sm: '1.125rem' },
+              px: { xs: 2, sm: 0 }
             }}
           >
             Boost your productivity with our collection of carefully crafted online tools designed for modern developers.
@@ -162,9 +170,9 @@ const ToolsSection = () => {
         </Box>
 
         {/* Tools Grid */}
-        <Grid container spacing={6} justifyContent="center">
+        <Grid container spacing={{ xs: 3, sm: 4, md: 6 }} justifyContent="center">
           {tools.map((tool) => (
-            <Grid xs={12} sm={6} md={4} key={tool.title}>
+            <Grid xs={12} sm={6} lg={4} key={tool.title}>
               <Paper
                 elevation={2}
                 sx={{
@@ -185,7 +193,7 @@ const ToolsSection = () => {
               >
                 <Box
                   sx={{
-                    p: 3,
+                    p: { xs: 2.5, sm: 3 },
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
@@ -194,7 +202,7 @@ const ToolsSection = () => {
                 >
                   <Box
                     sx={{
-                      p: 1.5,
+                      p: { xs: 1.25, sm: 1.5 },
                       background: theme.custom.gradients.primary,
                       borderRadius: "0.75rem",
                       display: "flex",
@@ -216,11 +224,12 @@ const ToolsSection = () => {
                         bgcolor: `${theme.palette.primary.main}20`,
                         color: theme.palette.primary.main,
                         borderColor: `${theme.palette.primary.main}30`,
+                        fontSize: { xs: '0.7rem', sm: '0.75rem' }
                       }}
                     />
                   )}
                 </Box>
-                <Box sx={{ px: 3, pb: 2 }}>
+                <Box sx={{ px: { xs: 2.5, sm: 3 }, pb: 2 }}>
                   <Typography
                     variant="h6"
                     sx={{
@@ -228,7 +237,7 @@ const ToolsSection = () => {
                       color: theme.palette.text.primary,
                       transition: "color 0.2s",
                       "&:hover": { color: theme.palette.mode === 'light' ? theme.palette.primary.dark : theme.palette.primary.main },
-                      fontSize: "1.25rem",
+                      fontSize: { xs: '1.125rem', sm: '1.25rem' },
                       mb: 1,
                     }}
                   >
@@ -237,8 +246,9 @@ const ToolsSection = () => {
                   <Typography
                     sx={{
                       color: theme.palette.text.secondary,
-                      fontSize: "1rem",
+                      fontSize: { xs: '0.875rem', sm: '1rem' },
                       mb: 2,
+                      lineHeight: 1.5
                     }}
                   >
                     {tool.description}
@@ -246,15 +256,18 @@ const ToolsSection = () => {
                 </Box>
                 <Box
                   sx={{
-                    px: 3,
-                    pb: 3,
+                    px: { xs: 2.5, sm: 3 },
+                    pb: { xs: 2.5, sm: 3 },
                     mt: "auto",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
                   }}
                 >
-                  <span style={{ fontSize: "0.95rem", color: theme.palette.text.secondary }}>
+                  <span style={{ 
+                    fontSize: { xs: "0.8rem", sm: "0.95rem" }, 
+                    color: theme.palette.text.secondary 
+                  }}>
                     {tool.category}
                   </span>
                 </Box>

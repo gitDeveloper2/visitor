@@ -11,15 +11,16 @@ const AboutUs = () => {
     <Box
       sx={{
         textAlign: 'center',
-        py: { xs: 6, md: 8 },
+        py: { xs: 6, sm: 8 },
+        px: { xs: 2, sm: 3 },
         position: "relative",
         "&::before": {
           content: '""',
           position: "absolute",
           top: "50%",
           left: "50%",
-          width: 256,
-          height: 256,
+          width: { xs: 200, sm: 256 },
+          height: { xs: 200, sm: 256 },
           bgcolor: theme.palette.primary.main,
           opacity: 0.05,
           borderRadius: "50%",
@@ -33,7 +34,7 @@ const AboutUs = () => {
         <Paper
           elevation={0}
           sx={{
-            p: 4,
+            p: { xs: 3, sm: 4 },
             borderRadius: 3,
             ...getGlassStyles(theme),
             border: `1px solid ${theme.custom.glass.border}`,
@@ -44,7 +45,8 @@ const AboutUs = () => {
             component="h2"
             sx={{
               fontWeight: 700,
-              mb: 3,
+              mb: { xs: 2, sm: 3 },
+              fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
               ...commonStyles.textGradient(theme),
             }}
           >
@@ -57,7 +59,9 @@ const AboutUs = () => {
               maxWidth: 600,
               mx: "auto",
               lineHeight: 1.6,
-              mb: 2
+              mb: { xs: 1.5, sm: 2 },
+              fontSize: { xs: '1rem', sm: '1.125rem' },
+              px: { xs: 1, sm: 0 }
             }}
           >
             We are passionate about programming and committed to sharing knowledge
@@ -71,6 +75,8 @@ const AboutUs = () => {
               maxWidth: 500,
               mx: "auto",
               lineHeight: 1.6,
+              fontSize: { xs: '0.875rem', sm: '1rem' },
+              px: { xs: 1, sm: 0 }
             }}
           >
             Our platform serves thousands of developers worldwide, providing them with 
