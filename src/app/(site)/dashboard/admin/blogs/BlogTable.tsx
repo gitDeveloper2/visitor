@@ -32,7 +32,8 @@ interface BlogPost {
   createdAt: string;
   updatedAt: string;
   isFounderStory?: boolean;
-  tags?: string[];
+  category?: string;
+  subcategories?: string[];
   content?: string;
 }
 
@@ -155,30 +156,44 @@ export default function BlogTable() {
       ),
     },
     {
-      field: "tags",
-      headerName: "Tags",
+      field: "category",
+      headerName: "Category",
       flex: 1,
-      minWidth: 200,
+      minWidth: 150,
       renderCell: (params) => (
-        <Stack direction="row" spacing={0.5} flexWrap="wrap">
-          {(params.value || []).slice(0, 3).map((tag: string, index: number) => (
-            <Chip
-              key={index}
-              label={tag}
-              size="small"
-              variant="outlined"
-              sx={{ fontSize: '0.7rem', height: 20 }}
-            />
-          ))}
-          {(params.value || []).length > 3 && (
-            <Chip
-              label={`+${(params.value || []).length - 3}`}
-              size="small"
-              variant="outlined"
-              sx={{ fontSize: '0.7rem', height: 20 }}
-            />
+        <Box>
+          {/* Main Category */}
+          <Chip
+            label={params.row.category || 'Uncategorized'}
+            color="primary"
+            variant="filled"
+            size="small"
+            sx={{ mb: 0.5 }}
+          />
+          {/* Subcategories */}
+          {params.row.subcategories && params.row.subcategories.length > 0 && (
+            <Stack direction="row" spacing={0.5} flexWrap="wrap">
+              {params.row.subcategories.slice(0, 3).map((subcat: string, index: number) => (
+                <Chip
+                  key={index}
+                  label={subcat}
+                  size="small"
+                  variant="outlined"
+                  color="secondary"
+                  sx={{ fontSize: '0.7rem', height: 20 }}
+                />
+              ))}
+              {params.row.subcategories.length > 3 && (
+                <Chip
+                  label={`+${params.row.subcategories.length - 3}`}
+                  size="small"
+                  variant="outlined"
+                  sx={{ fontSize: '0.7rem', height: 20 }}
+                />
+              )}
+            </Stack>
           )}
-        </Stack>
+        </Box>
       ),
     },
     {

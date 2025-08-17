@@ -10,7 +10,8 @@ const transformBlogDocument = (doc: any) => ({
   _id: doc._id.toString(),
   title: doc.title || '',
   content: doc.content || '',
-  tags: doc.tags || [],
+  category: doc.category || 'Technology',
+  subcategories: doc.subcategories || [],
   authorId: doc.authorId || '',
   authorName: doc.authorName || '',
   authorEmail: doc.authorEmail || '',
@@ -27,7 +28,6 @@ const transformBlogDocument = (doc: any) => ({
   views: doc.views || 0,
   likes: doc.likes || 0,
   slug: doc.slug || '',
-  category: doc.category || 'Technology',
   imageUrl: doc.imageUrl || '',
   imagePublicId: doc.imagePublicId || '',
 });
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     const status = url.searchParams.get('status');
     const limit = parseInt(url.searchParams.get('limit') || '50');
     const page = parseInt(url.searchParams.get('page') || '1');
-    const tag = url.searchParams.get('tag');
+    const subcategory = url.searchParams.get('subcategory');
     const category = url.searchParams.get('category');
     const approved = url.searchParams.get('approved');
     const founderStories = url.searchParams.get('founderStories');
@@ -52,9 +52,9 @@ export async function GET(request: NextRequest) {
     filter.status = 'approved';
     
     if (status) filter.status = status;
-    if (tag) {
-      // Use $in operator to find blogs that contain the specific tag in their tags array
-      filter.tags = { $in: [tag] };
+    if (subcategory) {
+      // Use $in operator to find blogs that contain the specific subcategory in their subcategories array
+      filter.subcategories = { $in: [subcategory] };
     }
     if (category) filter.category = category;
     if (founderStories === 'true') filter.isFounderStory = true;

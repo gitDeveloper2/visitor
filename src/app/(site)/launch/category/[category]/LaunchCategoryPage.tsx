@@ -19,7 +19,7 @@ import { useTheme } from '@mui/material/styles';
 import { Search, AppWindow, DollarSign } from 'lucide-react';
 import Link from 'next/link';
 import { getShadow, getGlassStyles, typographyVariants, commonStyles } from '@/utils/themeUtils';
-import { appTags } from '@/utils/categories';
+import { fetchCategoryNames } from '@/utils/categories';
 
 interface App {
   _id: string;
@@ -37,6 +37,7 @@ interface App {
   likes?: number;
   slug: string;
   category?: string;
+  subcategories?: string[];
   imageUrl?: string;
 }
 
@@ -63,10 +64,11 @@ export default function LaunchCategoryPage({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTag, setSelectedTag] = useState(tag || '');
+
   const [currentPage, setCurrentPage] = useState(page);
   const [totalPages, setTotalPages] = useState(Math.ceil(initialTotalApps / 12));
   const [totalApps, setTotalApps] = useState(initialTotalApps);
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
 
   // Filter apps based on search query
   const filteredApps = apps.filter(app => {
@@ -79,7 +81,8 @@ export default function LaunchCategoryPage({
       app.authorName?.toLowerCase().includes(query) ||
       app.author?.toLowerCase().includes(query) ||
       (app.tags && app.tags.some(tag => tag.toLowerCase().includes(query))) ||
-      (app.techStack && app.techStack.some(tech => tech.toLowerCase().includes(query)))
+      (app.techStack && app.techStack.some(tech => tech.toLowerCase().includes(query))) ||
+      (app.subcategories && app.subcategories.some(subcat => subcat.toLowerCase().includes(query)))
     );
   });
 
@@ -88,9 +91,25 @@ export default function LaunchCategoryPage({
     setCurrentPage(1);
   }, [searchQuery]);
 
-  // Fetch additional data when filter or page changes (not on initial load)
+  // Fetch available categories for filtering
   useEffect(() => {
-    if (selectedTag === tag && currentPage === page && apps.length === initialApps.length) {
+    const loadCategories = async () => {
+      try {
+        const categories = await fetchCategoryNames('app');
+        setAvailableCategories(categories);
+      } catch (error) {
+        console.error('Error loading categories:', error);
+        // Fallback to empty array
+        setAvailableCategories([]);
+      }
+    };
+    
+    loadCategories();
+  }, []);
+
+  // Fetch additional data when page changes (not on initial load)
+  useEffect(() => {
+    if (currentPage === page && apps.length === initialApps.length) {
       // Use initial data for default state
       setApps(initialApps);
       setTotalPages(Math.ceil(initialTotalApps / 12));
@@ -108,9 +127,7 @@ export default function LaunchCategoryPage({
         params.append('page', currentPage.toString());
         params.append('limit', '12');
         
-        if (selectedTag) {
-          params.append('tag', selectedTag);
-        }
+
 
         const res = await fetch(`/api/user-apps/public?${params.toString()}`);
         if (!res.ok) throw new Error('Failed to fetch apps');
@@ -127,27 +144,16 @@ export default function LaunchCategoryPage({
     }
 
     fetchApps();
-  }, [category, currentPage, selectedTag, tag, page, initialApps, initialTotalApps]);
+  }, [category, currentPage, page, initialApps, initialTotalApps]);
 
   const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
     setCurrentPage(value);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleTagClick = (tag: string) => {
-    const newTag = selectedTag === tag ? '' : tag;
-    setSelectedTag(newTag);
-    setCurrentPage(1);
-    
-    // Update URL
-    const url = new URL(window.location.href);
-    if (newTag) {
-      url.searchParams.set('tag', newTag);
-    } else {
-      url.searchParams.delete('tag');
-    }
-    url.searchParams.delete('page');
-    window.history.pushState({}, '', url.toString());
+  const handleCategoryClick = (categoryName: string) => {
+    // Navigate to the actual category page instead of filtering
+    window.location.href = `/launch/category/${categoryName.toLowerCase().replace(/\s+/g, '-')}`;
   };
 
   const renderAppCard = (app: App) => {
@@ -249,70 +255,106 @@ export default function LaunchCategoryPage({
           {app.description}
         </Typography>
 
-        {/* Tech Stack and Tags - Combined */}
-        {(app.techStack?.length > 0 || app.tags?.length > 0) && (
+        {/* Category and Additional Categories */}
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1, fontWeight: 600 }}>
+            Categories
+          </Typography>
+          <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+            {/* Main Category */}
+            {app.category && (
+              <Chip 
+                size="small" 
+                label={app.category} 
+                variant="filled"
+                sx={{
+                  fontWeight: 600,
+                  color: theme.palette.primary.contrastText,
+                  backgroundColor: theme.palette.primary.main,
+                  fontSize: "0.7rem",
+                }}
+              />
+            )}
+            
+                         {/* Additional Categories (Subcategories) */}
+             {app.subcategories && app.subcategories.length > 0 && app.subcategories.slice(0, 3).map((subcat, i) => (
+               <Chip 
+                 key={`subcat-${i}`} 
+                 size="small" 
+                 label={subcat} 
+                 variant="outlined"
+                 sx={{
+                   fontWeight: 500,
+                   color: theme.palette.text.primary,
+                   borderColor: theme.palette.divider,
+                   backgroundColor: theme.palette.background.paper,
+                   fontSize: "0.7rem",
+                   "&:hover": {
+                     backgroundColor: theme.palette.action.hover,
+                     borderColor: theme.palette.primary.main,
+                   },
+                 }}
+               />
+             ))}
+             
+             {/* Show total count if there are more subcategories */}
+             {app.subcategories && app.subcategories.length > 3 && (
+               <Chip 
+                 size="small" 
+                 label={`+${app.subcategories.length - 3}`} 
+                 variant="outlined"
+                 sx={{
+                   fontWeight: 500,
+                   color: theme.palette.text.secondary,
+                   borderColor: theme.palette.divider,
+                   backgroundColor: theme.palette.background.paper,
+                   fontSize: "0.7rem",
+                 }}
+               />
+             )}
+          </Box>
+        </Box>
+
+        {/* Tech Stack - Show separately if exists */}
+        {app.techStack?.length > 0 && (
           <Box sx={{ mb: 3 }}>
             <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1, fontWeight: 600 }}>
-              Technologies & Tags
+              Technologies
             </Typography>
             <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-              {/* Show tech stack first (max 2) */}
-              {app.techStack?.slice(0, 2).map((tech, i) => (
-                <Chip 
-                  key={`tech-${i}`} 
-                  size="small" 
-                  label={tech} 
-                  variant="outlined"
-                  sx={{
-                    fontWeight: 600,
-                    color: theme.palette.primary.main,
-                    borderColor: theme.palette.primary.main,
-                    backgroundColor: theme.palette.primary.light + '10',
-                    fontSize: "0.7rem",
-                    "&:hover": {
-                      backgroundColor: theme.palette.primary.main,
-                      color: theme.palette.primary.contrastText,
-                    },
-                  }}
-                />
-              ))}
-              
-              {/* Show tags (max 2) */}
-              {app.tags?.slice(0, 2).map((tag, i) => (
-                <Chip 
-                  key={`tag-${i}`} 
-                  size="small" 
-                  label={tag} 
-                  variant="outlined"
-                  sx={{
-                    fontWeight: 500,
-                    color: theme.palette.text.primary,
-                    borderColor: theme.palette.divider,
-                    backgroundColor: theme.palette.background.paper,
-                    fontSize: "0.7rem",
-                    "&:hover": {
-                      backgroundColor: theme.palette.action.hover,
-                      borderColor: theme.palette.primary.main,
-                    },
-                  }}
-                />
-              ))}
-              
-              {/* Show total count if there are more items */}
-              {((app.techStack?.length || 0) + (app.tags?.length || 0)) > 4 && (
-                <Chip 
-                  size="small" 
-                  label={`+${((app.techStack?.length || 0) + (app.tags?.length || 0)) - 4}`} 
-                  variant="outlined"
-                  sx={{
-                    fontWeight: 500,
-                    color: theme.palette.text.secondary,
-                    borderColor: theme.palette.divider,
-                    backgroundColor: theme.palette.background.paper,
-                    fontSize: "0.7rem",
-                  }}
-                />
-              )}
+                           {app.techStack && app.techStack.length > 0 && app.techStack.slice(0, 3).map((tech, i) => (
+               <Chip 
+                 key={`tech-${i}`} 
+                 size="small" 
+                 label={tech} 
+                 variant="outlined"
+                 sx={{
+                   fontWeight: 600,
+                   color: theme.palette.secondary.main,
+                   borderColor: theme.palette.secondary.main,
+                   backgroundColor: theme.palette.secondary.light + '10',
+                   fontSize: "0.7rem",
+                   "&:hover": {
+                     backgroundColor: theme.palette.secondary.main,
+                     color: theme.palette.secondary.contrastText,
+                   },
+                 }}
+               />
+             ))}
+             {app.techStack && app.techStack.length > 3 && (
+               <Chip 
+                 size="small" 
+                 label={`+${app.techStack.length - 3}`} 
+                 variant="outlined"
+                 sx={{
+                   fontWeight: 500,
+                   color: theme.palette.text.secondary,
+                   borderColor: theme.palette.divider,
+                   backgroundColor: theme.palette.background.paper,
+                   fontSize: "0.7rem",
+                 }}
+               />
+             )}
             </Box>
           </Box>
         )}
@@ -464,7 +506,7 @@ export default function LaunchCategoryPage({
         <TextField
           fullWidth
           size="medium"
-          placeholder="Search apps, tags, or authors..."
+                     placeholder="Search apps, tags, or authors..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           InputProps={{
@@ -482,19 +524,30 @@ export default function LaunchCategoryPage({
           }}
         />
         
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
-          {appTags.map((tag) => (
-            <Chip
-              key={tag}
-              label={tag}
-              onClick={() => handleTagClick(tag)}
-              color={selectedTag === tag ? "primary" : "default"}
-              variant={selectedTag === tag ? "filled" : "outlined"}
-              size="small"
-              sx={{ fontWeight: 500, cursor: "pointer" }}
-            />
-          ))}
-        </Box>
+                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
+           <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 600, alignSelf: 'center' }}>
+             Browse other categories:
+           </Typography>
+           {availableCategories.map((categoryName) => (
+             <Chip
+               key={categoryName}
+               label={categoryName}
+               onClick={() => handleCategoryClick(categoryName)}
+               color="default"
+               variant="outlined"
+               size="small"
+               sx={{ 
+                 fontWeight: 500, 
+                 cursor: "pointer",
+                 "&:hover": {
+                   backgroundColor: theme.palette.primary.main,
+                   color: theme.palette.primary.contrastText,
+                   borderColor: theme.palette.primary.main,
+                 }
+               }}
+             />
+           ))}
+         </Box>
       </Paper>
 
       {/* Featured Apps */}
@@ -579,12 +632,12 @@ export default function LaunchCategoryPage({
               <Typography variant="h6" color="text.secondary">
                 No apps found
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                {searchQuery || selectedTag 
-                  ? "Try adjusting your search or filter criteria."
-                  : `No apps found in ${category} category.`
-                }
-              </Typography>
+                             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                 {searchQuery 
+                   ? "Try adjusting your search criteria."
+                   : `No apps found in ${category} category.`
+                 }
+               </Typography>
             </Box>
           )}
         </>

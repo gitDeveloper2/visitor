@@ -33,15 +33,44 @@ import { Star, BadgeCheck, DollarSign, UploadCloud, Github, Globe, User, Code } 
 import { useTheme } from "@mui/material/styles";
 import { useSearchParams } from 'next/navigation';
 import Link from "next/link";
-import { appTags, fetchCategoryNames } from "@/utils/categories";
+import { getSubcategorySuggestions, fetchCategoryNames } from "@/utils/categories";
 import { getGlassStyles, getShadow, typographyVariants, commonStyles } from "@/utils/themeUtils";
 
 function SubmitAppPageContent() {
   const theme = useTheme();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [newFeature, setNewFeature] = useState("");
+  const [newTech, setNewTech] = useState("");
+  const [selectedPremiumPlan, setSelectedPremiumPlan] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingAppId, setEditingAppId] = useState<string | null>(null);
+  const hasLoadedDataRef = useRef(false);
+
+  const [form, setForm] = useState({
+    name: "",
+    tagline: "",
+    description: "",
+    fullDescription: "",
+    subcategories: [] as string[],
+    website: "",
+    github: "",
+    category: "",
+    techStack: [] as string[],
+    pricing: "Free",
+    features: [] as string[],
+    isInternal: false,
+    authorName: "",
+    authorEmail: "",
+    authorBio: "",
+  });
+
   const [categories, setCategories] = useState<string[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [subcategories, setSubcategories] = useState<string[]>([]);
 
   // Fetch categories from API on component mount
   useEffect(() => {
@@ -63,34 +92,20 @@ function SubmitAppPageContent() {
 
     loadCategories();
   }, []);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
-  const [newFeature, setNewFeature] = useState("");
-  const [newTag, setNewTag] = useState("");
-  const [newTech, setNewTech] = useState("");
-  const [selectedPremiumPlan, setSelectedPremiumPlan] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingAppId, setEditingAppId] = useState<string | null>(null);
-  const hasLoadedDataRef = useRef(false);
 
-  const [form, setForm] = useState({
-    name: "",
-    tagline: "",
-    description: "",
-    fullDescription: "",
-    tags: [] as string[],
-    website: "",
-    github: "",
-    category: "",
-    techStack: [] as string[],
-    pricing: "Free",
-    features: [] as string[],
-    isInternal: false,
-    authorName: "",
-    authorEmail: "",
-    authorBio: "",
-  });
+  // Fetch subcategories when category changes
+  useEffect(() => {
+    const loadSubcategories = async () => {
+      // For subcategories, we show all available categories (excluding the main selected category)
+      // This allows users to select multiple categories for their app
+      if (categories.length > 0) {
+        const availableSubcategories = categories.filter(cat => cat !== form.category);
+        setSubcategories(availableSubcategories);
+      }
+    };
+
+    loadSubcategories();
+  }, [form.category, categories]);
 
   // Load draft data to restore form
   const loadDraftData = useCallback(async (draftId: string) => {
@@ -107,7 +122,7 @@ function SubmitAppPageContent() {
           tagline: draftData.tagline || "",
           description: draftData.description || "",
           fullDescription: draftData.fullDescription || "",
-          tags: draftData.tags || [],
+          subcategories: draftData.subcategories || [],
           website: draftData.website || "",
           github: draftData.github || "",
           category: draftData.category || "",
@@ -149,7 +164,7 @@ function SubmitAppPageContent() {
           tagline: appData.tagline || "",
           description: appData.description || "",
           fullDescription: appData.fullDescription || "",
-          tags: appData.tags || [],
+          subcategories: appData.subcategories || [],
           website: appData.website || "",
           github: appData.github || "",
           category: appData.category || "",
@@ -270,23 +285,7 @@ function SubmitAppPageContent() {
     }
   };
 
-  // Tag management functions
-  const addTag = () => {
-    if (newTag.trim() && !form.tags.includes(newTag.trim())) {
-      setForm(prev => ({
-        ...prev,
-        tags: [...prev.tags, newTag.trim()]
-      }));
-      setNewTag("");
-    }
-  };
 
-  const removeTag = (index: number) => {
-    setForm(prev => ({
-      ...prev,
-      tags: prev.tags.filter((_, i) => i !== index)
-    }));
-  };
 
   // Tech stack management functions
   const addTech = () => {
@@ -306,16 +305,16 @@ function SubmitAppPageContent() {
     }));
   };
 
-  const handleTagToggle = (tag: string) => {
-    if (form.tags.includes(tag)) {
+  const handleSubcategoryToggle = (subcategory: string) => {
+    if (form.subcategories.includes(subcategory)) {
       setForm(prev => ({
         ...prev,
-        tags: prev.tags.filter(t => t !== tag)
+        subcategories: prev.subcategories.filter(s => s !== subcategory)
       }));
     } else {
       setForm(prev => ({
         ...prev,
-        tags: [...prev.tags, tag]
+        subcategories: [...prev.subcategories, subcategory]
       }));
     }
   };
@@ -328,7 +327,7 @@ function SubmitAppPageContent() {
         tagline: form.tagline,
         description: form.description,
         fullDescription: form.fullDescription,
-        tags: form.tags,
+        subcategories: form.subcategories,
         website: form.website,
         github: form.github,
         category: form.category,
@@ -451,7 +450,7 @@ function SubmitAppPageContent() {
           tagline: form.tagline,
           description: form.description,
           fullDescription: form.fullDescription,
-          tags: form.tags,
+          subcategories: form.subcategories,
           website: form.website,
           github: form.github,
           category: form.category,
@@ -514,7 +513,7 @@ function SubmitAppPageContent() {
             tagline: "",
             description: "",
             fullDescription: "",
-            tags: [],
+            subcategories: [],
             website: "",
             github: "",
             category: "",
@@ -714,38 +713,66 @@ function SubmitAppPageContent() {
 
               <Grid item xs={12}>
                 <Typography variant="subtitle1" fontWeight={600} mb={2} color="text.secondary">
-                  Tags
+                  Additional Categories (Optional - Select multiple categories)
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                  <TextField
-                    label="Add a tag"
-                    fullWidth
-                    placeholder="e.g. React, Mobile, Productivity, AI, SaaS"
-                    value={newTag}
-                    onChange={(e) => setNewTag(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && addTag()}
-                    helperText="Press Enter or click Add to add a tag"
-                  />
-                  <Button
-                    variant="outlined"
-                    onClick={addTag}
-                    disabled={!newTag.trim()}
-                    sx={{ minWidth: 100 }}
-                  >
-                    Add
-                  </Button>
-                </Box>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  {form.tags.map((tag, index) => (
-                    <Chip
-                      key={index}
-                      label={tag}
-                      onDelete={() => removeTag(index)}
-                      color="primary"
-                      variant="outlined"
-                    />
-                  ))}
-                </Box>
+                {subcategories.length > 0 ? (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                    {subcategories.map((category) => (
+                      <Chip
+                        key={category}
+                        label={category}
+                        onClick={() => {
+                          const isSelected = form.subcategories.includes(category);
+                          if (isSelected) {
+                            setForm(prev => ({
+                              ...prev,
+                              subcategories: prev.subcategories.filter(s => s !== category)
+                            }));
+                          } else {
+                            setForm(prev => ({
+                              ...prev,
+                              subcategories: [...prev.subcategories, category]
+                            }));
+                          }
+                        }}
+                        color={form.subcategories.includes(category) ? "primary" : "default"}
+                        variant={form.subcategories.includes(category) ? "filled" : "outlined"}
+                        sx={{ cursor: 'pointer' }}
+                      />
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Select a main category first to see additional category options.
+                  </Typography>
+                )}
+                {form.subcategories.length > 0 && (
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Selected additional categories:
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {form.subcategories.map((category, index) => (
+                        <Chip
+                          key={index}
+                          label={category}
+                          onDelete={() => {
+                            setForm(prev => ({
+                              ...prev,
+                              subcategories: prev.subcategories.filter((_, i) => i !== index)
+                            }));
+                          }}
+                          color="primary"
+                          variant="outlined"
+                          size="small"
+                        />
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                  Additional categories help users discover your app. Select relevant categories that apply to your app (excluding the main category you already selected).
+                </Typography>
               </Grid>
 
               {/* Links and URLs */}
@@ -1231,7 +1258,7 @@ function SubmitAppPageContent() {
                           tagline: "",
                           description: "",
                           fullDescription: "",
-                          tags: [],
+                          subcategories: [],
                           website: "",
                           github: "",
                           category: "",

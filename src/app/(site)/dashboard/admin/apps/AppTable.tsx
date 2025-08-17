@@ -44,6 +44,9 @@ interface AppItem {
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
   updatedAt: string;
+  // Category fields
+  category?: string;
+  subcategories?: string[];
   // Verification fields
   verificationStatus?: 'pending' | 'verified' | 'failed' | 'not_required';
   verificationUrl?: string;
@@ -244,6 +247,46 @@ export default function AppTable() {
         }}>
           {params.row.description}
         </Typography>
+      ),
+    },
+    {
+      field: "category",
+      headerName: "Category",
+      width: 150,
+      renderCell: (params) => (
+        <Box>
+          {/* Main Category */}
+          <Chip
+            label={params.row.category || 'Uncategorized'}
+            color="primary"
+            variant="filled"
+            size="small"
+            sx={{ mb: 0.5 }}
+          />
+          {/* Subcategories */}
+          {params.row.subcategories && params.row.subcategories.length > 0 && (
+            <Stack direction="row" spacing={0.5} flexWrap="wrap">
+              {params.row.subcategories.slice(0, 2).map((subcat: string, index: number) => (
+                <Chip
+                  key={index}
+                  label={subcat}
+                  size="small"
+                  variant="outlined"
+                  color="secondary"
+                  sx={{ fontSize: '0.7rem', height: 20 }}
+                />
+              ))}
+              {params.row.subcategories.length > 2 && (
+                <Chip
+                  label={`+${params.row.subcategories.length - 2}`}
+                  size="small"
+                  variant="outlined"
+                  sx={{ fontSize: '0.7rem', height: 20 }}
+                />
+              )}
+            </Stack>
+          )}
+        </Box>
       ),
     },
     {

@@ -231,20 +231,58 @@ class CategoryService {
   }
 
   /**
+   * Get subcategories for a specific parent category
+   */
+  async getSubcategories(parentCategoryId: string): Promise<ICategory[]> {
+    try {
+      const { db } = await connectToDatabase();
+      
+      const subcategories = await db.collection('categories')
+        .find({ 
+          parentCategory: new ObjectId(parentCategoryId),
+          isActive: true 
+        })
+        .sort({ sortOrder: 1, name: 1 })
+        .toArray();
+
+      return serializeMongoObject(subcategories);
+    } catch (error) {
+      console.error('Error fetching subcategories:', error);
+      throw new Error('Failed to fetch subcategories');
+    }
+  }
+
+  /**
    * Get category hierarchy (parent categories with subcategories)
    */
   async getCategoryHierarchy(): Promise<ICategory[]> {
     try {
       const { db } = await connectToDatabase();
       
-      const categories = await db.collection('categories')
-        .find({ isActive: true })
+      // First, get all parent categories (those without parentCategory)
+      const parentCategories = await db.collection('categories')
+        .find({ 
+          isActive: true,
+          $or: [
+            { parentCategory: { $exists: false } },
+            { parentCategory: null }
+          ]
+        })
         .sort({ sortOrder: 1, name: 1 })
         .toArray();
 
-      // For now, return all active categories since we're not doing complex population
-      // In a real implementation, you might want to do additional queries for subcategories
-      return serializeMongoObject(categories);
+      // For each parent category, fetch its subcategories
+      const categoriesWithSubcategories = await Promise.all(
+        parentCategories.map(async (category) => {
+          const subcategories = await this.getSubcategories(category._id.toString());
+          return {
+            ...category,
+            subcategories
+          };
+        })
+      );
+
+      return serializeMongoObject(categoriesWithSubcategories);
     } catch (error) {
       console.error('Error fetching category hierarchy:', error);
       throw new Error('Failed to fetch category hierarchy');

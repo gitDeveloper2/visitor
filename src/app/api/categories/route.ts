@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') as 'app' | 'blog' | 'both' | undefined;
     const isActive = searchParams.get('isActive') !== 'false'; // Default to true
     const parentCategory = searchParams.get('parentCategory') || undefined;
+    const getSubcategories = searchParams.get('getSubcategories') === 'true';
 
     const filters = {
       type,
@@ -19,7 +20,15 @@ export async function GET(request: NextRequest) {
       parentCategory
     };
 
-    const categories = await categoryService.getCategories(filters);
+    let categories;
+    
+    if (getSubcategories && parentCategory) {
+      // Fetch subcategories for a specific parent category
+      categories = await categoryService.getSubcategories(parentCategory);
+    } else {
+      // Fetch regular categories
+      categories = await categoryService.getCategories(filters);
+    }
     
     return NextResponse.json({
       success: true,

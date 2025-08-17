@@ -35,26 +35,115 @@ const emergencyFallbackCategories = {
   both: ["Technology", "Productivity", "Development", "Design", "Marketing"]
 };
 
-// Tags remain static as they are different from categories
-export const blogTags = [
-  "React", "Vue", "Angular", "Node.js", "Python", "JavaScript", "TypeScript",
-  "Web Development", "Mobile Development", "UI/UX", "Design Systems",
-  "Startup", "Business", "Marketing", "SEO", "Analytics", "Productivity",
-  "AI", "Machine Learning", "Web3", "Blockchain", "Tutorial", "Guide",
-  "Case Study", "Interview", "Tools", "Resources"
-] as const;
+// Subcategory suggestions organized by main category
+export const subcategorySuggestions = {
+  // Technology & Development
+  "Technology": [
+    "React", "Vue", "Angular", "Node.js", "Python", "JavaScript", "TypeScript",
+    "Web Development", "Mobile Development", "UI/UX", "Design Systems",
+    "API", "Database", "Cloud", "AWS", "Azure", "Docker", "Kubernetes"
+  ],
+  
+  // Business & Marketing
+  "Business": [
+    "Startup", "SaaS", "B2B", "B2C", "Enterprise", "Freemium", "Paid", "Free",
+    "Marketing", "SEO", "Analytics", "Automation", "Collaboration"
+  ],
+  
+  // Content & Education
+  "Education": [
+    "Tutorial", "Guide", "Course", "Workshop", "Documentation", "Best Practices",
+    "Case Study", "Interview", "Review", "News", "Opinion"
+  ],
+  
+  // Creative & Design
+  "Design": [
+    "UI/UX", "Graphic Design", "Web Design", "Mobile Design", "Branding",
+    "Typography", "Color Theory", "Layout", "Prototyping"
+  ],
+  
+  // Emerging Technologies
+  "AI": [
+    "Machine Learning", "Deep Learning", "Natural Language Processing",
+    "Computer Vision", "ChatGPT", "Generative AI", "Neural Networks"
+  ],
+  
+  // Finance & Productivity
+  "Finance": [
+    "Personal Finance", "Investment", "Cryptocurrency", "Blockchain", "Web3",
+    "Fintech", "Banking", "Insurance"
+  ],
+  
+  // Health & Wellness
+  "Health": [
+    "Fitness", "Mental Health", "Nutrition", "Medical", "Wellness",
+    "Healthcare", "Telemedicine", "Wearables"
+  ],
+  
+  // Entertainment & Media
+  "Entertainment": [
+    "Gaming", "Music", "Video", "Streaming", "Social Media", "Content Creation",
+    "Podcasting", "Blogging"
+  ]
+};
 
-export const appTags = [
-  "React", "Vue", "Angular", "Node.js", "Python", "JavaScript", "TypeScript",
-  "Mobile", "Desktop", "Web App", "API", "Database", "Cloud", "AWS", "Azure",
-  "Free", "Freemium", "Paid", "Open Source", "SaaS", "B2B", "B2C", "AI",
-  "Analytics", "Automation", "Collaboration", "Communication", "Design",
-  "Development", "Education", "Entertainment", "Finance", "Health",
-  "Marketing", "Productivity", "Security", "Social Media"
-] as const;
+// Helper function to get subcategory suggestions for a main category
+export const getSubcategorySuggestions = async (mainCategory: string): Promise<string[]> => {
+  try {
+    // Try to find the category ID first
+    const categories = await fetchCategoriesFromAPI();
+    const category = categories.find(cat => cat.name === mainCategory);
+    
+    if (category && category._id) {
+      // Fetch subcategories from the database
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/api/categories?getSubcategories=true&parentCategory=${category._id}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data) {
+          return data.data.map((subcat: any) => subcat.name);
+        }
+      }
+    }
+    
+    // Fallback to hardcoded suggestions if database fetch fails
+    return subcategorySuggestions[mainCategory as keyof typeof subcategorySuggestions] || [];
+  } catch (error) {
+    console.error('Error fetching subcategories from database:', error);
+    // Fallback to hardcoded suggestions
+    return subcategorySuggestions[mainCategory as keyof typeof subcategorySuggestions] || [];
+  }
+};
 
-export type BlogTag = typeof blogTags[number];
-export type AppTag = typeof appTags[number];
+// Helper function to get all available subcategories from database
+export const getAllSubcategoriesFromDB = async (): Promise<string[]> => {
+  try {
+    const categories = await fetchCategoriesFromAPI();
+    const allSubcategories: string[] = [];
+    
+    // Fetch subcategories for each category
+    for (const category of categories) {
+      if (category._id) {
+        const baseUrl = getBaseUrl();
+        const response = await fetch(`${baseUrl}/api/categories?getSubcategories=true&parentCategory=${category._id}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data) {
+            allSubcategories.push(...data.data.map((subcat: any) => subcat.name));
+          }
+        }
+      }
+    }
+    
+    return [...new Set(allSubcategories)]; // Remove duplicates
+  } catch (error) {
+    console.error('Error fetching all subcategories from database:', error);
+    // Fallback to hardcoded suggestions
+    return Object.values(subcategorySuggestions).flat();
+  }
+};
 
 // Primary function to fetch categories from API
 export const fetchCategoriesFromAPI = async (type?: 'app' | 'blog' | 'both'): Promise<Category[]> => {

@@ -13,7 +13,8 @@ interface IApp {
   badges: string[];
   status: 'pending' | 'approved' | 'rejected';
   // App details
-  category?: string;
+  category: string; // Main category (required)
+  subcategories: string[]; // Optional subcategories (replaces tags)
   techStack?: string[];
   pricing?: string;
   website?: string;
@@ -22,7 +23,6 @@ interface IApp {
   // Features and media
   features?: string[];
   gallery?: string[];
-  tags?: string[];
   // Stats
   stats?: {
     likes: number;
@@ -66,7 +66,8 @@ const appSchema = new Schema<IAppDocument>(
     badges: { type: [String], default: [] },
     status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
     // App details
-    category: { type: String },
+    category: { type: String, required: true },
+    subcategories: { type: [String], default: [] },
     techStack: { type: [String], default: [] },
     pricing: { type: String },
     website: { type: String },
@@ -75,7 +76,6 @@ const appSchema = new Schema<IAppDocument>(
     // Features and media
     features: { type: [String], default: [] },
     gallery: { type: [String], default: [] },
-    tags: { type: [String], default: [] },
     // Stats
     stats: {
       likes: { type: Number, default: 0 },

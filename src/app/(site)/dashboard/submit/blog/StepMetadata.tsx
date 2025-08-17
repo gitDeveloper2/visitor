@@ -19,7 +19,7 @@ import {
   Paper,
 } from "@mui/material";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
-import { blogTags, type BlogCategory, type BlogTag, fetchCategoryNames } from "../../../../../utils/categories";
+import { getSubcategorySuggestions, type BlogCategory, fetchCategoryNames } from "../../../../../utils/categories";
 import { compressImage, validateImage, type CompressedImage } from "../../../../../utils/imageCompression";
 
 export type FounderDomainStatus = "unknown" | "checking" | "ok" | "taken" | "invalid";
@@ -34,7 +34,7 @@ export interface BlogMetadata {
   author: string;
   role: string;
   category: BlogCategory | "";
-  tags: string[];
+  subcategories: string[];
   authorBio: string;
   content: string;
   isFounderStory?: boolean;
@@ -61,6 +61,7 @@ export default function StepMetadata({ formData, setFormData }: StepMetadataProp
   const [imageError, setImageError] = useState<string | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [subcategories, setSubcategories] = useState<string[]>([]);
 
   // Fetch categories from API on component mount
   useEffect(() => {
@@ -82,6 +83,20 @@ export default function StepMetadata({ formData, setFormData }: StepMetadataProp
 
     loadCategories();
   }, []);
+
+  // Fetch subcategories when category changes
+  useEffect(() => {
+    const loadSubcategories = async () => {
+      // For subcategories, we show all available categories (excluding the main selected category)
+      // This allows users to select multiple categories for their blog
+      if (categories.length > 0) {
+        const availableSubcategories = categories.filter(cat => cat !== formData.category);
+        setSubcategories(availableSubcategories);
+      }
+    };
+
+    loadSubcategories();
+  }, [formData.category, categories]);
   const [compressing, setCompressing] = useState(false);
 
   // Image upload handler
@@ -115,13 +130,13 @@ export default function StepMetadata({ formData, setFormData }: StepMetadataProp
     setImageError(null);
   };
 
-  // Tag selection handler
-  const handleTagToggle = (tag: BlogTag) => {
-    const currentTags = formData.tags || [];
-    const newTags = currentTags.includes(tag)
-      ? currentTags.filter(t => t !== tag)
-      : [...currentTags, tag];
-    setFormData({ tags: newTags });
+  // Subcategory selection handler
+  const handleSubcategoryToggle = (subcategory: string) => {
+    const currentSubcategories = formData.subcategories || [];
+    const newSubcategories = currentSubcategories.includes(subcategory)
+      ? currentSubcategories.filter(s => s !== subcategory)
+      : [...currentSubcategories, subcategory];
+    setFormData({ subcategories: newSubcategories });
   };
 
   // debounced domain check
@@ -203,25 +218,54 @@ export default function StepMetadata({ formData, setFormData }: StepMetadataProp
 
         <Grid item xs={12}>
           <Typography variant="subtitle2" gutterBottom>
-            Tags (Select multiple)
+            Additional Categories (Optional - Select multiple categories)
           </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-            {blogTags.map((tag) => (
-              <Chip
-                key={tag}
-                label={tag}
-                onClick={() => handleTagToggle(tag)}
-                color={formData.tags?.includes(tag) ? "primary" : "default"}
-                variant={formData.tags?.includes(tag) ? "filled" : "outlined"}
-                size="small"
-              />
-            ))}
-          </Box>
-          {formData.tags && formData.tags.length > 0 && (
-            <Typography variant="caption" color="text.secondary">
-              Selected: {formData.tags.join(', ')}
+          {subcategories.length > 0 ? (
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+              {subcategories.map((category) => (
+                <Chip
+                  key={category}
+                  label={category}
+                  onClick={() => handleSubcategoryToggle(category)}
+                  color={formData.subcategories?.includes(category) ? "primary" : "default"}
+                  variant={formData.subcategories?.includes(category) ? "filled" : "outlined"}
+                  size="small"
+                  sx={{ cursor: 'pointer' }}
+                />
+              ))}
+            </Box>
+          ) : (
+            <Typography variant="caption" color="text.secondary" sx={{ mb: 2 }}>
+              Select a main category first to see additional category options.
             </Typography>
           )}
+          {formData.subcategories && formData.subcategories.length > 0 && (
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Selected additional categories:
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {formData.subcategories.map((category, index) => (
+                  <Chip
+                    key={index}
+                    label={category}
+                    onDelete={() => {
+                      setFormData(prev => ({
+                        ...prev,
+                        subcategories: prev.subcategories?.filter((_, i) => i !== index) || []
+                      }));
+                    }}
+                    color="primary"
+                    variant="outlined"
+                    size="small"
+                  />
+                ))}
+              </Box>
+            </Box>
+          )}
+          <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+            Additional categories help users discover your content. Select relevant categories that apply to your blog (excluding the main category you already selected).
+          </Typography>
         </Grid>
         <Grid item xs={12}>
           <TextField fullWidth multiline minRows={3} maxRows={5} label="Author Bio" value={formData.authorBio} onChange={(e) => setFormData({ authorBio: e.target.value })} required />

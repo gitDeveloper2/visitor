@@ -300,15 +300,74 @@ export default function AppsMainPage({
           {app.description}
         </Typography>
 
-        {/* Tech Stack and Tags - Combined */}
-        {(app.techStack?.length > 0 || app.tags?.length > 0) && (
+        {/* Category and Additional Categories */}
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1, fontWeight: 600 }}>
+            Categories
+          </Typography>
+          <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+            {/* Main Category */}
+            {app.category && (
+              <Chip 
+                size="small" 
+                label={app.category} 
+                variant="filled"
+                sx={{
+                  fontWeight: 600,
+                  color: theme.palette.primary.contrastText,
+                  backgroundColor: theme.palette.primary.main,
+                  fontSize: "0.7rem",
+                }}
+              />
+            )}
+            
+            {/* Additional Categories (Subcategories) */}
+            {app.subcategories?.slice(0, 3).map((subcat, i) => (
+              <Chip 
+                key={`subcat-${i}`} 
+                size="small" 
+                label={subcat} 
+                variant="outlined"
+                sx={{
+                  fontWeight: 500,
+                  color: theme.palette.text.primary,
+                  borderColor: theme.palette.divider,
+                  backgroundColor: theme.palette.background.paper,
+                  fontSize: "0.7rem",
+                  "&:hover": {
+                    backgroundColor: theme.palette.action.hover,
+                    borderColor: theme.palette.primary.main,
+                  },
+                }}
+              />
+            ))}
+            
+            {/* Show total count if there are more subcategories */}
+            {app.subcategories && app.subcategories.length > 3 && (
+              <Chip 
+                size="small" 
+                label={`+${app.subcategories.length - 3}`} 
+                variant="outlined"
+                sx={{
+                  fontWeight: 500,
+                  color: theme.palette.text.secondary,
+                  borderColor: theme.palette.divider,
+                  backgroundColor: theme.palette.background.paper,
+                  fontSize: "0.7rem",
+                }}
+              />
+            )}
+          </Box>
+        </Box>
+
+        {/* Tech Stack - Show separately if exists */}
+        {app.techStack?.length > 0 && (
           <Box sx={{ mb: 3 }}>
             <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1, fontWeight: 600 }}>
-              Technologies & Tags
+              Technologies
             </Typography>
             <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-              {/* Show tech stack first (max 2) */}
-              {app.techStack?.slice(0, 2).map((tech, i) => (
+              {app.techStack?.slice(0, 3).map((tech, i) => (
                 <Chip 
                   key={`tech-${i}`} 
                   size="small" 
@@ -316,44 +375,21 @@ export default function AppsMainPage({
                   variant="outlined"
                   sx={{
                     fontWeight: 600,
-                    color: theme.palette.primary.main,
-                    borderColor: theme.palette.primary.main,
-                    backgroundColor: theme.palette.primary.light + '10',
+                    color: theme.palette.secondary.main,
+                    borderColor: theme.palette.secondary.main,
+                    backgroundColor: theme.palette.secondary.light + '10',
                     fontSize: "0.7rem",
                     "&:hover": {
-                      backgroundColor: theme.palette.primary.main,
-                      color: theme.palette.primary.contrastText,
+                      backgroundColor: theme.palette.secondary.main,
+                      color: theme.palette.secondary.contrastText,
                     },
                   }}
                 />
               ))}
-              
-              {/* Show tags (max 2) */}
-              {app.tags?.slice(0, 2).map((tag, i) => (
-                <Chip 
-                  key={`tag-${i}`} 
-                  size="small" 
-                  label={tag} 
-                  variant="outlined"
-                  sx={{
-                    fontWeight: 500,
-                    color: theme.palette.text.primary,
-                    borderColor: theme.palette.divider,
-                    backgroundColor: theme.palette.background.paper,
-                    fontSize: "0.7rem",
-                    "&:hover": {
-                      backgroundColor: theme.palette.action.hover,
-                      borderColor: theme.palette.primary.main,
-                    },
-                  }}
-                />
-              ))}
-              
-              {/* Show total count if there are more items */}
-              {((app.techStack?.length || 0) + (app.tags?.length || 0)) > 4 && (
+              {app.techStack && app.techStack.length > 3 && (
                 <Chip 
                   size="small" 
-                  label={`+${((app.techStack?.length || 0) + (app.tags?.length || 0)) - 4}`} 
+                  label={`+${app.techStack.length - 3}`} 
                   variant="outlined"
                   sx={{
                     fontWeight: 500,

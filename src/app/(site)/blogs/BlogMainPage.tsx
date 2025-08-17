@@ -55,6 +55,7 @@ interface BlogPost {
   likes?: number;
   slug?: string;
   category?: string;
+  subcategories?: string[];
   imageUrl?: string;
   imagePublicId?: string;
 }
@@ -128,29 +129,105 @@ function FeaturedBlogCard({ blog, isFounderStory = false }: FeaturedBlogCardProp
           {excerpt}
         </Typography>
 
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
-          {blog.tags.slice(0, 3).map((tag) => (
-            <Link key={tag} href={`/blogs/tag/${encodeURIComponent(tag)}`} style={{ textDecoration: 'none' }}>
-              <Chip
-                label={tag}
-                size="small"
-                variant="outlined"
-                sx={{
-                  fontWeight: 500,
-                  color: theme.palette.text.primary,
-                  borderColor: theme.palette.divider,
-                  backgroundColor: theme.palette.background.paper,
-                  cursor: 'pointer',
-                  "&:hover": {
-                    backgroundColor: theme.palette.action.hover,
-                    borderColor: theme.palette.primary.main,
-                    color: theme.palette.primary.main,
-                  },
-                }}
-              />
-            </Link>
-          ))}
-        </Box>
+                 {/* Categories and Subcategories */}
+         <Box sx={{ mb: 2 }}>
+           <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+             {/* Main Category */}
+             {blog.category && (
+               <Chip 
+                 size="small" 
+                 label={blog.category} 
+                 variant="filled"
+                 sx={{
+                   fontWeight: 600,
+                   color: theme.palette.primary.contrastText,
+                   backgroundColor: theme.palette.primary.main,
+                   fontSize: "0.7rem",
+                 }}
+               />
+             )}
+             
+             {/* Additional Categories (Subcategories) */}
+             {blog.subcategories?.slice(0, 2).map((subcat, i) => (
+               <Chip 
+                 key={`subcat-${i}`} 
+                 size="small" 
+                 label={subcat} 
+                 variant="outlined"
+                 sx={{
+                   fontWeight: 500,
+                   color: theme.palette.text.primary,
+                   borderColor: theme.palette.divider,
+                   backgroundColor: theme.palette.background.paper,
+                   fontSize: "0.7rem",
+                 }}
+               />
+             ))}
+             
+             {/* Show total count if there are more subcategories */}
+             {blog.subcategories && blog.subcategories.length > 2 && (
+               <Chip 
+                 size="small" 
+                 label={`+${blog.subcategories.length - 2}`} 
+                 variant="outlined"
+                 sx={{
+                   fontWeight: 500,
+                   color: theme.palette.text.secondary,
+                   borderColor: theme.palette.divider,
+                   backgroundColor: theme.palette.background.paper,
+                   fontSize: "0.7rem",
+                 }}
+               />
+             )}
+           </Box>
+         </Box>
+
+         {/* Tags - Show separately if exists */}
+         {blog.tags && blog.tags.length > 0 && (
+           <Box sx={{ mb: 2 }}>
+             <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1, fontWeight: 600 }}>
+               Tags
+             </Typography>
+             <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+               {blog.tags.slice(0, 3).map((tag, i) => (
+                 <Link key={`tag-${i}`} href={`/blogs/tag/${encodeURIComponent(tag)}`} style={{ textDecoration: 'none' }}>
+                   <Chip
+                     key={`tag-${i}`}
+                     label={tag}
+                     size="small"
+                     variant="outlined"
+                     sx={{
+                       fontWeight: 500,
+                       color: theme.palette.text.secondary,
+                       borderColor: theme.palette.divider,
+                       backgroundColor: theme.palette.background.paper,
+                       cursor: 'pointer',
+                       "&:hover": {
+                         backgroundColor: theme.palette.action.hover,
+                         borderColor: theme.palette.primary.main,
+                         color: theme.palette.primary.main,
+                       },
+                     }}
+                   />
+                 </Link>
+               ))}
+               {blog.tags.length > 3 && (
+                 <Chip 
+                   size="small" 
+                   label={`+${blog.tags.length - 3}`} 
+                   variant="outlined"
+                   sx={{
+                     fontWeight: 500,
+                     color: theme.palette.text.secondary,
+                     borderColor: theme.palette.divider,
+                     backgroundColor: theme.palette.background.paper,
+                     fontSize: "0.7rem",
+                   }}
+                 />
+               )}
+             </Box>
+           </Box>
+         )}
 
         <Box
           sx={{
@@ -410,7 +487,103 @@ export default function BlogMainPage({
           {excerpt}
         </Typography>
 
-        {renderTags(blog.tags)}
+        {/* Categories and Subcategories */}
+        <Box sx={{ mb: 2 }}>
+          <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+            {/* Main Category */}
+            {blog.category && (
+              <Chip 
+                size="small" 
+                label={blog.category} 
+                variant="filled"
+                sx={{
+                  fontWeight: 600,
+                  color: theme.palette.primary.contrastText,
+                  backgroundColor: theme.palette.primary.main,
+                  fontSize: "0.7rem",
+                }}
+              />
+            )}
+            
+            {/* Additional Categories (Subcategories) */}
+            {blog.subcategories?.slice(0, 2).map((subcat, i) => (
+              <Chip 
+                key={`subcat-${i}`} 
+                size="small" 
+                label={subcat} 
+                variant="outlined"
+                sx={{
+                  fontWeight: 500,
+                  color: theme.palette.text.primary,
+                  borderColor: theme.palette.divider,
+                  backgroundColor: theme.palette.background.paper,
+                  fontSize: "0.7rem",
+                  "&:hover": {
+                    backgroundColor: theme.palette.action.hover,
+                    borderColor: theme.palette.primary.main,
+                  },
+                }}
+              />
+            ))}
+            
+            {/* Show total count if there are more subcategories */}
+            {blog.subcategories && blog.subcategories.length > 2 && (
+              <Chip 
+                size="small" 
+                label={`+${blog.subcategories.length - 2}`} 
+                variant="outlined"
+                sx={{
+                  fontWeight: 500,
+                  color: theme.palette.text.secondary,
+                  borderColor: theme.palette.divider,
+                  backgroundColor: theme.palette.background.paper,
+                  fontSize: "0.7rem",
+                }}
+              />
+            )}
+          </Box>
+        </Box>
+
+        {/* Tags - Show separately if exists */}
+        {blog.tags && blog.tags.length > 0 && (
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1, fontWeight: 600 }}>
+              Tags
+            </Typography>
+            <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+              {blog.tags.slice(0, 3).map((tag, i) => (
+                <Chip 
+                  key={`tag-${i}`} 
+                  size="small" 
+                  label={tag} 
+                  variant="outlined"
+                  sx={{
+                    fontWeight: 500,
+                    color: theme.palette.text.secondary,
+                    borderColor: theme.palette.divider,
+                    backgroundColor: theme.palette.background.paper,
+                    fontSize: "0.7rem",
+                  }}
+                />
+              ))}
+              {blog.tags.length > 3 && (
+                <Chip 
+                  size="small" 
+                  label={`+${blog.tags.length - 3}`} 
+                  variant="outlined"
+                  sx={{
+                    fontWeight: 500,
+                    color: theme.palette.text.secondary,
+                    borderColor: theme.palette.divider,
+                    backgroundColor: theme.palette.background.paper,
+                    fontSize: "0.7rem",
+                  }}
+                />
+              )}
+            </Box>
+          </Box>
+        )}
+
         {renderMetaInfo(
           new Date(blog.createdAt).toLocaleDateString(),
           `${readTime} min read`,

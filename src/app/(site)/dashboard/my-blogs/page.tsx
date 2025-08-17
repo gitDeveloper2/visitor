@@ -362,11 +362,98 @@ export default function ManageBlogsPage() {
                             {blog.content?.replace(/<[^>]*>/g, '').slice(0, 150)}...
                           </Typography>
 
-                          <Stack direction="row" spacing={1} mb={2} flexWrap="wrap">
-                            {(blog.tags || []).map((tag: string, i: number) => (
-                              <Chip key={i} size="small" label={tag} variant="filled" />
-                            ))}
-                          </Stack>
+                          {/* Categories and Subcategories */}
+                          <Box sx={{ mb: 2 }}>
+                            <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                              {/* Main Category */}
+                              {blog.category && (
+                                <Chip 
+                                  size="small" 
+                                  label={blog.category} 
+                                  variant="filled"
+                                  sx={{
+                                    fontWeight: 600,
+                                    color: theme.palette.primary.contrastText,
+                                    backgroundColor: theme.palette.primary.main,
+                                    fontSize: "0.7rem",
+                                  }}
+                                />
+                              )}
+                              
+                              {/* Additional Categories (Subcategories) */}
+                              {blog.subcategories?.slice(0, 2).map((subcat, i) => (
+                                <Chip 
+                                  key={`subcat-${i}`} 
+                                  size="small" 
+                                  label={subcat} 
+                                  variant="outlined"
+                                  sx={{
+                                    fontWeight: 500,
+                                    color: theme.palette.text.primary,
+                                    borderColor: theme.palette.divider,
+                                    backgroundColor: theme.palette.background.paper,
+                                    fontSize: "0.7rem",
+                                  }}
+                                />
+                              ))}
+                              
+                              {/* Show total count if there are more subcategories */}
+                              {blog.subcategories && blog.subcategories.length > 2 && (
+                                <Chip 
+                                  size="small" 
+                                  label={`+${blog.subcategories.length - 2}`} 
+                                  variant="outlined"
+                                  sx={{
+                                    fontWeight: 500,
+                                    color: theme.palette.text.secondary,
+                                    borderColor: theme.palette.divider,
+                                    backgroundColor: theme.palette.background.paper,
+                                    fontSize: "0.7rem",
+                                  }}
+                                />
+                              )}
+                            </Box>
+                          </Box>
+
+                          {/* Tags - Show separately if exists */}
+                          {blog.tags && blog.tags.length > 0 && (
+                            <Box sx={{ mb: 2 }}>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1, fontWeight: 600 }}>
+                                Tags
+                              </Typography>
+                              <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                                {blog.tags.slice(0, 3).map((tag, i) => (
+                                  <Chip 
+                                    key={`tag-${i}`} 
+                                    size="small" 
+                                    label={tag} 
+                                    variant="outlined"
+                                    sx={{
+                                      fontWeight: 500,
+                                      color: theme.palette.text.secondary,
+                                      borderColor: theme.palette.divider,
+                                      backgroundColor: theme.palette.background.paper,
+                                      fontSize: "0.7rem",
+                                    }}
+                                  />
+                                ))}
+                                {blog.tags.length > 3 && (
+                                  <Chip 
+                                    size="small" 
+                                    label={`+${blog.tags.length - 3}`} 
+                                    variant="outlined"
+                                    sx={{
+                                      fontWeight: 500,
+                                      color: theme.palette.text.secondary,
+                                      borderColor: theme.palette.divider,
+                                      backgroundColor: theme.palette.background.paper,
+                                      fontSize: "0.7rem",
+                                    }}
+                                  />
+                                )}
+                              </Box>
+                            </Box>
+                          )}
 
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, color: 'text.secondary', fontSize: '0.75rem' }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>

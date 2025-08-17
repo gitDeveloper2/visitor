@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     const { 
       name, 
       description, 
-      tags, 
+      subcategories, 
       isInternal,
       // Additional fields for better app data
       website,
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     }
     
     // Ensure arrays are properly formatted (no more comma-separated string handling)
-    const processedTags = Array.isArray(tags) ? tags : [];
+    const processedSubcategories = Array.isArray(subcategories) ? subcategories : [];
     const processedTechStack = Array.isArray(techStack) ? techStack : [];
     const processedFeatures = Array.isArray(features) ? features : [];
     
@@ -83,7 +83,7 @@ export async function POST(request: Request) {
       description,
       tagline: tagline || description.slice(0, 100), // Use description as fallback
       fullDescription: fullDescription || description, // Use description as fallback
-      tags: processedTags,
+      subcategories: processedSubcategories,
       authorId: session.user.id,
       authorName: session.user.name,
       authorEmail: session.user.email,
@@ -190,7 +190,8 @@ export async function GET(request: Request) {
     const authorId = url.searchParams.get('authorId');
     const limit = parseInt(url.searchParams.get('limit') || '50');
     const page = parseInt(url.searchParams.get('page') || '1');
-    const tag = url.searchParams.get('tag');
+    const category = url.searchParams.get('category');
+    const subcategory = url.searchParams.get('subcategory');
     const approved = url.searchParams.get('approved');
     const featured = url.searchParams.get('featured');
     const pricing = url.searchParams.get('pricing');
@@ -203,7 +204,8 @@ export async function GET(request: Request) {
       authorId,
       limit,
       page,
-      tag,
+      category,
+      subcategory,
       approved,
       featured,
       pricing,
@@ -219,7 +221,8 @@ export async function GET(request: Request) {
     
     if (status) filter.status = status;
     if (authorId) filter.authorId = authorId; // This will override the above, but should be the same user
-    if (tag) filter.tags = { $in: [tag] };
+    if (category) filter.category = category;
+    if (subcategory) filter.subcategories = { $in: [subcategory] };
     if (approved === 'true') filter.status = 'approved';
     if (verificationStatus) filter.verificationStatus = verificationStatus;
     if (requiresVerification === 'true') filter.requiresVerification = true;

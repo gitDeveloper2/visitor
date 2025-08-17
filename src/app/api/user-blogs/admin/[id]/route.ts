@@ -49,7 +49,7 @@ export async function PATCH(
     const { 
       title, 
       content, 
-      tags, 
+      subcategories, 
       isInternal,
       author,
       role,
@@ -84,7 +84,7 @@ export async function PATCH(
     const updateData = {
       title,
       content,
-      tags: tags || [],
+      subcategories: subcategories || [],
       isFounderStory: isFounderStory || false,
       isInternal: isInternal || isFounderStory || false,
       // Additional fields from form

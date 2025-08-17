@@ -27,7 +27,8 @@ export async function GET(request: Request) {
     const status = url.searchParams.get('status');
     const limit = parseInt(url.searchParams.get('limit') || '100');
     const page = parseInt(url.searchParams.get('page') || '1');
-    const tag = url.searchParams.get('tag');
+    const category = url.searchParams.get('category');
+    const subcategory = url.searchParams.get('subcategory');
     const verificationStatus = url.searchParams.get('verificationStatus');
     const pricing = url.searchParams.get('pricing');
 
@@ -35,7 +36,8 @@ export async function GET(request: Request) {
     
     // Admin can see ALL apps, no user filtering
     if (status) filter.status = status;
-    if (tag) filter.tags = { $in: [tag] };
+    if (category) filter.category = category;
+    if (subcategory) filter.subcategories = { $in: [subcategory] };
     if (verificationStatus) filter.verificationStatus = verificationStatus;
     if (pricing) {
       if (pricing === 'Premium') {

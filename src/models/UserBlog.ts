@@ -4,7 +4,8 @@ interface IUserBlog {
   title: string;
   slug: string; // Added slug field
   content: string;
-  tags: string[];
+  category: string; // Main category (required)
+  subcategories: string[]; // Optional subcategories (replaces tags)
   authorId: string;
   authorName: string;
   authorEmail: string;
@@ -28,7 +29,8 @@ const userBlogSchema = new Schema<IUserBlogDocument>(
     title: { type: String, required: true },
     slug: { type: String, required: true, unique: true, index: true }, // Added slug with index
     content: { type: String, required: true },
-    tags: { type: [String], default: [] },
+    category: { type: String, required: true },
+    subcategories: { type: [String], default: [] },
     authorId: { type: String, required: true },
     authorName: { type: String, required: true },
     authorEmail: { type: String, required: true },

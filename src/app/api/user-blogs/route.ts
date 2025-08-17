@@ -18,7 +18,7 @@ export async function POST(request: Request) {
       title, 
       content, 
       category,
-      tags, 
+      subcategories, 
       isInternal,
       author, // from form
       role, // from form
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
       slug, // Add the generated slug
       content,
       category: category || 'Technology',
-      tags: tags || [],
+      subcategories: subcategories || [],
       authorId: session.user.id,
       authorName: session.user.name,
       authorEmail: session.user.email,
@@ -117,7 +117,8 @@ export async function GET(request: Request) {
     const authorId = url.searchParams.get('authorId');
     const limit = parseInt(url.searchParams.get('limit') || '50');
     const page = parseInt(url.searchParams.get('page') || '1');
-    const tag = url.searchParams.get('tag');
+    const category = url.searchParams.get('category');
+    const subcategory = url.searchParams.get('subcategory');
     const approved = url.searchParams.get('approved');
 
     const filter: any = {};
@@ -131,7 +132,8 @@ export async function GET(request: Request) {
     }
     
     if (status) filter.status = status;
-    if (tag) filter.tags = { $in: [tag] };
+    if (category) filter.category = category;
+    if (subcategory) filter.subcategories = { $in: [subcategory] };
     if (approved === 'true') filter.status = 'approved';
 
     const skip = (page - 1) * limit;

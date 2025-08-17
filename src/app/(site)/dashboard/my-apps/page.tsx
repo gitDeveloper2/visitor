@@ -67,6 +67,9 @@ interface AppItem {
   createdAt: string;
   updatedAt: string;
   slug?: string;
+  // Add category fields
+  category?: string;
+  subcategories?: string[];
   // Add premium fields
   isPremium?: boolean;
   premiumStatus?: string;
@@ -734,11 +737,98 @@ export default function ManageAppsPage() {
                           {app.description?.slice(0, 150)}...
               </Typography>
 
-                        <Stack direction="row" spacing={1} mb={2} flexWrap="wrap">
-                {(app.tags || []).map((tag: string, i: number) => (
-                            <Chip key={i} size="small" label={tag} variant="filled" />
-                ))}
-              </Stack>
+                        {/* Categories and Subcategories */}
+                        <Box sx={{ mb: 2 }}>
+                          <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                            {/* Main Category */}
+                            {app.category && (
+                              <Chip 
+                                size="small" 
+                                label={app.category} 
+                                variant="filled"
+                                sx={{
+                                  fontWeight: 600,
+                                  color: theme.palette.primary.contrastText,
+                                  backgroundColor: theme.palette.primary.main,
+                                  fontSize: "0.7rem",
+                                }}
+                              />
+                            )}
+                            
+                            {/* Additional Categories (Subcategories) */}
+                            {app.subcategories?.slice(0, 2).map((subcat, i) => (
+                              <Chip 
+                                key={`subcat-${i}`} 
+                                size="small" 
+                                label={subcat} 
+                                variant="outlined"
+                                sx={{
+                                  fontWeight: 500,
+                                  color: theme.palette.text.primary,
+                                  borderColor: theme.palette.divider,
+                                  backgroundColor: theme.palette.background.paper,
+                                  fontSize: "0.7rem",
+                                }}
+                              />
+                            ))}
+                            
+                            {/* Show total count if there are more subcategories */}
+                            {app.subcategories && app.subcategories.length > 2 && (
+                              <Chip 
+                                size="small" 
+                                label={`+${app.subcategories.length - 2}`} 
+                                variant="outlined"
+                                sx={{
+                                  fontWeight: 500,
+                                  color: theme.palette.text.secondary,
+                                  borderColor: theme.palette.divider,
+                                  backgroundColor: theme.palette.background.paper,
+                                  fontSize: "0.7rem",
+                                }}
+                              />
+                            )}
+                          </Box>
+                        </Box>
+
+                        {/* Tags - Show separately if exists */}
+                        {app.tags && app.tags.length > 0 && (
+                          <Box sx={{ mb: 2 }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1, fontWeight: 600 }}>
+                              Tags
+                            </Typography>
+                            <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                              {app.tags.slice(0, 3).map((tag, i) => (
+                                <Chip 
+                                  key={`tag-${i}`} 
+                                  size="small" 
+                                  label={tag} 
+                                  variant="outlined"
+                                  sx={{
+                                    fontWeight: 500,
+                                    color: theme.palette.text.secondary,
+                                    borderColor: theme.palette.divider,
+                                    backgroundColor: theme.palette.background.paper,
+                                    fontSize: "0.7rem",
+                                  }}
+                                />
+                              ))}
+                              {app.tags.length > 3 && (
+                                <Chip 
+                                  size="small" 
+                                  label={`+${app.tags.length - 3}`} 
+                                  variant="outlined"
+                                  sx={{
+                                    fontWeight: 500,
+                                    color: theme.palette.text.secondary,
+                                    borderColor: theme.palette.divider,
+                                    backgroundColor: theme.palette.background.paper,
+                                    fontSize: "0.7rem",
+                                  }}
+                                />
+                              )}
+                            </Box>
+                          </Box>
+                        )}
 
               {/* Premium Status */}
               {app.isPremium && (
