@@ -1,3 +1,5 @@
+// Force dynamic rendering to prevent build-time static generation issues
+export const dynamic = 'force-dynamic';
 
 import { ServerAuthGuard } from "@/components/auth/ServerAuthGuard";
 

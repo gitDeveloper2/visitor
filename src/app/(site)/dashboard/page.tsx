@@ -1,5 +1,8 @@
 "use client";
 
+// Force dynamic rendering to prevent build-time static generation issues
+export const dynamic = 'force-dynamic';
+
 import { Box, Container, Grid, Paper, Typography, Chip, Stack, Button } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { getGlassStyles, getShadow } from "../../../utils/themeUtils";

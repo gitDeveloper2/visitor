@@ -3,6 +3,9 @@ import dbConnect from '../../../lib/config/mongodb';
 import App from '../../../models/App';
 import { getServerSession } from "../../../lib/auth";
 
+// Force dynamic rendering to prevent build-time static generation issues
+export const dynamic = 'force-dynamic';
+
 async function isAdmin(session: any) {
   return session && session.user && session.user.role === 'admin';
 }

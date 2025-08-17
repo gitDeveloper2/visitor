@@ -1,5 +1,9 @@
-import { NextResponse } from 'next/server';
-import { connectToDatabase } from '@lib/mongodb';
+import { NextRequest, NextResponse } from 'next/server';
+import { connectToDatabase } from '@/lib/mongodb';
+import { serializeMongoObject } from '@/lib/utils/serialization';
+
+// Force dynamic rendering to prevent build-time static generation issues
+export const dynamic = 'force-dynamic';
 
 // Transform database document to BlogPost interface
 const transformBlogDocument = (doc: any) => ({
@@ -28,7 +32,7 @@ const transformBlogDocument = (doc: any) => ({
   imagePublicId: doc.imagePublicId || '',
 });
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const { db } = await connectToDatabase();
 

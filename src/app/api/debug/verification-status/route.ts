@@ -1,11 +1,14 @@
-import { NextResponse } from 'next/server';
-import { getSession } from '@/features/shared/utils/auth';
-import { connectToDatabase } from '@lib/mongodb';
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from '@/lib/auth';
+import { connectToDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 
-export async function GET(request: Request) {
+// Force dynamic rendering to prevent build-time static generation issues
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: NextRequest) {
   try {
-    const session = await getSession();
+    const session = await getServerSession();
     if (!session?.user) {
       return NextResponse.json({ message: 'Unauthenticated User' }, { status: 401 });
     }

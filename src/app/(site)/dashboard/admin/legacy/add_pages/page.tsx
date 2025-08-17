@@ -1,5 +1,8 @@
 "use client"; // Mark this file as a client component
 
+// Force dynamic rendering to prevent build-time static generation issues
+export const dynamic = 'force-dynamic';
+
 import { useState } from "react";
 import {
   Button,

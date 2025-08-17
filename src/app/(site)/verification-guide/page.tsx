@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -21,6 +21,13 @@ import {
   AccordionDetails,
   Stack,
   LinearProgress,
+  Button,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormHelperText
 } from '@mui/material';
 import {
   CheckCircle,
@@ -34,9 +41,15 @@ import {
   Schedule,
   Assignment,
   Error,
+  ContentCopy,
+  Download,
+  Preview
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { generateVerificationBadgeHtml } from '@/components/badges/VerificationBadge';
+
+// Force dynamic rendering to prevent build-time static generation issues
+export const dynamic = 'force-dynamic';
 
 export default function VerificationGuidePage() {
   const theme = useTheme();

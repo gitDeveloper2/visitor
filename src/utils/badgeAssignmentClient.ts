@@ -1,9 +1,20 @@
 // Client-safe badge assignment functions
 // These functions make API calls instead of direct database access
 
+import { isBuildTime, getBaseUrl } from '@/lib/config/environment';
+
 export async function assignBadgeTextToAppClient(appId: string): Promise<string> {
   try {
-    const response = await fetch(`/api/badge-assignment/text?appId=${encodeURIComponent(appId)}`);
+    // During build time, return fallback to prevent build failures
+    if (isBuildTime()) {
+      console.log('Build time detected, returning fallback badge text');
+      return 'Verified by BasicUtils';
+    }
+
+    const baseUrl = getBaseUrl();
+    const url = `${baseUrl}/api/badge-assignment/text?appId=${encodeURIComponent(appId)}`;
+    
+    const response = await fetch(url);
     const result = await response.json();
     
     if (result.success) {
@@ -20,7 +31,16 @@ export async function assignBadgeTextToAppClient(appId: string): Promise<string>
 
 export async function assignBadgeClassToAppClient(appId: string): Promise<string> {
   try {
-    const response = await fetch(`/api/badge-assignment/class?appId=${encodeURIComponent(appId)}`);
+    // During build time, return fallback to prevent build failures
+    if (isBuildTime()) {
+      console.log('Build time detected, returning fallback badge class');
+      return 'verified-badge';
+    }
+
+    const baseUrl = getBaseUrl();
+    const url = `${baseUrl}/api/badge-assignment/class?appId=${encodeURIComponent(appId)}`;
+    
+    const response = await fetch(url);
     const result = await response.json();
     
     if (result.success) {
@@ -37,7 +57,16 @@ export async function assignBadgeClassToAppClient(appId: string): Promise<string
 
 export async function getBadgeTextVariationsClient(appId: string, count: number = 3): Promise<string[]> {
   try {
-    const response = await fetch(`/api/badge-assignment/variations?appId=${encodeURIComponent(appId)}&count=${count}`);
+    // During build time, return fallback to prevent build failures
+    if (isBuildTime()) {
+      console.log('Build time detected, returning fallback badge text variations');
+      return ['Verified by BasicUtils'];
+    }
+
+    const baseUrl = getBaseUrl();
+    const url = `${baseUrl}/api/badge-assignment/variations?appId=${encodeURIComponent(appId)}&count=${count}`;
+    
+    const response = await fetch(url);
     const result = await response.json();
     
     if (result.success) {
@@ -54,7 +83,16 @@ export async function getBadgeTextVariationsClient(appId: string, count: number 
 
 export async function getBadgeClassVariationsClient(appId: string, count: number = 3): Promise<string[]> {
   try {
-    const response = await fetch(`/api/badge-assignment/class-variations?appId=${encodeURIComponent(appId)}&count=${count}`);
+    // During build time, return fallback to prevent build failures
+    if (isBuildTime()) {
+      console.log('Build time detected, returning fallback badge class variations');
+      return ['verified-badge'];
+    }
+
+    const baseUrl = getBaseUrl();
+    const url = `${baseUrl}/api/badge-assignment/class-variations?appId=${encodeURIComponent(appId)}&count=${count}`;
+    
+    const response = await fetch(url);
     const result = await response.json();
     
     if (result.success) {
@@ -71,7 +109,16 @@ export async function getBadgeClassVariationsClient(appId: string, count: number
 
 export async function getBadgeAssignmentInfoClient(appId: string) {
   try {
-    const response = await fetch(`/api/badge-assignment/info?appId=${encodeURIComponent(appId)}`);
+    // During build time, return fallback to prevent build failures
+    if (isBuildTime()) {
+      console.log('Build time detected, returning fallback badge assignment info');
+      return null;
+    }
+
+    const baseUrl = getBaseUrl();
+    const url = `${baseUrl}/api/badge-assignment/info?appId=${encodeURIComponent(appId)}`;
+    
+    const response = await fetch(url);
     const result = await response.json();
     
     if (result.success) {

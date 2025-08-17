@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession, isAdmin } from '@/lib/auth';
 import categoryService from '@/lib/services/categoryService';
 
+// Force dynamic rendering to prevent build-time static generation issues
+export const dynamic = 'force-dynamic';
+
 // GET /api/categories - Get all categories with optional filtering
 export async function GET(request: NextRequest) {
   try {

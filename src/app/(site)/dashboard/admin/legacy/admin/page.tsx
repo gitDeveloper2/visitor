@@ -1,5 +1,8 @@
 'use client';
 
+// Force dynamic rendering to prevent build-time static generation issues
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState } from 'react';
 import {
   Box,

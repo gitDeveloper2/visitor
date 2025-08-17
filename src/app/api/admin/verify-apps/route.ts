@@ -5,6 +5,9 @@ import { ObjectId } from 'mongodb';
 import { verifyAppBadge, verifyPendingApps } from '../../../../utils/verificationService';
 import { generateVerificationBadgeHtmlServer, generateAntiTrackingBadgesServer, generateSEOOptimizedBadgeServer } from '@/utils/badgeGenerationServer';
 
+// Force dynamic rendering to prevent build-time static generation issues
+export const dynamic = 'force-dynamic';
+
 // Enhanced URL validation function (same as user verification)
 function isPrivateHost(host: string): boolean {
   return (

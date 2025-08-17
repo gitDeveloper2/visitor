@@ -1,6 +1,8 @@
 // Categories utility - Fully API-driven to ensure consistency with database management
 // All categories are now fetched from the database via /api/categories
 
+import { isBuildTime, getBaseUrl } from '@/lib/config/environment';
+
 export interface Category {
   _id: string;
   name: string;
@@ -54,25 +56,24 @@ export const appTags = [
 export type BlogTag = typeof blogTags[number];
 export type AppTag = typeof appTags[number];
 
-// Helper function to get the base URL for API calls
-const getBaseUrl = () => {
-  // Check if we're on the server side
-  if (typeof window === 'undefined') {
-    // Server-side: always use localhost in development
-    if (process.env.NODE_ENV === 'development') {
-      return 'http://localhost:3000';
-    }
-    
-    // Production: use environment variable or default
-    return process.env.NEXT_PUBLIC_BASE_URL || 'https://basicutils.com';
-  }
-  // Client-side: use relative URL
-  return '';
-};
-
 // Primary function to fetch categories from API
 export const fetchCategoriesFromAPI = async (type?: 'app' | 'blog' | 'both'): Promise<Category[]> => {
   try {
+    // During build time, return fallback categories to prevent build failures
+    if (isBuildTime()) {
+      console.log('Build time detected, returning fallback categories');
+      return emergencyFallbackCategories[type || 'both'].map((name, index) => ({
+        _id: `fallback-${index}`,
+        name,
+        slug: name.toLowerCase().replace(/\s+/g, '-'),
+        type: type || 'both',
+        isActive: true,
+        sortOrder: index,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }));
+    }
+
     const baseUrl = getBaseUrl();
     const params = new URLSearchParams();
     if (type) {
@@ -108,7 +109,17 @@ export const fetchCategoriesFromAPI = async (type?: 'app' | 'blog' | 'both'): Pr
     }
   } catch (error) {
     console.error('Error fetching categories:', error);
-    throw error;
+    // Return emergency fallbacks in case of any error
+    return emergencyFallbackCategories[type || 'both'].map((name, index) => ({
+      _id: `fallback-${index}`,
+      name,
+      slug: name.toLowerCase().replace(/\s+/g, '-'),
+      type: type || 'both',
+      isActive: true,
+      sortOrder: index,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }));
   }
 };
 

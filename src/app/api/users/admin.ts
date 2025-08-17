@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import dbConnect, { User } from '../../../lib/config/mongodb';
 import { getServerSession } from "../../../lib/auth";
 
+// Force dynamic rendering to prevent build-time static generation issues
+export const dynamic = 'force-dynamic';
+
 async function isAdmin(session: any) {
   return session && session.user && session.user.role === 'admin';
 }

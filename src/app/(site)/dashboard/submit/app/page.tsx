@@ -1,5 +1,8 @@
 "use client";
 
+// Force dynamic rendering to prevent build-time static generation issues
+export const dynamic = 'force-dynamic';
+
 import React, { Suspense, useState, useCallback, useRef, useEffect } from "react";
 import {
   Box,
@@ -18,16 +21,20 @@ import {
   Chip,
   IconButton,
   Paper,
-  Card,
-  CardContent,
+
   Divider,
+  InputAdornment,
+
+  Stack,
+  CircularProgress,
 } from "@mui/material";
-import { Add as AddIcon, Delete as DeleteIcon, KeyboardArrowUp as UpIcon, KeyboardArrowDown as DownIcon, Check } from "@mui/icons-material";
-import { Star } from "lucide-react";
+import { Delete as DeleteIcon, KeyboardArrowUp as UpIcon, KeyboardArrowDown as DownIcon, Check } from "@mui/icons-material";
+import { Star, BadgeCheck, DollarSign, UploadCloud, Github, Globe, User, Code } from "lucide-react";
 import { useTheme } from "@mui/material/styles";
 import { useSearchParams } from 'next/navigation';
 import Link from "next/link";
 import { appTags, fetchCategoryNames } from "@/utils/categories";
+import { getGlassStyles, getShadow, typographyVariants, commonStyles } from "@/utils/themeUtils";
 
 function SubmitAppPageContent() {
   const theme = useTheme();
@@ -69,7 +76,9 @@ function SubmitAppPageContent() {
 
   const [form, setForm] = useState({
     name: "",
+    tagline: "",
     description: "",
+    fullDescription: "",
     tags: [] as string[],
     website: "",
     github: "",
@@ -78,6 +87,9 @@ function SubmitAppPageContent() {
     pricing: "Free",
     features: [] as string[],
     isInternal: false,
+    authorName: "",
+    authorEmail: "",
+    authorBio: "",
   });
 
   // Load draft data to restore form
@@ -92,7 +104,9 @@ function SubmitAppPageContent() {
         // Restore form with draft data
         const newFormData = {
           name: draftData.name || "",
+          tagline: draftData.tagline || "",
           description: draftData.description || "",
+          fullDescription: draftData.fullDescription || "",
           tags: draftData.tags || [],
           website: draftData.website || "",
           github: draftData.github || "",
@@ -101,6 +115,9 @@ function SubmitAppPageContent() {
           pricing: draftData.pricing || "Free",
           features: draftData.features || [],
           isInternal: draftData.isInternal || false,
+          authorName: draftData.authorName || "",
+          authorEmail: draftData.authorEmail || "",
+          authorBio: draftData.authorBio || "",
         };
         
         console.log('Setting form data:', newFormData);
@@ -129,7 +146,9 @@ function SubmitAppPageContent() {
         // Restore form with published app data
         const newFormData = {
           name: appData.name || "",
+          tagline: appData.tagline || "",
           description: appData.description || "",
+          fullDescription: appData.fullDescription || "",
           tags: appData.tags || [],
           website: appData.website || "",
           github: appData.github || "",
@@ -138,6 +157,9 @@ function SubmitAppPageContent() {
           pricing: appData.pricing || "Free",
           features: appData.features || [],
           isInternal: appData.isInternal || false,
+          authorName: appData.authorName || "",
+          authorEmail: appData.authorEmail || "",
+          authorBio: appData.authorBio || "",
         };
         
         console.log('Setting form data:', newFormData);
@@ -303,7 +325,9 @@ function SubmitAppPageContent() {
     try {
       const payload = {
         name: form.name,
+        tagline: form.tagline,
         description: form.description,
+        fullDescription: form.fullDescription,
         tags: form.tags,
         website: form.website,
         github: form.github,
@@ -312,6 +336,9 @@ function SubmitAppPageContent() {
         pricing: form.pricing,
         features: form.features,
         isInternal: form.isInternal,
+        authorName: form.authorName,
+        authorEmail: form.authorEmail,
+        authorBio: form.authorBio,
         premiumPlan: selectedPremiumPlan,
       };
 
@@ -421,7 +448,9 @@ function SubmitAppPageContent() {
         // Free app - submit directly or update existing
         const payload = {
           name: form.name,
+          tagline: form.tagline,
           description: form.description,
+          fullDescription: form.fullDescription,
           tags: form.tags,
           website: form.website,
           github: form.github,
@@ -430,6 +459,9 @@ function SubmitAppPageContent() {
           pricing: form.pricing,
           features: form.features,
           isInternal: form.isInternal,
+          authorName: form.authorName,
+          authorEmail: form.authorEmail,
+          authorBio: form.authorBio,
           premiumPlan: selectedPremiumPlan,
         };
 
@@ -478,8 +510,10 @@ function SubmitAppPageContent() {
         setSuccess(true);
         if (!isEditing) {
           setForm({ 
-            name: "", 
-            description: "", 
+            name: "",
+            tagline: "",
+            description: "",
+            fullDescription: "",
             tags: [],
             website: "",
             github: "",
@@ -487,7 +521,10 @@ function SubmitAppPageContent() {
             techStack: [],
             pricing: "Free",
             features: [],
-            isInternal: false
+            isInternal: false,
+            authorName: "",
+            authorEmail: "",
+            authorBio: "",
           });
           setSelectedPremiumPlan(null);
         }
@@ -507,37 +544,28 @@ function SubmitAppPageContent() {
 
   const reviewSteps = ["Initial Review", "Quality Check", "Publication"];
 
-  const pricingOptions = ["Free", "Freemium", "Paid", "Enterprise", "Contact Sales"];
+  const pricingOptions = ["Free", "Freemium", "One-time", "Subscription", "Enterprise"];
 
-  const premiumFeatures = [
-    'Verified badge and premium placement',
-    'Priority review process (24-48 hours)',
-    'Enhanced app analytics and insights',
-    'Featured in premium app showcase',
-    'Priority customer support',
-    'Marketing promotion opportunities',
-    'Lifetime premium status (no expiration)',
-  ];
 
-  const handlePremiumSelection = (plan: string | null) => {
-    setSelectedPremiumPlan(plan);
-  };
+
+
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom fontWeight={600}>
-          {isEditing ? 'Edit Your App' : 'Submit Your App'}
+    <Box component="main" sx={{ bgcolor: "background.default", py: 10 }}>
+      <Container maxWidth="lg">
+        {/* Page Title */}
+        <Typography variant="h2" sx={typographyVariants.sectionTitle} textAlign="center">
+          {isEditing ? 'Edit Your' : 'Submit Your'} <Box component="span" sx={commonStyles.textGradient}>App</Box>
         </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+        <Typography variant="h6" color="text.secondary" textAlign="center" mt={2} mb={6}>
           {isEditing 
             ? 'Update your app information and save your changes.'
-            : 'Share your amazing app with the developer community. We\'ll review it and publish it on our platform.'
+            : 'Share your innovation with thousands of tech enthusiasts and get the visibility you deserve.'
           }
         </Typography>
-        
+
         {/* Progress Steps */}
-        <Box sx={{ display: 'flex', gap: 2, mb: 4, flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', gap: 2, mb: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
           {reviewSteps.map((step, index) => (
             <Chip
               key={step}
@@ -545,456 +573,701 @@ function SubmitAppPageContent() {
               variant={index === 0 ? "filled" : "outlined"}
               color={index === 0 ? "primary" : "default"}
               size="small"
+              sx={{ px: 2, py: 1 }}
             />
           ))}
         </Box>
-      </Box>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
-
-      {success && (
-        <Alert severity="success" sx={{ mb: 3 }}>
-                  {paymentSuccess 
-          ? "🎉 Payment successful! Your app draft has been restored. You can now complete your submission with premium features activated."
-          : isEditing 
-            ? "App updated successfully! Your changes have been saved."
-            : "App submitted successfully! We'll review it and get back to you soon."
-        }
-        </Alert>
-      )}
-
-      <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        {/* Basic Information */}
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom fontWeight={600} sx={{ mb: 2 }}>
-            Basic Information
-          </Typography>
-          
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <TextField 
-                label="App Name" 
-                name="name" 
-                value={form.name} 
-                onChange={(e) => handleChange("name", e.target.value)} 
-                fullWidth 
-                required 
-                placeholder="Enter your app name"
-              />
-            </Grid>
-            
-            <Grid item xs={12}>
-              <TextField 
-                label="Description" 
-                name="description" 
-                value={form.description} 
-                onChange={(e) => handleChange("description", e.target.value)} 
-                fullWidth 
-                required 
-                multiline 
-                rows={3}
-                placeholder="Brief description of what your app does"
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              <TextField 
-                fullWidth 
-                label="Website" 
-                name="website" 
-                value={form.website} 
-                onChange={(e) => handleChange("website", e.target.value)} 
-                placeholder="https://yourapp.com"
-                helperText="Optional: Your app's website"
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              <TextField 
-                fullWidth 
-                label="GitHub Repository" 
-                name="github" 
-                value={form.github} 
-                onChange={(e) => handleChange("github", e.target.value)} 
-                placeholder="https://github.com/username/repo"
-                helperText="Optional: Link to your source code"
-              />
-            </Grid>
-            
-            <Grid item xs={12}>
-              <Typography variant="subtitle1" fontWeight={600} mb={2} color="text.secondary">
-                Tags (Select from predefined options)
-              </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                {appTags.map((tag) => (
-                  <Chip
-                    key={tag}
-                    label={tag}
-                    onClick={() => handleTagToggle(tag)}
-                    color={form.tags.includes(tag) ? "primary" : "default"}
-                    variant={form.tags.includes(tag) ? "filled" : "outlined"}
-                    size="small"
-                  />
-                ))}
-              </Box>
-              <Typography variant="caption" color="text.secondary">
-                Selected: {form.tags.length} tags
-              </Typography>
-            </Grid>
-            
-            <Grid item xs={12}>
-              <Typography variant="subtitle1" fontWeight={600} mb={2} color="text.secondary">
-                Tech Stack
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 2, mb: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-                <TextField
-                  label="Add technology"
-                  fullWidth
-                  placeholder="e.g. React, Node.js, MongoDB"
-                  value={newTech}
-                  onChange={(e) => setNewTech(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && addTech()}
-                  helperText="Press Enter or click Add to add a technology"
-                />
-                <Button
-                  variant="outlined"
-                  onClick={addTech}
-                  disabled={!newTech.trim()}
-                  sx={{ minWidth: { xs: '100%', sm: 100 } }}
-                >
-                  Add
-                </Button>
-              </Box>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {form.techStack.map((tech, index) => (
-                  <Chip
-                    key={index}
-                    label={tech}
-                    onDelete={() => removeTech(index)}
-                    color="secondary"
-                    variant="outlined"
-                  />
-                ))}
-              </Box>
-            </Grid>
-          </Grid>
-        </Paper>
-
-        {/* App Details */}
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom fontWeight={600} sx={{ mb: 2 }}>
-            App Details
-          </Typography>
-          
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth required>
-                <InputLabel>Category</InputLabel>
-                <Select
-                  value={form.category}
-                  label="Category"
-                  onChange={(e) => handleChange("category", e.target.value)}
-                  disabled={categoriesLoading}
-                >
-                  {categoriesLoading ? (
-                    <MenuItem disabled>Loading categories...</MenuItem>
-                  ) : (
-                    categories.map((category) => (
-                      <MenuItem key={category} value={category}>{category}</MenuItem>
-                    ))
-                  )}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Pricing Model</InputLabel>
-                <Select
-                  value={form.pricing}
-                  label="Pricing Model"
-                  onChange={(e) => handleChange("pricing", e.target.value)}
-                >
-                  {pricingOptions.map((option) => (
-                    <MenuItem key={option} value={option}>{option}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12}>
-              <Typography variant="subtitle1" fontWeight={600} mb={2} color="text.secondary">
-                Key Features
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 2, mb: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-                <TextField
-                  label="Add a feature"
-                  fullWidth
-                  placeholder="e.g. Real-time collaboration, AI-powered suggestions, Cross-platform sync..."
-                  value={newFeature}
-                  onChange={(e) => setNewFeature(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && addFeature()}
-                  helperText="Press Enter or click Add to add a feature"
-                />
-                <Button
-                  variant="outlined"
-                  onClick={addFeature}
-                  disabled={!newFeature.trim()}
-                  sx={{ minWidth: { xs: '100%', sm: 100 } }}
-                >
-                  Add
-                </Button>
-              </Box>
-              
-              {/* Features List */}
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                {form.features.map((feature, index) => (
-                  <Paper
-                    key={index}
-                    sx={{
-                      p: 2,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      backgroundColor: theme.palette.background.paper,
-                      border: `1px solid ${theme.palette.divider}`,
-                    }}
-                  >
-                    <Typography variant="body2" sx={{ flex: 1 }}>
-                      ✨ {feature}
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      <IconButton
-                        size="small"
-                        onClick={() => moveFeature(index, 'up')}
-                        disabled={index === 0}
-                      >
-                        <UpIcon />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => moveFeature(index, 'down')}
-                        disabled={index === form.features.length - 1}
-                      >
-                        <DownIcon />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => removeFeature(index)}
-                        color="error"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Box>
-                  </Paper>
-                ))}
-              </Box>
-            </Grid>
-          </Grid>
-        </Paper>
-
-        {/* Settings */}
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom fontWeight={600} sx={{ mb: 2 }}>
-            Settings
-          </Typography>
-          
-          <FormControlLabel
-            control={
-              <Switch
-                checked={form.isInternal}
-                onChange={(e) => handleChange("isInternal", e.target.checked)}
-              />
-            }
-            label="Internal Tool (Only visible to your organization)"
-          />
-        </Paper>
-
-        {/* Premium Upgrade Option - Only show for new apps or drafts, not published apps */}
-        {(!isEditing || (isEditing && searchParams.get('draftId') === editingAppId)) && (
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom fontWeight={600} sx={{ mb: 2 }}>
-              Premium Upgrade (Optional)
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Boost your app's visibility with premium features. This is completely optional.
-            </Typography>
-          
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <Card 
-                sx={{ 
-                  height: '100%',
-                  border: selectedPremiumPlan === 'premium' ? `2px solid ${theme.palette.primary.main}` : `1px solid ${theme.palette.divider}`,
-                  backgroundColor: selectedPremiumPlan === 'premium' ? `${theme.palette.primary.main}08` : 'transparent',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease-in-out',
-                  '&:hover': {
-                    borderColor: theme.palette.primary.main,
-                    backgroundColor: `${theme.palette.primary.main}04`,
-                  }
-                }}
-                onClick={() => handlePremiumSelection(selectedPremiumPlan === 'premium' ? null : 'premium')}
-              >
-                <CardContent sx={{ p: 3, textAlign: 'center' }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-                                         {selectedPremiumPlan === 'premium' && (
-                       <Box sx={{ mr: 1, color: 'primary.main', display: 'inline-flex' }}>
-                         <Check sx={{ fontSize: 24 }} />
-                       </Box>
-                     )}
-                    <Box sx={{ color: 'primary.main', display: 'inline-flex' }}>
-                      <Star size={32} />
-                    </Box>
-                  </Box>
-                  <Typography variant="h6" fontWeight={600} gutterBottom>
-                    Premium Listing
-                  </Typography>
-                  <Typography variant="h4" fontWeight={800} color="primary" gutterBottom>
-                    $19
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    One-time payment • Lifetime benefits
-                  </Typography>
-                  
-                  <Divider sx={{ my: 2 }} />
-                  
-                  <Box sx={{ textAlign: 'left' }}>
-                                         {premiumFeatures.slice(0, 4).map((feature, index) => (
-                       <Box key={index} display="flex" alignItems="center" mb={1}>
-                         <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
-                           <Check sx={{ fontSize: 16 }} />
-                         </Box>
-                         <Typography variant="body2" fontSize="0.875rem">
-                           {feature}
-                         </Typography>
-                       </Box>
-                     ))}
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <Card 
-                sx={{ 
-                  height: '100%',
-                  border: selectedPremiumPlan === 'free' ? `2px solid ${theme.palette.success.main}` : `1px solid ${theme.palette.divider}`,
-                  backgroundColor: selectedPremiumPlan === 'free' ? `${theme.palette.success.main}08` : 'transparent',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease-in-out',
-                  '&:hover': {
-                    borderColor: theme.palette.success.main,
-                    backgroundColor: `${theme.palette.success.main}04`,
-                  }
-                }}
-                onClick={() => handlePremiumSelection(selectedPremiumPlan === 'free' ? null : 'free')}
-              >
-                <CardContent sx={{ p: 3, textAlign: 'center' }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-                                         {selectedPremiumPlan === 'free' && (
-                       <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
-                         <Check sx={{ fontSize: 24 }} />
-                       </Box>
-                     )}
-                    <Typography variant="h4" color="success.main">🚀</Typography>
-                  </Box>
-                  <Typography variant="h6" fontWeight={600} gutterBottom>
-                    Free Listing
-                  </Typography>
-                  <Typography variant="h4" fontWeight={800} color="success.main" gutterBottom>
-                    $0
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Standard listing • No additional cost
-                  </Typography>
-                  
-                  <Divider sx={{ my: 2 }} />
-                  
-                  <Box sx={{ textAlign: 'left' }}>
-                                         <Box display="flex" alignItems="center" mb={1}>
-                       <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
-                         <Check sx={{ fontSize: 16 }} />
-                       </Box>
-                       <Typography variant="body2" fontSize="0.875rem">
-                         Standard app listing
-                       </Typography>
-                     </Box>
-                    <Box display="flex" alignItems="center" mb={1}>
-                      <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
-                        <Check sx={{ fontSize: 16 }} />
-                      </Box>
-                      <Typography variant="body2" fontSize="0.875rem">
-                        Community review process
-                      </Typography>
-                    </Box>
-                    <Box display="flex" alignItems="center" mb={1}>
-                      <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
-                        <Check sx={{ fontSize: 16 }} />
-                      </Box>
-                      <Typography variant="body2" fontSize="0.875rem">
-                        Basic analytics
-                      </Typography>
-                    </Box>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-          
-          {selectedPremiumPlan === 'premium' && (
-            <Box sx={{ mt: 3, p: 2, backgroundColor: `${theme.palette.primary.main}08`, borderRadius: 2, border: `1px solid ${theme.palette.primary.main}20` }}>
-              <Typography variant="body2" color="primary" fontWeight={500}>
-                💡 Premium selected! You'll be redirected to payment after submission.
-              </Typography>
-            </Box>
-          )}
-        </Paper>
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
         )}
 
-        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
-          {isEditing && (
-            <Button
-              variant="outlined"
-              size="large"
-              onClick={() => {
-                setIsEditing(false);
-                setEditingAppId(null);
-                setForm({
-                  name: "",
-                  description: "",
-                  tags: [],
-                  website: "",
-                  github: "",
-                  category: "",
-                  techStack: [],
-                  pricing: "Free",
-                  features: [],
-                  isInternal: false,
-                });
-                setSelectedPremiumPlan(null);
-                setSuccess(false);
-                setError(null);
-              }}
-              sx={{ py: 1.5, px: 4, fontSize: '1.1rem' }}
-            >
-              New App
-            </Button>
+        {success && (
+          <Alert severity="success" sx={{ mb: 3 }}>
+            {paymentSuccess 
+              ? "🎉 Payment successful! Your app draft has been restored. You can now complete your submission with premium features activated."
+              : isEditing 
+                ? "App updated successfully! Your changes have been saved."
+                : "App submitted successfully! We'll review it and get back to you soon."
+            }
+          </Alert>
+        )}
+
+        {/* Form */}
+        <Paper sx={{ ...getGlassStyles(theme), p: 4, borderRadius: "1.5rem", boxShadow: getShadow(theme, "elegant"), position: 'relative' }}>
+          {loading && (
+            <Box sx={{ 
+              position: 'absolute', 
+              top: 0, 
+              left: 0, 
+              right: 0, 
+              bottom: 0, 
+              bgcolor: 'rgba(255,255,255,0.8)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              zIndex: 1,
+              borderRadius: "1.5rem"
+            }}>
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="h6" color="primary.main" mb={1}>
+                  {isEditing ? 'Updating your app...' : 'Submitting your app...'}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Please wait while we process your {isEditing ? 'update' : 'submission'}
+                </Typography>
+              </Box>
+            </Box>
           )}
-          <Button
-            type="submit"
-            variant="contained"
-            size="large"
-            disabled={loading || !form.name || !form.description}
-            sx={{ py: 1.5, px: 4, fontSize: '1.1rem' }}
-          >
-            {loading ? (isEditing ? "Updating..." : "Submitting...") : (isEditing ? "Update App" : "Submit App")}
-          </Button>
-        </Box>
+          
+          <form onSubmit={handleSubmit}>
+            <Grid container spacing={4}>
+              {/* Basic App Information */}
+              <Grid item xs={12}>
+                <Typography variant="h5" fontWeight={600} mb={3} display="flex" alignItems="center" gap={1}>
+                  <Star size={24} color={theme.palette.primary.main} />
+                  Basic App Information
+                </Typography>
+              </Grid>
+              
+              <Grid item xs={12} md={6}>
+                <TextField 
+                  fullWidth 
+                  label="App Name" 
+                  required 
+                  value={form.name}
+                  onChange={(e) => handleChange("name", e.target.value)}
+                  helperText="Choose a memorable and descriptive name"
+                  disabled={isEditing && loading}
+                />
+              </Grid>
+              
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth required>
+                  <InputLabel>Category</InputLabel>
+                  <Select
+                    value={form.category}
+                    label="Category"
+                    onChange={(e) => handleChange("category", e.target.value)}
+                    disabled={categoriesLoading}
+                  >
+                    {categoriesLoading ? (
+                      <MenuItem disabled>
+                        <CircularProgress size={20} sx={{ mr: 1 }} />
+                        Loading categories...
+                      </MenuItem>
+                    ) : (
+                      categories.map((category) => (
+                        <MenuItem key={category} value={category}>
+                          {category}
+                        </MenuItem>
+                      ))
+                    )}
+                  </Select>
+                  {categoriesLoading && (
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                      Loading categories from database...
+                    </Typography>
+                  )}
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12}>
+                <TextField
+                  label="Tagline"
+                  fullWidth
+                  required
+                  placeholder="A brief, compelling description of your app"
+                  value={form.tagline}
+                  onChange={(e) => handleChange("tagline", e.target.value)}
+                  helperText="A short, catchy description that appears in listings (max 100 characters)"
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <TextField
+                  label="Description"
+                  multiline
+                  rows={3}
+                  required
+                  fullWidth
+                  value={form.description}
+                  onChange={(e) => handleChange("description", e.target.value)}
+                  helperText="A concise description for listings and previews (100-200 characters)"
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <TextField
+                  label="Full Description"
+                  multiline
+                  rows={6}
+                  fullWidth
+                  placeholder="Tell the full story of your app, its features, benefits, target audience, and what makes it unique"
+                  value={form.fullDescription}
+                  onChange={(e) => handleChange("fullDescription", e.target.value)}
+                  helperText="Detailed description for the app page. Include use cases, benefits, and what problems it solves."
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <Typography variant="subtitle1" fontWeight={600} mb={2} color="text.secondary">
+                  Tags
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                  <TextField
+                    label="Add a tag"
+                    fullWidth
+                    placeholder="e.g. React, Mobile, Productivity, AI, SaaS"
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && addTag()}
+                    helperText="Press Enter or click Add to add a tag"
+                  />
+                  <Button
+                    variant="outlined"
+                    onClick={addTag}
+                    disabled={!newTag.trim()}
+                    sx={{ minWidth: 100 }}
+                  >
+                    Add
+                  </Button>
+                </Box>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {form.tags.map((tag, index) => (
+                    <Chip
+                      key={index}
+                      label={tag}
+                      onDelete={() => removeTag(index)}
+                      color="primary"
+                      variant="outlined"
+                    />
+                  ))}
+                </Box>
+              </Grid>
+
+              {/* Links and URLs */}
+              <Grid item xs={12}>
+                <Typography variant="h5" fontWeight={600} mb={3} display="flex" alignItems="center" gap={1}>
+                  <Globe size={24} color={theme.palette.primary.main} />
+                  Links & URLs
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <TextField 
+                  fullWidth 
+                  label="Website URL" 
+                  placeholder="https://yourapp.com" 
+                  required
+                  value={form.website}
+                  onChange={(e) => handleChange("website", e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Globe size={20} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  helperText="Your app's main website or landing page"
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <TextField 
+                  fullWidth 
+                  label="GitHub Repository" 
+                  placeholder="https://github.com/username/repo"
+                  value={form.github}
+                  onChange={(e) => handleChange("github", e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Github size={20} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  helperText="Optional: Link to your open-source code"
+                />
+              </Grid>
+
+              {/* Technical Details */}
+              <Grid item xs={12}>
+                <Typography variant="h5" fontWeight={600} mb={3} display="flex" alignItems="center" gap={1}>
+                  <Code size={24} color={theme.palette.primary.main} />
+                  Technical Details
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12}>
+                <Typography variant="subtitle1" fontWeight={600} mb={2} color="text.secondary">
+                  Tech Stack
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                  <TextField
+                    label="Add technology"
+                    fullWidth
+                    placeholder="e.g. React, Node.js, MongoDB, AWS"
+                    value={newTech}
+                    onChange={(e) => setNewTech(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && addTech()}
+                    helperText="Press Enter or click Add to add a technology"
+                  />
+                  <Button
+                    variant="outlined"
+                    onClick={addTech}
+                    disabled={!newTech.trim()}
+                    sx={{ minWidth: 100 }}
+                  >
+                    Add
+                  </Button>
+                </Box>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {form.techStack.map((tech, index) => (
+                    <Chip
+                      key={index}
+                      label={tech}
+                      onDelete={() => removeTech(index)}
+                      color="secondary"
+                      variant="outlined"
+                    />
+                  ))}
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth required>
+                  <InputLabel>Pricing Model</InputLabel>
+                  <Select
+                    value={form.pricing}
+                    label="Pricing Model"
+                    onChange={(e) => handleChange("pricing", e.target.value)}
+                  >
+                    {pricingOptions.map((option) => (
+                      <MenuItem key={option} value={option}>{option}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12}>
+                <Typography variant="subtitle1" fontWeight={600} mb={2} color="text.secondary">
+                  Key Features
+                </Typography>
+                {/* Feature Input */}
+                <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                  <TextField
+                    label="Add a feature"
+                    fullWidth
+                    placeholder="e.g. Real-time collaboration, AI-powered suggestions, Cross-platform sync..."
+                    value={newFeature}
+                    onChange={(e) => setNewFeature(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && addFeature()}
+                    helperText="Press Enter or click Add to add a feature"
+                  />
+                  <Button
+                    variant="outlined"
+                    onClick={addFeature}
+                    disabled={!newFeature.trim()}
+                    sx={{ minWidth: 100 }}
+                  >
+                    Add
+                  </Button>
+                </Box>
+                
+                {/* Features List */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 3 }}>
+                  {form.features.map((feature, index) => (
+                    <Paper
+                      key={index}
+                      sx={{
+                        p: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        backgroundColor: theme.palette.background.paper,
+                        border: `1px solid ${theme.palette.divider}`,
+                      }}
+                    >
+                      <Typography variant="body2" sx={{ flex: 1 }}>
+                        ✨ {feature}
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 0.5 }}>
+                        <IconButton
+                          size="small"
+                          onClick={() => moveFeature(index, 'up')}
+                          disabled={index === 0}
+                        >
+                          <UpIcon />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => moveFeature(index, 'down')}
+                          disabled={index === form.features.length - 1}
+                        >
+                          <DownIcon />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => removeFeature(index)}
+                          color="error"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
+                    </Paper>
+                  ))}
+                </Box>
+                
+                <Typography variant="caption" color="text.secondary" mt={1} display="block">
+                  Focus on the most important features that solve real problems for your users
+                </Typography>
+              </Grid>
+
+              {/* Author Information */}
+              <Grid item xs={12}>
+                <Typography variant="h5" fontWeight={600} mb={3} display="flex" alignItems="center" gap={1}>
+                  <User size={24} color={theme.palette.primary.main} />
+                  Author Information
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <TextField 
+                  fullWidth 
+                  label="Author Name" 
+                  required
+                  value={form.authorName}
+                  onChange={(e) => handleChange("authorName", e.target.value)}
+                  helperText="Your name or company name"
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <TextField 
+                  fullWidth 
+                  label="Author Email" 
+                  type="email"
+                  required
+                  value={form.authorEmail}
+                  onChange={(e) => handleChange("authorEmail", e.target.value)}
+                  helperText="We'll use this to contact you about your submission"
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <TextField
+                  label="Author Bio"
+                  multiline
+                  rows={3}
+                  fullWidth
+                  placeholder="Tell us about yourself, your background, and what inspired you to create this app"
+                  value={form.authorBio}
+                  onChange={(e) => handleChange("authorBio", e.target.value)}
+                  helperText="A brief bio that will be displayed on your app page"
+                />
+              </Grid>
+
+              {/* Screenshots & Media */}
+              <Grid item xs={12}>
+                <Typography variant="h5" fontWeight={600} mb={3} display="flex" alignItems="center" gap={1}>
+                  <UploadCloud size={24} color={theme.palette.primary.main} />
+                  Screenshots & Media
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12}>
+                <Box
+                  sx={{
+                    border: `1px dashed ${theme.palette.divider}`,
+                    borderRadius: "12px",
+                    textAlign: "center",
+                    p: 4,
+                    color: "text.secondary",
+                    cursor: "pointer",
+                    '&:hover': {
+                      backgroundColor: theme.palette.action.hover,
+                    },
+                  }}
+                >
+                  <UploadCloud size={28} />
+                  <Typography mt={1}>Drag and drop your screenshots here</Typography>
+                  <Typography variant="caption">Upload 3-5 high-quality images (PNG/JPG) showcasing your app</Typography>
+                  <Button sx={{ mt: 2 }} variant="outlined" size="small">Choose Files</Button>
+                </Box>
+              </Grid>
+
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
+              </Grid>
+
+              {/* Settings */}
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom fontWeight={600} sx={{ mb: 2 }}>
+                  Settings
+                </Typography>
+                
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={form.isInternal}
+                      onChange={(e) => handleChange("isInternal", e.target.checked)}
+                    />
+                  }
+                  label="Internal Tool (Only visible to your organization)"
+                />
+              </Grid>
+
+              {/* Premium Upgrade Option - Only show for new apps or drafts, not published apps */}
+              {(!isEditing || (isEditing && searchParams.get('draftId') === editingAppId)) && (
+                <Grid item xs={12}>
+                  <Typography variant="h6" gutterBottom fontWeight={600} sx={{ mb: 2 }}>
+                    Premium Upgrade (Optional)
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    Boost your app's visibility with premium features. This is completely optional.
+                  </Typography>
+                
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={6}>
+                    <Paper 
+                      sx={{ 
+                        height: '100%',
+                        border: selectedPremiumPlan === 'premium' ? `2px solid ${theme.palette.primary.main}` : `1px solid ${theme.palette.divider}`,
+                        backgroundColor: selectedPremiumPlan === 'premium' ? `${theme.palette.primary.main}08` : 'transparent',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease-in-out',
+                        '&:hover': {
+                          borderColor: theme.palette.primary.main,
+                          backgroundColor: `${theme.palette.primary.main}04`,
+                        }
+                      }}
+                      onClick={() => setSelectedPremiumPlan(selectedPremiumPlan === 'premium' ? null : 'premium')}
+                    >
+                      <Box sx={{ p: 3, textAlign: 'center' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                          {selectedPremiumPlan === 'premium' && (
+                            <Box sx={{ mr: 1, color: 'primary.main', display: 'inline-flex' }}>
+                              <Check sx={{ fontSize: 24 }} />
+                            </Box>
+                          )}
+                          <Box sx={{ color: 'primary.main', display: 'inline-flex' }}>
+                            <Star size={32} />
+                          </Box>
+                        </Box>
+                        <Typography variant="h6" fontWeight={600} gutterBottom>
+                          Premium Listing
+                        </Typography>
+                        <Typography variant="h4" fontWeight={800} color="primary" gutterBottom>
+                          $19
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          One-time payment • Lifetime benefits
+                        </Typography>
+                        
+                        <Divider sx={{ my: 2 }} />
+                        
+                        <Box sx={{ textAlign: 'left' }}>
+                          <Box display="flex" alignItems="center" mb={1}>
+                            <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
+                              <Check sx={{ fontSize: 16 }} />
+                            </Box>
+                            <Typography variant="body2" fontSize="0.875rem">
+                              Verified badge and premium placement
+                            </Typography>
+                          </Box>
+                          <Box display="flex" alignItems="center" mb={1}>
+                            <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
+                              <Check sx={{ fontSize: 16 }} />
+                            </Box>
+                            <Typography variant="body2" fontSize="0.875rem">
+                              Priority review process (24-48 hours)
+                            </Typography>
+                          </Box>
+                          <Box display="flex" alignItems="center" mb={1}>
+                            <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
+                              <Check sx={{ fontSize: 16 }} />
+                            </Box>
+                            <Typography variant="body2" fontSize="0.875rem">
+                              Enhanced app analytics and insights
+                            </Typography>
+                          </Box>
+                          <Box display="flex" alignItems="center" mb={1}>
+                            <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
+                              <Check sx={{ fontSize: 16 }} />
+                            </Box>
+                            <Typography variant="body2" fontSize="0.875rem">
+                              Featured in premium app showcase
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Box>
+                    </Paper>
+                  </Grid>
+                  
+                  <Grid item xs={12} md={6}>
+                    <Paper 
+                      sx={{ 
+                        height: '100%',
+                        border: selectedPremiumPlan === 'free' ? `2px solid ${theme.palette.success.main}` : `1px solid ${theme.palette.divider}`,
+                        backgroundColor: selectedPremiumPlan === 'free' ? `${theme.palette.success.main}08` : 'transparent',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease-in-out',
+                        '&:hover': {
+                          borderColor: theme.palette.success.main,
+                          backgroundColor: `${theme.palette.success.main}04`,
+                        }
+                      }}
+                      onClick={() => setSelectedPremiumPlan(selectedPremiumPlan === 'free' ? null : 'free')}
+                    >
+                      <Box sx={{ p: 3, textAlign: 'center' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                          {selectedPremiumPlan === 'free' && (
+                            <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
+                              <Check sx={{ fontSize: 24 }} />
+                            </Box>
+                          )}
+                          <Typography variant="h4" color="success.main">🚀</Typography>
+                        </Box>
+                        <Typography variant="h6" fontWeight={600} gutterBottom>
+                          Free Listing
+                        </Typography>
+                        <Typography variant="h4" fontWeight={800} color="success.main" gutterBottom>
+                          $0
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          Standard listing • No additional cost
+                        </Typography>
+                        
+                        <Divider sx={{ my: 2 }} />
+                        
+                        <Box sx={{ textAlign: 'left' }}>
+                          <Box display="flex" alignItems="center" mb={1}>
+                            <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
+                              <Check sx={{ fontSize: 16 }} />
+                            </Box>
+                            <Typography variant="body2" fontSize="0.875rem">
+                              Standard app listing
+                            </Typography>
+                          </Box>
+                          <Box display="flex" alignItems="center" mb={1}>
+                            <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
+                              <Check sx={{ fontSize: 16 }} />
+                            </Box>
+                            <Typography variant="body2" fontSize="0.875rem">
+                              Community review process
+                            </Typography>
+                          </Box>
+                          <Box display="flex" alignItems="center" mb={1}>
+                            <Box sx={{ mr: 1, color: 'success.main', display: 'inline-flex' }}>
+                              <Check sx={{ fontSize: 16 }} />
+                            </Box>
+                            <Typography variant="body2" fontSize="0.875rem">
+                              Basic analytics
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Box>
+                    </Paper>
+                  </Grid>
+                </Grid>
+                
+                {selectedPremiumPlan === 'premium' && (
+                  <Box sx={{ mt: 3, p: 2, backgroundColor: `${theme.palette.primary.main}08`, borderRadius: 2, border: `1px solid ${theme.palette.primary.main}20` }}>
+                    <Typography variant="body2" color="primary" fontWeight={500}>
+                      💡 Premium selected! You'll be redirected to payment after submission.
+                    </Typography>
+                  </Box>
+                )}
+                </Grid>
+              )}
+
+              {/* Review Process */}
+              <Grid item xs={12}>
+                <Box mt={4}>
+                  <Typography variant="subtitle1" fontWeight={700} mb={2}>
+                    Review Process
+                  </Typography>
+                  <Stack direction="row" flexWrap="wrap" gap={1.5}>
+                    {reviewSteps.map((step, index) => (
+                      <Chip
+                        key={step}
+                        label={`${index + 1}. ${step}`}
+                        variant="outlined"
+                        sx={{
+                          fontWeight: 600,
+                          px: 2,
+                          borderRadius: "999px",
+                          backgroundColor: theme.palette.background.paper,
+                          borderColor: theme.palette.divider,
+                          color: theme.palette.text.primary,
+                          "&:hover": {
+                              backgroundColor: theme.palette.action.hover,
+                            },
+                        }}
+                      />
+                    ))}
+                  </Stack>
+                  <Typography variant="body2" color="text.secondary" mt={2}>
+                    We review all submissions within 48-72 hours. Premium submissions get priority review.
+                  </Typography>
+                </Box>
+              </Grid>
+
+              {/* Submit Button */}
+              <Grid item xs={12}>
+                <Box mt={4} textAlign="center" sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+                  {isEditing && (
+                    <Button
+                      variant="outlined"
+                      size="large"
+                      onClick={() => {
+                        setIsEditing(false);
+                        setEditingAppId(null);
+                        setForm({
+                          name: "",
+                          tagline: "",
+                          description: "",
+                          fullDescription: "",
+                          tags: [],
+                          website: "",
+                          github: "",
+                          category: "",
+                          techStack: [],
+                          pricing: "Free",
+                          features: [],
+                          isInternal: false,
+                          authorName: "",
+                          authorEmail: "",
+                          authorBio: "",
+                        });
+                        setSelectedPremiumPlan(null);
+                        setSuccess(false);
+                        setError(null);
+                      }}
+                      sx={{ py: 1.5, px: 4, fontSize: '1.1rem' }}
+                    >
+                      New App
+                    </Button>
+                  )}
+                  <Button 
+                    type="submit"
+                    variant="contained" 
+                    color="primary" 
+                    size="large" 
+                    sx={{ borderRadius: "999px", px: 6, py: 1.5 }}
+                    startIcon={<Star size={20} />}
+                    disabled={loading || !form.name || !form.description}
+                  >
+                    {loading ? (isEditing ? 'Updating...' : 'Submitting...') : (isEditing ? 'Update App' : 'Submit App for Review')}
+                  </Button>
+                </Box>
+              </Grid>
+            </Grid>
+          </form>
+        </Paper>
         
         <Box sx={{ mt: 3, textAlign: 'center' }}>
           <Button
@@ -1008,8 +1281,8 @@ function SubmitAppPageContent() {
             View Premium Plans
           </Button>
         </Box>
-      </Box>
-    </Container>
+      </Container>
+    </Box>
   );
 }
 

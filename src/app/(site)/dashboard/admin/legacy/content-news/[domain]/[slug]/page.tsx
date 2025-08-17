@@ -4,6 +4,8 @@ import { getServerSession } from "../../../../../lib/auth";
 import {redirect} from "next/navigation"
 import { connectToDatabase } from "@lib/mongodb";
 
+// Force dynamic rendering to prevent build-time static generation issues
+export const dynamic = 'force-dynamic';
 
 export default async function Page({ params }: { params: { domain: string; slug: string } }) {
   // const session=await getServerSession()

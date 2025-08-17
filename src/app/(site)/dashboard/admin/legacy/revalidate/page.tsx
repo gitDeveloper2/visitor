@@ -1,4 +1,8 @@
 "use client"
+
+// Force dynamic rendering to prevent build-time static generation issues
+export const dynamic = 'force-dynamic';
+
 import { useForm } from 'react-hook-form';
 import { useState } from 'react';
 import { TextField, Button, Typography, Container } from '@mui/material';
