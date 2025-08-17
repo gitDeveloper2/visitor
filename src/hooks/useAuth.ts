@@ -15,7 +15,7 @@ export function useAuthState() {
   return {
     // Session state
     session,
-    user: session?.user,
+    user: session?.user as any,
     
     // Loading states
     isLoading: isPending,
@@ -31,18 +31,18 @@ export function useAuthState() {
     userId: session?.user?.id,
     userEmail: session?.user?.email,
     userName: session?.user?.name,
-    userRole: session?.user?.role || 'user',
-    isPro: session?.user?.pro || false,
-    isSuspended: session?.user?.suspended || false,
-    userAvatar: session?.user?.avatarUrl || session?.user?.image,
-    userGithubUsername: session?.user?.githubUsername,
-    userSocialAccounts: session?.user?.socialAccounts || [],
-    userKind: session?.user?.kind,
+    userRole: (session?.user as any)?.role || 'user',
+    isPro: (session?.user as any)?.pro || false,
+    isSuspended: (session?.user as any)?.suspended || false,
+    userAvatar: (session?.user as any)?.avatarUrl || session?.user?.image,
+    userGithubUsername: (session?.user as any)?.githubUsername,
+    userSocialAccounts: (session?.user as any)?.socialAccounts || [],
+    userKind: (session?.user as any)?.kind,
     
     // Helper methods
-    hasRole: (role: string) => session?.user?.role === role,
-    isAdmin: () => session?.user?.role === 'admin',
-    isModerator: () => session?.user?.role === 'moderator',
+    hasRole: (role: string) => (session?.user as any)?.role === role,
+    isAdmin: () => (session?.user as any)?.role === 'admin',
+    isModerator: () => (session?.user as any)?.role === 'moderator',
   };
 }
 

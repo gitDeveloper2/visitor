@@ -80,6 +80,14 @@ export const auth = betterAuth({
         defaultValue: [],
         input: false,
       },
+      // Onboarding fields
+      bio: { type: "string", defaultValue: "", input: false },
+      jobTitle: { type: "string", defaultValue: "", input: false },
+      websiteUrl: { type: "string", defaultValue: "", input: false },
+      twitterUsername: { type: "string", defaultValue: "", input: false },
+      linkedinUsername: { type: "string", defaultValue: "", input: false },
+      onboardingCompleted: { type: "boolean", defaultValue: false, input: false },
+      needsOnboarding: { type: "boolean", defaultValue: true, input: false },
     },  
   },
 
@@ -99,22 +107,15 @@ export const auth = betterAuth({
   //         to: user.email,
   //         name: user.name ?? "there",
   //       });
-      
+        
   //   },
   // },
 
-
-
-   // Enrich only email signups
-   databaseHooks: {
+  // Database hooks to add onboarding fields after user creation
+  databaseHooks: {
     user: {
       create: {
-     
         before: async (user, ctx) => {
-          // await sendWelcomeEmail({
-          //   to: user.email,
-          //   name: user.name ?? "there",
-          // });
           const u = user as typeof user & { kind?: string };
         
           if (!u.kind) {
@@ -130,13 +131,20 @@ export const auth = betterAuth({
                   u.name ?? "user"
                 )}`,
                 socialAccounts: [],
+                // Initialize onboarding fields
+                bio: "",
+                jobTitle: "",
+                websiteUrl: "",
+                twitterUsername: "",
+                linkedinUsername: "",
+                onboardingCompleted: false,
+                needsOnboarding: true,
               },
             };
           }
          
           return { data: u };
         }
-        
       },
     },
   },  
@@ -151,7 +159,15 @@ export const auth = betterAuth({
         role?: string;
         suspended?: boolean;
         socialAccounts?: string[];
-        kind:boolean;
+        kind: string;
+        // Onboarding fields
+        bio?: string;
+        jobTitle?: string;
+        websiteUrl?: string;
+        twitterUsername?: string;
+        linkedinUsername?: string;
+        onboardingCompleted?: boolean;
+        needsOnboarding?: boolean;
       };
 
       // const votingToken = encryptVotingToken({
@@ -174,7 +190,15 @@ export const auth = betterAuth({
           role: u.role ?? "user",
           suspended: u.suspended ?? false,
           socialAccounts: decodedSocials,
-          kind: u.kind
+          kind: u.kind,
+          // Include onboarding fields in session
+          bio: u.bio ?? "",
+          jobTitle: u.jobTitle ?? "",
+          websiteUrl: u.websiteUrl ?? "",
+          twitterUsername: u.twitterUsername ?? "",
+          linkedinUsername: u.linkedinUsername ?? "",
+          onboardingCompleted: u.onboardingCompleted ?? false,
+          needsOnboarding: u.needsOnboarding ?? true,
         },
         session: {
           ...session,

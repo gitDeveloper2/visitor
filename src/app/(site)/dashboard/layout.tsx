@@ -17,7 +17,8 @@ import {
 import Link from "next/link";
 import { useTheme } from "@mui/material/styles";
 import { authClient } from "@/app/auth-client";
-import { AuthGuard } from "@/components/auth/AuthGuard";
+import { AuthGuard, OnboardingGuard } from "@/components/auth/client";
+import { useAuthState } from "@/hooks/useAuth";
 
 // Icons
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -38,7 +39,9 @@ export default function DashboardLayout({
 }) {
   return (
     <AuthGuard redirectTo="/auth/signin">
-      <DashboardContent>{children}</DashboardContent>
+      <OnboardingGuard redirectTo="/onboarding">
+        <DashboardContent>{children}</DashboardContent>
+      </OnboardingGuard>
     </AuthGuard>
   );
 }

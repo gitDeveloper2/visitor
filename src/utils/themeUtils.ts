@@ -2,29 +2,29 @@ import { Theme } from '@mui/material/styles';
 
 // Helper functions for consistent theme usage
 export const getGradient = (theme: Theme, gradientType: 'primary' | 'secondary' | 'hero') => {
-  return theme.custom.gradients[gradientType];
+  return theme?.custom?.gradients?.[gradientType] || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
 };
 
 export const getGlassStyles = (theme: Theme) => ({
-  background: theme.custom.glass.background,
-  border: `1px solid ${theme.custom.glass.border}`,
+  background: theme?.custom?.glass?.background || 'hsla(0, 0%, 100%, 0.85)',
+  border: `1px solid ${theme?.custom?.glass?.border || theme?.palette?.divider || '#e0e0e0'}`,
   backdropFilter: 'blur(16px)',
   WebkitBackdropFilter: 'blur(16px)',
 });
 
 export const getShadow = (theme: Theme, shadowType: 'elegant' | 'neon') => {
-  return theme.custom.shadows[shadowType];
+  return theme?.custom?.shadows?.[shadowType] || '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
 };
 
 export const getAnimation = (theme: Theme, animationType: 'float' | 'glow') => {
-  return theme.custom.animations[animationType];
+  return theme?.custom?.animations?.[animationType] || 'none';
 };
 
 // Common style objects for reuse
 export const commonStyles = {
   glassCard: (theme: Theme) => ({
     ...getGlassStyles(theme),
-    borderRadius: theme.shape.borderRadius * 1.5,
+    borderRadius: (theme?.shape?.borderRadius || 8) * 1.5,
     boxShadow: getShadow(theme, 'elegant'),
   }),
 
@@ -32,7 +32,7 @@ export const commonStyles = {
     background: getGradient(theme, 'primary'),
     color: 'white',
     fontWeight: 600,
-    borderRadius: theme.shape.borderRadius,
+    borderRadius: theme?.shape?.borderRadius || 8,
     '&:hover': {
       background: getGradient(theme, 'primary'),
       boxShadow: getShadow(theme, 'neon'),
@@ -41,11 +41,11 @@ export const commonStyles = {
 
   glassButton: (theme: Theme) => ({
     ...getGlassStyles(theme),
-    color: theme.palette.primary.main,
-    borderColor: theme.palette.primary.main,
-    borderRadius: theme.shape.borderRadius,
+    color: theme?.palette?.primary?.main || '#667eea',
+    borderColor: theme?.palette?.primary?.main || '#667eea',
+    borderRadius: theme?.shape?.borderRadius || 8,
     '&:hover': {
-      backgroundColor: `${theme.palette.primary.main}20`,
+      backgroundColor: `${theme?.palette?.primary?.main || '#667eea'}20`,
     },
   }),
 

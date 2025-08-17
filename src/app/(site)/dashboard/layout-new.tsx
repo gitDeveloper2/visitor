@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import { useTheme } from "@mui/material/styles";
-import { AuthGuard } from "@/components/auth";
+import { AuthGuard } from "@/components/auth/client";
 
 // Icons
 import DashboardIcon from "@mui/icons-material/Dashboard";

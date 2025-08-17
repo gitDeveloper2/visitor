@@ -14,8 +14,7 @@ import {
   Chip,
   Divider,
 } from '@mui/material';
-import { AuthGuard } from '@/components/auth/AuthGuard';
-import { ConditionalRender } from '@/components/auth/ProtectedRoute';
+import { AuthGuard, ConditionalRender } from '@/components/auth/client';
 import { usePermission, usePermissions } from '@/hooks/useAuthGuard';
 
 export default function ExampleProtectedPage() {

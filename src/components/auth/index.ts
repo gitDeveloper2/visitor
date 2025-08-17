@@ -1,9 +1,12 @@
-// Main authentication components
-export { AuthGuard } from './AuthGuard';
-export { AuthRequiredDisplay } from './AuthRequiredDisplay';
-export { ServerAuthGuard, withAuth } from './ServerAuthGuard';
-export { ProtectedRoute, withProtection, ConditionalRender } from './ProtectedRoute';
+// Server-side authentication components
+// This file should only be imported in server components
 
-// Re-export hooks for convenience
-export { useAuthGuard, usePermission, usePermissions } from '@/hooks/useAuthGuard';
-export { useAuthState, usePermissions as useAuthPermissions } from '@/hooks/useAuth'; 
+export { ServerAuthGuard, withAuth } from './ServerAuthGuard';
+
+// Re-export server-side auth utilities
+export { 
+  getServerSession, 
+  isAuthenticated, 
+  hasRole, 
+  isAdmin 
+} from './server'; 
