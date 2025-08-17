@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from '@/lib/auth';
-import { dbObject } from '@/lib/mongodb';
+import { connectToDatabase, dbObject } from '@/lib/mongodb';
+import { ObjectId } from 'mongodb';
 
 export async function GET() {
   try {
@@ -9,9 +10,9 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { db } = await dbObject();
-    const user = await db.collection('users').findOne(
-      { _id: session.user.id },
+    const {db} = await connectToDatabase();
+    const user = await db.collection('user').findOne(
+      { _id: new ObjectId(session.user.id) },
       { projection: { bio: 1, jobTitle: 1, websiteUrl: 1, twitterUsername: 1, linkedinUsername: 1 } }
     );
 
@@ -30,10 +31,9 @@ export async function PUT(request: NextRequest) {
     }
 
     const { bio, jobTitle, websiteUrl, twitterUsername, linkedinUsername } = await request.json();
-
-    const { db } = await dbObject();
-    const result = await db.collection('users').updateOne(
-      { _id: session.user.id },
+    const {db} = await connectToDatabase();
+    const result = await db.collection('user').updateOne(
+      { _id: new ObjectId(session.user.id) },
       {
         $set: {
           bio: bio || "",

@@ -51,28 +51,38 @@ export function useOnboardingGuard(): {
   isLoading: boolean;
   redirectTo: string | null;
 } {
-  const { isLoading } = useAuthState();
-  const onboardingStatus = useOnboarding();
+  try {
+    const { isLoading } = useAuthState();
+    const onboardingStatus = useOnboarding();
 
-  if (isLoading) {
+    if (isLoading) {
+      return {
+        canAccess: false,
+        isLoading: true,
+        redirectTo: null,
+      };
+    }
+
+    if (onboardingStatus.needsOnboarding) {
+      return {
+        canAccess: false,
+        isLoading: false,
+        redirectTo: '/onboarding',
+      };
+    }
+
     return {
-      canAccess: false,
-      isLoading: true,
+      canAccess: true,
+      isLoading: false,
+      redirectTo: null,
+    };
+  } catch (error) {
+    console.error('Error in useOnboardingGuard:', error);
+    // Default to allowing access if there's an error
+    return {
+      canAccess: true,
+      isLoading: false,
       redirectTo: null,
     };
   }
-
-  if (onboardingStatus.needsOnboarding) {
-    return {
-      canAccess: false,
-      isLoading: false,
-      redirectTo: '/onboarding',
-    };
-  }
-
-  return {
-    canAccess: true,
-    isLoading: false,
-    redirectTo: null,
-  };
 } 

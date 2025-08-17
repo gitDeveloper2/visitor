@@ -8,31 +8,22 @@ import {
   Typography,
   TextField,
   Button,
-  Stepper,
-  Step,
-  StepLabel,
   Grid,
   Alert,
   CircularProgress,
+  Divider,
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { useAuthState } from '@/hooks/useAuth';
 import { useTheme } from '@mui/material/styles';
 import { getShadow, getGlassStyles } from '@/utils/themeUtils';
 import { User, Briefcase, Globe, Twitter, Linkedin, CheckCircle } from 'lucide-react';
-
-const steps = [
-  { label: 'Welcome', icon: <User size={20} /> },
-  { label: 'Professional Info', icon: <Briefcase size={20} /> },
-  { label: 'Social Links', icon: <Globe size={20} /> },
-  { label: 'Complete', icon: <CheckCircle size={20} /> }
-];
+import { authClient } from '@/app/auth-client';
 
 export default function OnboardingPage() {
   const router = useRouter();
   const theme = useTheme();
   const { user, isLoading } = useAuthState();
-  const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -55,34 +46,20 @@ export default function OnboardingPage() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleNext = () => {
-    if (activeStep === 0) {
-      // Welcome step - just move to next
-      setActiveStep((prevStep) => prevStep + 1);
-    } else if (activeStep === 1) {
-      // Validate professional info
-      if (!form.bio || !form.jobTitle) {
-        setError('Please fill in your bio and job title');
-        return;
-      }
-      setActiveStep((prevStep) => prevStep + 1);
-      setError(null);
-    } else if (activeStep === 2) {
-      // Social links step - optional, can skip
-      setActiveStep((prevStep) => prevStep + 1);
-    }
-  };
-
-  const handleBack = () => {
-    setActiveStep((prevStep) => prevStep - 1);
-    setError(null);
-  };
-
-  const handleComplete = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
     setError(null);
 
+    // Validate required fields
+    if (!form.bio || !form.jobTitle) {
+      setError('Please fill in your bio and job title');
+      setLoading(false);
+      return;
+    }
+
     try {
+      console.log("form ",form)
       const response = await fetch('/api/user/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -90,12 +67,17 @@ export default function OnboardingPage() {
       });
 
       if (!response.ok) {
+        console.log("error ",response)
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to save profile');
       }
-
-      // Redirect to dashboard
-      router.push('/dashboard');
+      console.log("succeeded")
+      
+      // Force session refresh and page refresh to update onboarding status
+      await authClient.getSession({ query: { disableCookieCache: true } });
+      
+      // Force a complete page refresh to update all session data
+      window.location.href = '/dashboard';
     } catch (err: any) {
       setError(err.message || 'Unknown error occurred');
     } finally {
@@ -103,63 +85,90 @@ export default function OnboardingPage() {
     }
   };
 
-  const renderStepContent = (step: number) => {
-    switch (step) {
-      case 0:
-        return (
-          <Box sx={{ textAlign: 'center', py: 4 }}>
-            <Typography variant="h4" gutterBottom>
-              Welcome to BasicUtils! 🎉
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-              Let's set up your profile so you can start submitting apps and blogs with consistent author information.
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              This will only take a few minutes and will make your content submissions much faster in the future.
-            </Typography>
-          </Box>
-        );
-      case 1:
-        return (
-          <Box sx={{ py: 4 }}>
-            <Typography variant="h5" gutterBottom>
-              Tell Us About Yourself
-            </Typography>
+  if (isLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!user) {
+    return null; // Will redirect to signin
+  }
+
+  return (
+    <Container maxWidth="md" sx={{ py: 4 }}>
+      <Paper sx={{ p: 4, borderRadius: 3, ...getGlassStyles(theme), boxShadow: getShadow(theme, 'elegant') }}>
+        <Box sx={{ textAlign: 'center', mb: 4 }}>
+          <User sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
+          <Typography variant="h3" gutterBottom>
+            Complete Your Profile
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Set up your profile to start submitting apps and blogs with consistent author information.
+          </Typography>
+        </Box>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          {/* Required Information Section */}
+          <Box sx={{ mb: 4 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <Briefcase sx={{ mr: 1, color: 'primary.main' }} />
+              <Typography variant="h6">
+                Professional Information
+              </Typography>
+            </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
               This information will appear with your content submissions and help establish your credibility.
             </Typography>
+            
             <TextField
-              label="Bio"
+              label="Bio *"
               name="bio"
               value={form.bio}
               onChange={handleChange}
               fullWidth
               multiline
-              rows={4}
+              rows={3}
               placeholder="Tell us about yourself, your expertise, and what you do..."
               helperText="A short professional bio that will appear with your content"
               sx={{ mb: 3 }}
+              required
             />
+            
             <TextField
-              label="Job Title"
+              label="Job Title *"
               name="jobTitle"
               value={form.jobTitle}
               onChange={handleChange}
               fullWidth
               placeholder="e.g., Software Engineer, Designer, Founder, Student"
               helperText="Your professional role or title"
+              required
             />
           </Box>
-        );
-      case 2:
-        return (
-          <Box sx={{ py: 4 }}>
-            <Typography variant="h5" gutterBottom>
-              Social & Professional Links
-            </Typography>
+
+          <Divider sx={{ my: 4 }} />
+
+          {/* Optional Social Links Section */}
+          <Box sx={{ mb: 4 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <Globe sx={{ mr: 1, color: 'primary.main' }} />
+              <Typography variant="h6">
+                Social & Professional Links (Optional)
+              </Typography>
+            </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              These are optional but help establish your professional presence.
+              These help establish your professional presence but are completely optional.
             </Typography>
+            
             <Grid container spacing={3}>
               <Grid item xs={12}>
                 <TextField
@@ -196,94 +205,26 @@ export default function OnboardingPage() {
               </Grid>
             </Grid>
           </Box>
-        );
-      case 3:
-        return (
-          <Box sx={{ textAlign: 'center', py: 4 }}>
-            <CheckCircle sx={{ fontSize: 64, color: 'success.main', mb: 2 }} />
-            <Typography variant="h5" gutterBottom>
-              You're All Set! 🚀
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-              Your profile is complete. Now when you submit apps and blogs, the forms will automatically fill with your information!
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              You can always update your profile later from the dashboard.
-            </Typography>
+
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              disabled={loading}
+              size="large"
+              sx={{ px: 6, py: 1.5 }}
+              startIcon={loading ? <CircularProgress size={20} /> : <CheckCircle />}
+            >
+              {loading ? 'Saving...' : 'Complete Setup'}
+            </Button>
           </Box>
-        );
-      default:
-        return null;
-    }
-  };
+        </form>
 
-  if (isLoading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (!user) {
-    return null; // Will redirect to signin
-  }
-
-  return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      <Paper sx={{ p: 4, borderRadius: 3, ...getGlassStyles(theme), boxShadow: getShadow(theme, 'elegant') }}>
-        <Typography variant="h3" gutterBottom align="center" sx={{ mb: 4 }}>
-          Complete Your Profile
-        </Typography>
-
-        <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-          {steps.map((step, index) => (
-            <Step key={step.label}>
-              <StepLabel icon={step.icon}>
-                {step.label}
-              </StepLabel>
-            </Step>
-          ))}
-        </Stepper>
-
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
-
-        {renderStepContent(activeStep)}
-
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-          <Button
-            disabled={activeStep === 0}
-            onClick={handleBack}
-            sx={{ mr: 1 }}
-          >
-            Back
-          </Button>
-          <Box>
-            {activeStep === steps.length - 1 ? (
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleComplete}
-                disabled={loading}
-                size="large"
-                sx={{ px: 4 }}
-              >
-                {loading ? <CircularProgress size={24} /> : 'Complete Setup'}
-              </Button>
-            ) : (
-              <Button
-                variant="contained"
-                onClick={handleNext}
-                size="large"
-              >
-                {activeStep === steps.length - 2 ? 'Skip' : 'Next'}
-              </Button>
-            )}
-          </Box>
+        <Box sx={{ textAlign: 'center', mt: 4 }}>
+          <Typography variant="body2" color="text.secondary">
+            You can always update your profile later from the dashboard.
+          </Typography>
         </Box>
       </Paper>
     </Container>

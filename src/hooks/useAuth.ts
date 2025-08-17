@@ -5,13 +5,14 @@ import { authClient } from '../app/auth-client';
  * This replaces useSession and other NextAuth hooks
  */
 export function useAuthState() {
-  const { data: session, isPending, error } = authClient.useSession();
-  console.log(session)
-  
-  // Determine authentication status based on session data
-  const isAuthenticated = !!session?.user;
-  const isUnauthenticated = !isPending && !session?.user;
-  
+  try {
+    const { data: session, isPending, error } = authClient.useSession();
+    console.log(session)
+    
+    // Determine authentication status based on session data
+    const isAuthenticated = !!session?.user;
+    const isUnauthenticated = !isPending && !session?.user;
+
   return {
     // Session state
     session,
@@ -44,6 +45,33 @@ export function useAuthState() {
     isAdmin: () => (session?.user as any)?.role === 'admin',
     isModerator: () => (session?.user as any)?.role === 'moderator',
   };
+  } catch (error) {
+    console.error('Error in useAuthState:', error);
+    // Return default values if there's an error
+    return {
+      session: null,
+      user: null,
+      isLoading: true,
+      isAuthenticated: false,
+      isUnauthenticated: false,
+      signIn: authClient.signIn,
+      signOut: authClient.signOut,
+      signUp: authClient.signUp,
+      userId: null,
+      userEmail: null,
+      userName: null,
+      userRole: 'user',
+      isPro: false,
+      isSuspended: false,
+      userAvatar: null,
+      userGithubUsername: null,
+      userSocialAccounts: [],
+      userKind: null,
+      hasRole: () => false,
+      isAdmin: () => false,
+      isModerator: () => false,
+    };
+  }
 }
 
 /**

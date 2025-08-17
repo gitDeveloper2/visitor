@@ -16,15 +16,18 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import { useAuthState } from "@/hooks/useAuth";
+import { useTheme } from "@mui/material/styles";
 import { getShadow, getGlassStyles } from "@/utils/themeUtils";
-import { Person, Apps, Article } from "lucide-react";
+import { User, AppWindow, FileText } from "lucide-react";
 
 export default function DashboardPage() {
-  const { user, isLoading } = useAuthState();
+  try {
+    const theme = useTheme();
+    const { user, isLoading } = useAuthState();
 
-  // Debug logging
-  console.log('Dashboard - User data:', user);
-  console.log('Dashboard - Loading state:', isLoading);
+    // Debug logging
+    console.log('Dashboard - User data:', user);
+    console.log('Dashboard - Loading state:', isLoading);
 
   // Show loading state while auth is initializing
   if (isLoading) {
@@ -52,35 +55,35 @@ export default function DashboardPage() {
     {
       title: "Submit App",
       description: "Share your application with the community",
-      icon: <Apps size={24} />,
+      icon: <AppWindow size={24} />,
       href: "/dashboard/submit/app",
       color: "primary.main",
     },
     {
       title: "Submit Blog",
       description: "Write and publish your thoughts",
-      icon: <Article size={24} />,
+      icon: <FileText size={24} />,
       href: "/dashboard/submit/blog",
       color: "secondary.main",
     },
     {
       title: "My Apps",
       description: "Manage your submitted applications",
-      icon: <Apps size={24} />,
+      icon: <AppWindow size={24} />,
       href: "/dashboard/my-apps",
       color: "success.main",
     },
     {
       title: "My Blogs",
       description: "View and edit your blog posts",
-      icon: <Article size={24} />,
+      icon: <FileText size={24} />,
       href: "/dashboard/my-blogs",
       color: "info.main",
     },
     {
       title: "Profile Settings",
       description: "Update your profile information",
-      icon: <Person size={24} />,
+      icon: <User size={24} />,
       href: "/dashboard/profile",
       color: "warning.main",
     },
@@ -100,8 +103,8 @@ export default function DashboardPage() {
                 height: '100%', 
                 display: 'flex', 
                 flexDirection: 'column',
-                ...getGlassStyles(),
-                ...getShadow(),
+                ...getGlassStyles(theme),
+                boxShadow: getShadow(theme, 'elegant'),
                 transition: 'transform 0.2s ease-in-out',
                 '&:hover': {
                   transform: 'translateY(-4px)',
@@ -150,4 +153,14 @@ export default function DashboardPage() {
       </Grid>
     </Container>
   );
+  } catch (error) {
+    console.error('Error in DashboardPage:', error);
+    return (
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <Typography variant="h6">Something went wrong. Please try again.</Typography>
+        </Box>
+      </Container>
+    );
+  }
 }

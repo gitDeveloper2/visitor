@@ -17,35 +17,42 @@ export function OnboardingGuard({
   fallback,
 }: OnboardingGuardProps) {
   const router = useRouter();
-  const { canAccess, isLoading, redirectTo: guardRedirectTo } = useOnboardingGuard();
+  
+  try {
+    const { canAccess, isLoading, redirectTo: guardRedirectTo } = useOnboardingGuard();
 
-  useEffect(() => {
-    if (!isLoading && !canAccess && guardRedirectTo) {
-      console.log('User needs onboarding, redirecting...', { redirectTo: guardRedirectTo });
-      router.push(guardRedirectTo);
+    useEffect(() => {
+      if (!isLoading && !canAccess && guardRedirectTo) {
+        console.log('User needs onboarding, redirecting...', { redirectTo: guardRedirectTo });
+        router.push(guardRedirectTo);
+      }
+    }, [canAccess, isLoading, guardRedirectTo, router]);
+
+    // Show loading state while checking
+    if (isLoading) {
+      return fallback || (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress />
+        </Box>
+      );
     }
-  }, [canAccess, isLoading, guardRedirectTo, router]);
 
-  // Show loading state while checking
-  if (isLoading) {
-    return fallback || (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-        <CircularProgress />
-      </Box>
-    );
+    // If user needs onboarding, don't render children
+    if (!canAccess) {
+      return fallback || (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress />
+        </Box>
+      );
+    }
+
+    // User has completed onboarding, render children
+    return <>{children}</>;
+  } catch (error) {
+    console.error('Error in OnboardingGuard:', error);
+    // Fallback to showing children if there's an error
+    return <>{children}</>;
   }
-
-  // If user needs onboarding, don't render children
-  if (!canAccess) {
-    return fallback || (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  // User has completed onboarding, render children
-  return <>{children}</>;
 }
 
 // Higher-order component for protecting pages that require completed onboarding
