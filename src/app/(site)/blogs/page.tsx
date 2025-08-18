@@ -2,6 +2,7 @@ import React, { Suspense } from 'react';
 import { Container, Typography, Box, CircularProgress, Chip, Grid, useTheme, useMediaQuery } from '@mui/material';
 import BlogMainPage from './BlogMainPage';
 import { connectToDatabase } from '../../../lib/mongodb';
+import { sortByScore, computeBlogScore } from '@/features/ranking/score';
 import Link from 'next/link';
 import { fetchCategoryNames } from '../../../utils/categories';
 
@@ -34,6 +35,7 @@ const transformBlogDocument = (doc: any) => ({
 
 // Featured blog selection logic (quality + time + category rotation)
 const CRITERIA_WEIGHTS = { quality: 0.4, timeBased: 0.3, categoryRotation: 0.3 };
+import { BLOG_QUALITY_CONFIG } from '@/features/ranking/config';
 
 const calculateBlogScore = (blog: any) => {
   const now = new Date();
@@ -137,10 +139,21 @@ export default async function BlogsPage() {
     
     console.log("raw blogs",rawBlogs)
     // Transform the database documents to match BlogPost interface
-    const allBlogs = rawBlogs.map(transformBlogDocument);
+    let allBlogs = rawBlogs.map(transformBlogDocument);
+    // Prefer stored qualityScore if present; fall back to computeBlogScore
+    allBlogs = [...allBlogs].sort((a: any, b: any) => {
+      const sa = typeof a.qualityScore === 'number' ? a.qualityScore : computeBlogScore(a);
+      const sb = typeof b.qualityScore === 'number' ? b.qualityScore : computeBlogScore(b);
+      return sb - sa;
+    });
     
-    // Select featured blogs using our algorithm
-    const featuredBlogs = selectFeaturedWithRotation(allBlogs, 3);
+    // Auto-feature blogs with high quality score
+    const highQuality = allBlogs.filter((b: any) => typeof b.qualityScore === 'number' && b.qualityScore >= BLOG_QUALITY_CONFIG.featureThreshold);
+    // Select featured blogs using algorithm; ensure high quality ones are regularly featured
+    const featuredSet = new Map<string, any>();
+    for (const b of highQuality.slice(0, 3)) featuredSet.set(b._id, b);
+    for (const b of selectFeaturedWithRotation(allBlogs, 3)) if (!featuredSet.has(b._id)) featuredSet.set(b._id, b);
+    const featuredBlogs = Array.from(featuredSet.values()).slice(0, 3);
     console.log("featured ",featuredBlogs);
     // Extract founder stories
     const founderStories = allBlogs.filter((blog: any) => blog.isFounderStory);

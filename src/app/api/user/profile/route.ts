@@ -30,12 +30,13 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { bio, jobTitle, websiteUrl, twitterUsername, linkedinUsername } = await request.json();
+    const { name, bio, jobTitle, websiteUrl, twitterUsername, linkedinUsername } = await request.json();
     const {db} = await connectToDatabase();
     const result = await db.collection('user').updateOne(
       { _id: new ObjectId(session.user.id) },
       {
         $set: {
+          ...(name ? { name } : {}),
           bio: bio || "",
           jobTitle: jobTitle || "",
           websiteUrl: websiteUrl || "",
@@ -53,7 +54,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ 
       message: 'Profile updated successfully',
-      profile: { bio, jobTitle, websiteUrl, twitterUsername, linkedinUsername }
+      profile: { name, bio, jobTitle, websiteUrl, twitterUsername, linkedinUsername }
     });
   } catch (error) {
     console.error('Error updating profile:', error);

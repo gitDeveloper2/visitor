@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@lib/mongodb';
+import { computeBlogQuality, finalizeBlogQualityScore } from '@/features/ranking/quality';
 import { getSession } from '@/features/shared/utils/auth';
 
 export async function GET(
@@ -86,6 +87,16 @@ export async function PATCH(
       return NextResponse.json({ message: 'You can only edit blogs that are pending approval' }, { status: 400 });
     }
 
+    // Recompute quality on update
+    const qParts = computeBlogQuality(content);
+    const q = finalizeBlogQualityScore({
+      wordCount: qParts.wordCount,
+      headingsScore: qParts.headingsScore,
+      linksScore: qParts.linksScore,
+      hasImage: Boolean(existingBlog.imageUrl),
+      tagsCount: Array.isArray(tags) ? tags.length : (existingBlog.tags?.length || 0),
+    });
+
     const updateData = {
       title,
       content,
@@ -100,6 +111,8 @@ export async function PATCH(
       // Update metadata
       readTime: Math.ceil(content.replace(/<[^>]*>/g, '').split(' ').length / 200),
       updatedAt: new Date(),
+      qualityScore: q.total,
+      qualityBreakdown: q,
     };
 
     const result = await db

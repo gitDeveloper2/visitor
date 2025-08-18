@@ -54,6 +54,14 @@ function SubmitAppPageContent() {
   const hasLoadedDataRef = useRef(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
+  // Content limits (adjust as needed)
+  const APP_LIMITS = {
+    taglineMin: 10,
+    descriptionMin: 80,
+    fullDescriptionMin: 300,
+    featuresMin: 3,
+  } as const;
+
   const [form, setForm] = useState({
     name: "",
     tagline: "",
@@ -394,16 +402,19 @@ function SubmitAppPageContent() {
 
     if (!isNonEmpty(form.name)) errors.name = "App name is required";
     if (!isNonEmpty(form.tagline)) errors.tagline = "Tagline is required";
-    if (!isNonEmpty(form.description) || (form.description || "").trim().length < 30) {
-      errors.description = "Description must be at least 30 characters";
+    else if ((form.tagline || "").trim().length < APP_LIMITS.taglineMin) errors.tagline = `Tagline must be at least ${APP_LIMITS.taglineMin} characters`;
+    if (!isNonEmpty(form.description) || (form.description || "").trim().length < APP_LIMITS.descriptionMin) {
+      errors.description = `Description must be at least ${APP_LIMITS.descriptionMin} characters`;
     }
-    if (!isNonEmpty(form.fullDescription)) errors.fullDescription = "Full description is required";
+    if (!isNonEmpty(form.fullDescription) || (form.fullDescription || "").trim().length < APP_LIMITS.fullDescriptionMin) {
+      errors.fullDescription = `Full description must be at least ${APP_LIMITS.fullDescriptionMin} characters`;
+    }
     if (!isNonEmpty(form.category)) errors.category = "Category is required";
     if (!isValidUrl(form.website)) errors.website = "Enter a valid website URL (include http/https)";
     if (!isNonEmpty(form.authorName)) errors.authorName = "Author name is required";
     if (!isValidEmail(form.authorEmail)) errors.authorEmail = "Enter a valid email";
     if (!isNonEmpty(form.pricing)) errors.pricing = "Pricing model is required";
-    if (!form.features || form.features.length === 0) errors.features = "Add at least one key feature";
+    if (!form.features || form.features.length < APP_LIMITS.featuresMin) errors.features = `Add at least ${APP_LIMITS.featuresMin} key features`;
     if (!selectedPremiumPlan) errors.selectedPremiumPlan = "Select Premium or Free listing";
 
     setFieldErrors(errors);
@@ -562,6 +573,21 @@ function SubmitAppPageContent() {
         }
         
         setSuccess(true);
+
+        // Sync profile after successful submit/update
+        try {
+          await fetch('/api/user/profile', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: form.authorName,
+              bio: form.authorBio,
+              jobTitle: (user as any)?.jobTitle || '',
+            })
+          });
+        } catch (e) {
+          console.warn('Failed to sync profile after app submit', e);
+        }
         if (!isEditing) {
           setForm({ 
             name: "",

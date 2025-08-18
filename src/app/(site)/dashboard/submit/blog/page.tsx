@@ -23,6 +23,8 @@ import StepReview from "./StepReview";
 import { useState, useEffect, useCallback } from "react";
 import PremiumBlogSubscription from "../../../../../components/premium/PremiumBlogSubscription";
 import { Clock, AlertTriangle } from "lucide-react";
+import { computeBlogQuality, finalizeBlogQualityScore, type BlogQualityBreakdown } from '@/features/ranking/quality';
+import { BLOG_QUALITY_CONFIG } from '@/features/ranking/config';
 
 import { useSearchParams } from 'next/navigation';
 import { useAuthState } from '@/hooks/useAuth';
@@ -39,6 +41,7 @@ function BlogSubmitPageContent() {
     author: "",
     role: "",
     category: "",
+    subcategories: [] as string[],
     tags: [] as string[],
     authorBio: "",
     excerpt: "",
@@ -59,11 +62,84 @@ function BlogSubmitPageContent() {
   const [isPremiumUser, setIsPremiumUser] = useState(false);
   const [draftExpiryDate, setDraftExpiryDate] = useState<Date | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [qualityBreakdown, setQualityBreakdown] = useState<BlogQualityBreakdown | null>(null);
+  const [qualityHints, setQualityHints] = useState<string[]>([]);
+
+  // Content limits (adjust as needed)
+  const BLOG_LIMITS = {
+    titleMin: 5,
+    authorBioMin: 30,
+    excerptMin: 60,
+    contentWordsMin: 900,
+    contentWordsMax: 2000,
+    tagsMin: 3,
+    tagsMax: 8,
+  } as const;
 
   // Debug: Log form data changes
   useEffect(() => {
     console.log('📋 Form data updated:', formData);
   }, [formData]);
+
+  // Live quality analysis (debounced)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        const contentHtml = formData.content || '';
+        const parts = computeBlogQuality(contentHtml, { maxLinks: BLOG_QUALITY_CONFIG.maxLinks });
+        const hasImage = Boolean(formData.imageUrl || formData.imageFile);
+        const tagsCount = Array.isArray(formData.tags) ? formData.tags.length : 0;
+        const breakdown = finalizeBlogQualityScore({
+          wordCount: parts.wordCount,
+          headingsScore: parts.headingsScore,
+          linksScore: parts.linksScore,
+          hasImage,
+          tagsCount,
+        });
+
+        // Derive human hints
+        const hints: string[] = [];
+        const minW = BLOG_QUALITY_CONFIG.wordIdealMin;
+        const maxW = BLOG_QUALITY_CONFIG.wordIdealMax;
+        if (parts.wordCount < minW) hints.push(`Add ${minW - parts.wordCount} more words to reach the minimum of ${minW}.`);
+        if (parts.wordCount > maxW) hints.push(`Trim ~${parts.wordCount - maxW} words to stay under the maximum of ${maxW}.`);
+
+        // Heading checks
+        const hMatches = Array.from(String(contentHtml || '').matchAll(/<h([1-6])[^>]*>/gi));
+        let hasH1 = false;
+        let lastLevel = 0;
+        let badJumps = 0;
+        for (const m of hMatches) {
+          const level = parseInt(m[1], 10);
+          if (level === 1) hasH1 = true;
+          if (lastLevel > 0 && level > lastLevel + 1) badJumps += 1;
+          lastLevel = level;
+        }
+        if (!hasH1) hints.push('Add an H1 heading at the top for better structure.');
+        if (badJumps > 0) hints.push(`Avoid skipping heading levels (found ${badJumps} jump${badJumps > 1 ? 's' : ''}).`);
+
+        // Links
+        const linkCount = (contentHtml.match(/<a\s+[^>]*href=/gi) || []).length;
+        if (linkCount > BLOG_QUALITY_CONFIG.maxLinks) {
+          hints.push(`Reduce links: ${linkCount}/${BLOG_QUALITY_CONFIG.maxLinks} (soft cap).`);
+        }
+
+        // Image
+        if (!hasImage) hints.push('Add an image for a small quality boost.');
+
+        // Tags
+        if (tagsCount < 3 || tagsCount > 8) hints.push('Use 3–8 relevant tags.');
+
+        setQualityBreakdown(breakdown);
+        setQualityHints(hints);
+      } catch (e) {
+        console.warn('Quality analysis failed:', e);
+        setQualityBreakdown(null);
+        setQualityHints([]);
+      }
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [formData.content, formData.tags, formData.imageFile, formData.imageUrl]);
 
   // Check if user is returning from payment with a draft ID or continuing editing
   useEffect(() => {
@@ -106,11 +182,12 @@ function BlogSubmitPageContent() {
         console.log('📝 Draft data received:', draft);
         
         // Map draft data to form structure
-        const formDataToSet = {
+        const formDataToSet: typeof formData = {
           title: draft.title || '',
           author: draft.author || '',
           role: draft.role || '',
           category: draft.category || '',
+          subcategories: Array.isArray(draft.subcategories) ? draft.subcategories : [],
           tags: Array.isArray(draft.tags) ? draft.tags : [],
           authorBio: draft.authorBio || '',
           excerpt: draft.excerpt || '',
@@ -194,12 +271,16 @@ function BlogSubmitPageContent() {
   const validateMetadata = () => {
     const errors: Record<string, string> = {};
     if (!formData.title?.trim()) errors.title = "Title is required";
+    else if (formData.title.trim().length < BLOG_LIMITS.titleMin) errors.title = `Title must be at least ${BLOG_LIMITS.titleMin} characters`;
     if (!formData.author?.trim()) errors.author = "Author name is required";
     if (!formData.role?.trim()) errors.role = "Author role is required";
     if (!formData.category?.toString().trim()) errors.category = "Category is required";
     if (!formData.authorBio?.trim()) errors.authorBio = "Author bio is required";
+    else if (formData.authorBio.trim().length < BLOG_LIMITS.authorBioMin) errors.authorBio = `Author bio must be at least ${BLOG_LIMITS.authorBioMin} characters`;
     if (!Array.isArray(formData.tags) || formData.tags.length === 0) errors.tags = "At least one tag is required";
+    else if (formData.tags.length < BLOG_LIMITS.tagsMin || formData.tags.length > BLOG_LIMITS.tagsMax) errors.tags = `Use between ${BLOG_LIMITS.tagsMin}-${BLOG_LIMITS.tagsMax} tags`;
     if (!formData.excerpt?.trim()) errors.excerpt = "Excerpt is required";
+    else if (formData.excerpt.trim().length < BLOG_LIMITS.excerptMin) errors.excerpt = `Excerpt must be at least ${BLOG_LIMITS.excerptMin} characters`;
     if (formData.isFounderStory) {
       const status = formData.founderDomainCheck?.status;
       if (!formData.founderUrl?.trim()) {
@@ -223,8 +304,11 @@ function BlogSubmitPageContent() {
   const validateContent = () => {
     const errors: Record<string, string> = {};
     const text = stripHtml(formData.content || "").trim();
-    if (!text || text.length < 30) {
-      errors.content = "Please write at least 30 characters of content";
+    const wordCount = text ? text.split(/\s+/).filter(Boolean).length : 0;
+    if (!text || wordCount < BLOG_LIMITS.contentWordsMin) {
+      errors.content = `Please write at least ${BLOG_LIMITS.contentWordsMin} words (current: ${wordCount})`;
+    } else if (wordCount > BLOG_LIMITS.contentWordsMax) {
+      errors.content = `Please keep the blog under ${BLOG_LIMITS.contentWordsMax} words (current: ${wordCount})`;
     }
     setValidationErrors(prev => ({ ...prev, ...errors }));
     return !errors.content;
@@ -239,6 +323,13 @@ function BlogSubmitPageContent() {
       setError("Please add more content before continuing.");
       return;
     }
+    if (activeStep === 1) {
+      // Enforce minimum quality before proceeding to review
+      if (!qualityBreakdown || qualityBreakdown.total < BLOG_QUALITY_CONFIG.minProceedThreshold) {
+        setError(`Please improve quality score to at least ${BLOG_QUALITY_CONFIG.minProceedThreshold.toFixed(2)} to proceed.`);
+        return;
+      }
+    }
     setError(null);
     setActiveStep((prev) => prev + 1);
   };
@@ -249,6 +340,55 @@ function BlogSubmitPageContent() {
     setFormData((prev) => {
       const newData = { ...prev, ...data };
       console.log('📋 New form data after change:', newData);
+
+      // Optimistically clear validation errors for fields that just became valid
+      setValidationErrors((prevErrs) => {
+        const nextErrs = { ...prevErrs };
+
+        const stripHtml = (html: string) => {
+          const tmp = document.createElement('div');
+          tmp.innerHTML = html || '';
+          return tmp.textContent || tmp.innerText || '';
+        };
+
+        if (Object.prototype.hasOwnProperty.call(data, 'title')) {
+          if (newData.title && newData.title.trim().length >= BLOG_LIMITS.titleMin) delete nextErrs.title;
+        }
+        if (Object.prototype.hasOwnProperty.call(data, 'author')) {
+          if (newData.author && newData.author.trim()) delete nextErrs.author;
+        }
+        if (Object.prototype.hasOwnProperty.call(data, 'role')) {
+          if (newData.role && newData.role.trim()) delete nextErrs.role;
+        }
+        if (Object.prototype.hasOwnProperty.call(data, 'category')) {
+          if (newData.category && String(newData.category).trim()) delete nextErrs.category;
+        }
+        if (Object.prototype.hasOwnProperty.call(data, 'authorBio')) {
+          if (newData.authorBio && newData.authorBio.trim().length >= BLOG_LIMITS.authorBioMin) delete nextErrs.authorBio;
+        }
+        if (Object.prototype.hasOwnProperty.call(data, 'tags') || Object.prototype.hasOwnProperty.call(data as any, 'tagsInput')) {
+          const count = Array.isArray(newData.tags) ? newData.tags.length : 0;
+          if (count >= BLOG_LIMITS.tagsMin && count <= BLOG_LIMITS.tagsMax) delete nextErrs.tags;
+        }
+        if (Object.prototype.hasOwnProperty.call(data, 'excerpt')) {
+          if (newData.excerpt && newData.excerpt.trim().length >= BLOG_LIMITS.excerptMin) delete nextErrs.excerpt;
+        }
+        if (Object.prototype.hasOwnProperty.call(data, 'content')) {
+          const text = stripHtml(newData.content || '').trim();
+          const wc = text ? text.split(/\s+/).filter(Boolean).length : 0;
+          if (wc >= BLOG_LIMITS.contentWordsMin && wc <= BLOG_LIMITS.contentWordsMax) delete nextErrs.content;
+        }
+        if (Object.prototype.hasOwnProperty.call(data, 'founderUrl') || Object.prototype.hasOwnProperty.call(data, 'founderDomainCheck') || Object.prototype.hasOwnProperty.call(data, 'isFounderStory')) {
+          const status = newData.founderDomainCheck?.status;
+          if (!newData.isFounderStory) {
+            delete nextErrs.founderUrl;
+          } else if (newData.founderUrl && status === 'ok') {
+            delete nextErrs.founderUrl;
+          }
+        }
+        return nextErrs;
+      });
+
       return newData;
     });
   };
@@ -278,6 +418,12 @@ function BlogSubmitPageContent() {
     if (!contentOk) {
       setActiveStep(1);
       setError("Please complete the blog content.");
+      return;
+    }
+    // Block submission if below threshold as a final guard
+    if (!qualityBreakdown || qualityBreakdown.total < BLOG_QUALITY_CONFIG.minProceedThreshold) {
+      setError(`Quality score must be ≥ ${BLOG_QUALITY_CONFIG.minProceedThreshold.toFixed(2)} before submitting.`);
+      setActiveStep(1);
       return;
     }
     setLoading(true);
@@ -348,14 +494,31 @@ function BlogSubmitPageContent() {
       }
 
       setSuccess(true);
+
+      // Sync author profile changes if user edited their author fields
+      try {
+        await fetch('/api/user/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: formData.author,
+            bio: formData.authorBio,
+            jobTitle: formData.role,
+          })
+        });
+      } catch (e) {
+        console.warn('Failed to sync profile after blog submit', e);
+      }
       setActiveStep(0);
       setFormData({
         title: "",
         author: "",
         role: "",
         category: "",
+        subcategories: [],
         tags: [],
         authorBio: "",
+        excerpt: "",
         content: "",
         isFounderStory: false,
         founderUrl: "",
@@ -476,7 +639,7 @@ function BlogSubmitPageContent() {
   
   return (
     <Box component="main" sx={{ bgcolor: "background.default", py: 8 }}>
-      <Container maxWidth="md">
+      <Container maxWidth="lg">
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h5" gutterBottom>
             Submit Your Blog
@@ -524,7 +687,7 @@ function BlogSubmitPageContent() {
         >
           {activeStep === 0 && (
             <StepMetadata 
-              formData={formData} 
+              formData={formData as any}
               setFormData={handleFormDataChange}
               errors={{
                 title: validationErrors.title,
@@ -543,6 +706,13 @@ function BlogSubmitPageContent() {
               formData={formData} 
               setFormData={handleFormDataChange}
               errorText={validationErrors.content}
+              quality={{
+                breakdown: qualityBreakdown || undefined,
+                hints: qualityHints,
+                config: BLOG_QUALITY_CONFIG,
+                tagsCount: Array.isArray(formData.tags) ? formData.tags.length : 0,
+                linkCap: BLOG_QUALITY_CONFIG.maxLinks,
+              }}
             />
           )}
           {activeStep === 2 && (
@@ -550,7 +720,7 @@ function BlogSubmitPageContent() {
               {/* Show countdown timer if editing a draft */}
               {draftExpiryDate && <DraftCountdownTimer />}
               
-              <StepReview metadata={formData} content={formData.content} />
+              <StepReview metadata={formData} content={formData.content} qualityBreakdown={qualityBreakdown || undefined} />
               {!formData.isFounderStory && !isPremiumUser && (
                 <Box mt={4}>
                   <Alert severity="warning" sx={{ mb: 3 }}>

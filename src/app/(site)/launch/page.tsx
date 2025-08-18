@@ -3,6 +3,7 @@ import { Container, Typography, Box, CircularProgress } from '@mui/material';
 import AppsMainPage from './AppsMainPage';
 import { connectToDatabase } from '../../../lib/mongodb';
 import { verifyAppPremiumStatus } from '../../../utils/premiumVerification';
+import { sortByScore, computeAppScore } from '@/features/ranking/score';
 
 // Helper function to serialize MongoDB objects
 function serializeMongoObject(obj: any): any {
@@ -62,7 +63,7 @@ export default async function LaunchPage() {
     
     // Fetch all approved apps for the first page (excluding featured apps to avoid duplication)
     const featuredAppIds = featuredApps.map(app => app._id);
-    const allApps = await db.collection('userapps')
+    let allApps = await db.collection('userapps')
       .find({ 
         status: 'approved',
         _id: { $nin: featuredAppIds } // Exclude featured apps from main list
@@ -70,6 +71,8 @@ export default async function LaunchPage() {
       .sort({ createdAt: -1 })
       .limit(12)
       .toArray();
+    // Apply ranking score to main list (featured already selected by premium+recency)
+    allApps = sortByScore(allApps as any, computeAppScore) as any;
     
     // Get total count for pagination (excluding featured apps)
     const totalApps = await db.collection('userapps')

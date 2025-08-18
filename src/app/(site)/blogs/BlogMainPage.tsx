@@ -463,7 +463,8 @@ export default function BlogMainPage({
   );
 
   const renderBlogCard = (blog: BlogPost) => {
-    const excerpt = blog.content.replace(/<[^>]*>/g, '').slice(0, 120) + '...';
+    const fallbackExcerpt = blog.content.replace(/<[^>]*>/g, '').slice(0, 120) + '...';
+    const excerpt = (blog as any).excerpt?.trim() ? (blog as any).excerpt : fallbackExcerpt;
     const readTime = blog.readTime || Math.ceil(blog.content.replace(/<[^>]*>/g, '').split(' ').length / 200);
 
     return (

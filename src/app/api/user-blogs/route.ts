@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/features/shared/utils/auth';
 import { connectToDatabase } from '@lib/mongodb';
 import { generateUniqueSlug } from '../../../utils/slugGenerator';
+import { computeBlogQuality, finalizeBlogQualityScore } from '@/features/ranking/quality';
 
 // Force dynamic rendering to prevent build-time static generation issues
 export const dynamic = 'force-dynamic';
@@ -64,6 +65,16 @@ export async function POST(request: Request) {
     const existingSlugStrings = existingSlugs.map(blog => blog.slug);
     const slug = generateUniqueSlug(title, existingSlugStrings);
 
+    // Compute quality score once per create
+    const qualityParts = computeBlogQuality(content);
+    const quality = finalizeBlogQualityScore({
+      wordCount: qualityParts.wordCount,
+      headingsScore: qualityParts.headingsScore,
+      linksScore: qualityParts.linksScore,
+      hasImage: Boolean(imageUrl),
+      tagsCount: Array.isArray(tags) ? tags.length : 0,
+    });
+
     const newBlog = {
       title,
       slug, // Add the generated slug
@@ -92,6 +103,8 @@ export async function POST(request: Request) {
       status: 'pending',
       createdAt: new Date(),
       updatedAt: new Date(),
+      qualityScore: quality.total,
+      qualityBreakdown: quality,
     };
 
     const result = await db.collection('userblogs').insertOne(newBlog);

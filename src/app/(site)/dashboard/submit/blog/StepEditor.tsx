@@ -9,7 +9,7 @@ import Underline from "@tiptap/extension-underline";
 import Image from "@tiptap/extension-image";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { common } from 'lowlight';
-import { Box, Typography, Alert } from "@mui/material";
+import { Box, Typography, Alert, Chip, Divider, LinearProgress, Tooltip, Grid, Paper } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { Color, TextStyle } from '@tiptap/extension-text-style'
 
@@ -19,6 +19,20 @@ interface StepEditorProps {
   };
   setFormData: (data: Partial<{ content: string }>) => void;
   errorText?: string;
+  quality?: {
+    breakdown?: {
+      wordCount: number;
+      headingsScore: number;
+      linksScore: number;
+      imagesScore: number;
+      tagsScore: number;
+      total: number;
+    };
+    hints: string[];
+    config: { wordIdealMin: number; wordIdealMax: number };
+    tagsCount: number;
+    linkCap: number;
+  };
 }
 
 // --- Menu Bar ---
@@ -62,7 +76,7 @@ const MenuBar = ({ editor }: { editor: any }) => {
 };
 
 // --- Component ---
-export default function StepEditor({ formData, setFormData, errorText }: StepEditorProps) {
+export default function StepEditor({ formData, setFormData, errorText, quality }: StepEditorProps) {
   const theme = useTheme();
 
   const editor = useEditor({
@@ -115,8 +129,64 @@ export default function StepEditor({ formData, setFormData, errorText }: StepEdi
           {errorText}
         </Alert>
       )}
-      <MenuBar editor={editor} />
-      <EditorContent editor={editor} />
+
+      <Grid container spacing={3} alignItems="flex-start">
+        <Grid item xs={12} md={9}>
+          <MenuBar editor={editor} />
+          <EditorContent editor={editor} />
+        </Grid>
+        {quality?.breakdown && (
+          <Grid item xs={12} md={3}>
+            <Box sx={{ position: { md: 'sticky' }, top: { md: 80 }, alignSelf: 'flex-start', zIndex: 1 }}>
+            <Paper sx={{ p: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Quality score
+                </Typography>
+                <Typography variant="body2" fontWeight={600}>
+                  {quality.breakdown.total.toFixed(2)} / {(
+                    quality.breakdown.imagesScore * 0 + 1
+                  ).toFixed(0)}
+                </Typography>
+              </Box>
+              <LinearProgress
+                variant="determinate"
+                value={Math.max(0, Math.min(100, quality.breakdown.total * 100))}
+                sx={{ height: 8, borderRadius: 999 }}
+              />
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+                <Tooltip title={`Words: ${quality.breakdown.wordCount} (ideal ${quality.config.wordIdealMin}-${quality.config.wordIdealMax})`}>
+                  <Chip size="small" label={`Words ${quality.breakdown.wordCount}`} />
+                </Tooltip>
+                <Tooltip title={`Headings score: ${quality.breakdown.headingsScore.toFixed(2)}`}>
+                  <Chip size="small" label={`Headings ${quality.breakdown.headingsScore.toFixed(2)}`} />
+                </Tooltip>
+                <Tooltip title={`Links score: ${quality.breakdown.linksScore.toFixed(2)} (cap ${quality.linkCap})`}>
+                  <Chip size="small" label={`Links ${quality.breakdown.linksScore.toFixed(2)}`} />
+                </Tooltip>
+                <Tooltip title={`Tags score: ${quality.breakdown.tagsScore.toFixed(2)} (you have ${quality.tagsCount})`}>
+                  <Chip size="small" label={`Tags ${quality.breakdown.tagsScore.toFixed(2)}`} />
+                </Tooltip>
+                <Tooltip title={`Images score: ${quality.breakdown.imagesScore.toFixed(2)}`}>
+                  <Chip size="small" label={`Images ${quality.breakdown.imagesScore.toFixed(2)}`} />
+                </Tooltip>
+              </Box>
+              {quality.hints.length > 0 && (
+                <Alert severity="info" sx={{ mt: 1 }}>
+                  <ul style={{ margin: 0, paddingLeft: 16 }}>
+                    {quality.hints.map((h, i) => (
+                      <li key={i}>
+                        <Typography variant="caption">{h}</Typography>
+                      </li>
+                    ))}
+                  </ul>
+                </Alert>
+              )}
+            </Paper>
+            </Box>
+          </Grid>
+        )}
+      </Grid>
     </Box>
   );
 }

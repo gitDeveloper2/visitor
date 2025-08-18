@@ -29,12 +29,14 @@ interface BlogPost {
   slug: string; // Added slug field
   content: string;
   tags: string[];
-  authorName: string;
-  authorEmail: string;
+  authorName?: string;
+  authorEmail?: string;
   // Additional fields from forms
   author?: string;
   role?: string;
   authorBio?: string;
+  excerpt?: string;
+  imageUrl?: string;
   founderUrl?: string;
   isInternal?: boolean;
   isFounderStory?: boolean;
@@ -109,7 +111,7 @@ export default function BlogPageWrapper() {
 
   return (
     <BlogArticlePage
-      author={blog.author || blog.authorName}
+      author={blog.author || blog.authorName || "Author"}
       role={blog.role || "Author"}
       authorBio={blog.authorBio}
       title={blog.title}
