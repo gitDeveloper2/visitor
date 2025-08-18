@@ -13,13 +13,10 @@ import { dbObject } from "../lib/mongodb";
 
 export const auth = betterAuth({
   database: mongodbAdapter(dbObject),
-  trustedOrigins: (process.env.NODE_ENV === "production")
-  ? ["https://mot-better-auth-driver.vercel.app"]
-  : [
-      "http://localhost:3000", // dev
-      process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`,
-      "https://mot-better-auth-driver.vercel.app", // fallback
-    ].filter(Boolean) as string[],
+  trustedOrigins: (process.env.BETTER_AUTH_URL || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean) as string[],
   emailAndPassword: {
     enabled: true,
     // autoSignIn: true,
