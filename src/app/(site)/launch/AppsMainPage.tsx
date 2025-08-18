@@ -24,7 +24,7 @@ import {
   typographyVariants,
   commonStyles,
 } from "../../../utils/themeUtils";
-import SubmitAppCTA from "./SubmitAppCTA";
+import UnifiedCTA from "../components/UnifiedCTA";
 import { useEffect, useState } from "react";
 import { fetchCategoriesFromAPI } from "../../../utils/categories";
 
@@ -779,7 +779,12 @@ export default function AppsMainPage({
         </Box>
       </Paper>
 
-      <SubmitAppCTA />
+      <UnifiedCTA 
+        title="Launch your app to thousands of developers 🚀"
+        subtitle="Get featured, verified, and gain visibility in the dev community."
+        href="/launch/submit"
+        buttonText="Submit Your App"
+      />
 
       {/* Featured Apps */}
       {featuredApps.length > 0 && (

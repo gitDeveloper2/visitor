@@ -32,6 +32,7 @@ import {
 import Badge from "@components/badges/Badge";
 import { getShadow, getGlassStyles, typographyVariants, commonStyles } from "@/utils/themeUtils";
 import Link from "next/link";
+import UnifiedCTA from "../components/UnifiedCTA";
 
 interface BlogPost {
   _id: string;
@@ -683,6 +684,14 @@ export default function BlogMainPage({
       </Paper>
       */}
 
+      {/* CTA unified with Launch */}
+      <UnifiedCTA 
+        title="Share your story with the community ✍️"
+        subtitle="Publish tutorials, founder stories, and insights for developers."
+        href="/dashboard/submission/blog"
+        buttonText="Submit Your Blog"
+      />
+
       {/* Featured Articles Section */}
       {featuredBlogs.length > 0 && (
         <Box sx={{ mb: { xs: 4, sm: 6 } }}>
@@ -783,20 +792,7 @@ export default function BlogMainPage({
           >
             All Articles
           </Typography>
-          <Button
-            component={Link}
-            href="/dashboard/submission/blog"
-            variant="contained"
-            color="primary"
-            startIcon={<Plus size={isMobile ? 16 : 18} />}
-            size={isMobile ? "small" : "medium"}
-            sx={{ 
-              fontWeight: 600,
-              fontSize: { xs: '0.75rem', sm: '0.875rem' }
-            }}
-          >
-            Write Blog
-          </Button>
+          {/* Header inline CTA removed in favor of unified CTA above */}
         </Box>
       </Box>
 
@@ -851,20 +847,12 @@ export default function BlogMainPage({
             }
           </Typography>
           {!searchQuery && (
-            <Button
-              component={Link}
+            <UnifiedCTA 
+              title="Share your first blog post ✍️"
+              subtitle="Inspire others by writing your first article."
               href="/dashboard/submission/blog"
-              variant="contained"
-              color="primary"
-              startIcon={<Plus size={isMobile ? 16 : 18} />}
-              size={isMobile ? "small" : "medium"}
-              sx={{ 
-                fontWeight: 600,
-                fontSize: { xs: '0.75rem', sm: '0.875rem' }
-              }}
-            >
-              Write Your First Blog
-            </Button>
+              buttonText="Submit Your Blog"
+            />
           )}
         </Box>
       )}
