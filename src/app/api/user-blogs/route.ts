@@ -19,10 +19,12 @@ export async function POST(request: Request) {
       content, 
       category,
       subcategories, 
+      tags,
       isInternal,
       author, // from form
       role, // from form
       authorBio, // from form
+      excerpt,
       founderUrl, // from form
       isFounderStory, // from form
       imageUrl, // from image upload
@@ -68,6 +70,7 @@ export async function POST(request: Request) {
       content,
       category: category || 'Technology',
       subcategories: subcategories || [],
+      tags: Array.isArray(tags) ? tags : [],
       authorId: session.user.id,
       authorName: session.user.name,
       authorEmail: session.user.email,
@@ -75,6 +78,7 @@ export async function POST(request: Request) {
       author: author || session.user.name,
       role: role || 'Author',
       authorBio: authorBio || '',
+      excerpt: excerpt || '',
       founderUrl: founderUrl || '',
       isFounderStory: isFounderStory || false,
       isInternal: isInternal || isFounderStory || false,

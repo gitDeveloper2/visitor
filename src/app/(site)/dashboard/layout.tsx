@@ -24,6 +24,7 @@ import {
   Toolbar,
   useMediaQuery,
   useTheme,
+  Collapse,
 } from "@mui/material";
 import Link from "next/link";
 import { useTheme as useMuiTheme } from "@mui/material/styles";
@@ -208,47 +209,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
         <Divider sx={{ my: 1 }} />
 
-        {/* Submit Section */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={handleSubmitMenuOpen}>
-            <AddIcon />
-            <Typography sx={{ ml: 1.5 }}>Submit</Typography>
-          </ListItemButton>
-        </ListItem>
-
-        <Menu
-          anchorEl={submitMenuAnchor}
-          open={Boolean(submitMenuAnchor)}
-          onClose={handleSubmitMenuClose}
-          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-          PaperProps={{
-            sx: {
-              bgcolor: 'background.paper',
-              color: 'text.primary',
-              boxShadow: (theme) => theme.shadows[8],
-              borderRadius: 2,
-              border: '1px solid',
-              borderColor: 'divider',
-            },
-          }}
-        >
-          {submitItems.map((item) => (
-            <MenuItem
-              key={item.href}
-              component={Link}
-              href={item.href}
-              onClick={() => {
-                handleSubmitMenuClose();
-                handleMobileMenuClose();
-              }}
-              sx={{ py: 1.5 }}
-            >
-              {item.icon}
-              <Typography sx={{ ml: 1.5 }}>{item.title}</Typography>
-            </MenuItem>
-          ))}
-        </Menu>
+        {/* Submit Section (inline submenu for mobile) */}
+        <MobileSubmitSection />
 
         {/* Admin Section */}
         {isAdmin && (
@@ -299,6 +261,41 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       </List>
     </Drawer>
   );
+
+  // Inline mobile submit section
+  const MobileSubmitSection: React.FC = () => {
+    const open = Boolean(submitMenuAnchor);
+    return (
+      <>
+        <ListItem disablePadding>
+          <ListItemButton onClick={(e) => (open ? handleSubmitMenuClose() : handleSubmitMenuOpen(e))}>
+            <AddIcon />
+            <Typography sx={{ ml: 1.5 }}>Submit</Typography>
+          </ListItemButton>
+        </ListItem>
+        <Collapse in={open} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+            {submitItems.map((item) => (
+              <ListItem key={item.href} disablePadding>
+                <ListItemButton
+                  component={Link}
+                  href={item.href}
+                  onClick={() => {
+                    handleSubmitMenuClose();
+                    handleMobileMenuClose();
+                  }}
+                  sx={{ pl: 4, py: 1.25 }}
+                >
+                  {item.icon}
+                  <Typography sx={{ ml: 1.5 }}>{item.title}</Typography>
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+        </Collapse>
+      </>
+    );
+  };
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>

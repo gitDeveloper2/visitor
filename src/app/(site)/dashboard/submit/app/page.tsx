@@ -27,18 +27,21 @@ import {
 
   Stack,
   CircularProgress,
+  FormHelperText,
 } from "@mui/material";
 import { Delete as DeleteIcon, KeyboardArrowUp as UpIcon, KeyboardArrowDown as DownIcon, Check } from "@mui/icons-material";
-import { Star, BadgeCheck, DollarSign, UploadCloud, Github, Globe, User, Code } from "lucide-react";
+import { Star, BadgeCheck, DollarSign, UploadCloud, Github, Globe, User, Code, Plus } from "lucide-react";
 import { useTheme } from "@mui/material/styles";
 import { useSearchParams } from 'next/navigation';
 import Link from "next/link";
 import { getSubcategorySuggestions, fetchCategoryNames } from "@/utils/categories";
 import { getGlassStyles, getShadow, typographyVariants, commonStyles } from "@/utils/themeUtils";
+import { useAuthState } from "@/hooks/useAuth";
 
 function SubmitAppPageContent() {
   const theme = useTheme();
   const searchParams = useSearchParams();
+  const { user } = useAuthState();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -49,6 +52,7 @@ function SubmitAppPageContent() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingAppId, setEditingAppId] = useState<string | null>(null);
   const hasLoadedDataRef = useRef(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [form, setForm] = useState({
     name: "",
@@ -106,6 +110,21 @@ function SubmitAppPageContent() {
 
     loadSubcategories();
   }, [form.category, categories]);
+
+  // Prefill author fields from session for new submissions only (do not override drafts/edits)
+  useEffect(() => {
+    if (!user) return;
+    const hasDraftParam = Boolean(searchParams.get('draftId'));
+    const hasAppParam = Boolean(searchParams.get('appId'));
+    if (isEditing || hasDraftParam || hasAppParam) return;
+
+    setForm(prev => ({
+      ...prev,
+      authorName: prev.authorName || (user as any)?.name || "",
+      authorEmail: prev.authorEmail || (user as any)?.email || "",
+      authorBio: prev.authorBio || (user as any)?.bio || "",
+    }));
+  }, [user, isEditing, searchParams]);
 
   // Load draft data to restore form
   const loadDraftData = useCallback(async (draftId: string) => {
@@ -249,6 +268,11 @@ function SubmitAppPageContent() {
       console.log('New form state:', newForm);
       return newForm;
     });
+    setFieldErrors(prev => {
+      const copy = { ...prev };
+      delete copy[field];
+      return copy;
+    });
   };
 
   // Feature management functions
@@ -360,8 +384,39 @@ function SubmitAppPageContent() {
     }
   };
 
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+    const isNonEmpty = (s?: string) => Boolean((s || "").trim());
+    const isValidUrl = (s?: string) => {
+      try { if (!s) return false; new URL(s); return true; } catch { return false; }
+    };
+    const isValidEmail = (s?: string) => !!(s && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s));
+
+    if (!isNonEmpty(form.name)) errors.name = "App name is required";
+    if (!isNonEmpty(form.tagline)) errors.tagline = "Tagline is required";
+    if (!isNonEmpty(form.description) || (form.description || "").trim().length < 30) {
+      errors.description = "Description must be at least 30 characters";
+    }
+    if (!isNonEmpty(form.fullDescription)) errors.fullDescription = "Full description is required";
+    if (!isNonEmpty(form.category)) errors.category = "Category is required";
+    if (!isValidUrl(form.website)) errors.website = "Enter a valid website URL (include http/https)";
+    if (!isNonEmpty(form.authorName)) errors.authorName = "Author name is required";
+    if (!isValidEmail(form.authorEmail)) errors.authorEmail = "Enter a valid email";
+    if (!isNonEmpty(form.pricing)) errors.pricing = "Pricing model is required";
+    if (!form.features || form.features.length === 0) errors.features = "Add at least one key feature";
+    if (!selectedPremiumPlan) errors.selectedPremiumPlan = "Select Premium or Free listing";
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) {
+      setError("Please fix the highlighted fields.");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     setLoading(true);
     setError(null);
     setSuccess(false);
@@ -638,13 +693,14 @@ function SubmitAppPageContent() {
                   required 
                   value={form.name}
                   onChange={(e) => handleChange("name", e.target.value)}
-                  helperText="Choose a memorable and descriptive name"
+                  helperText={fieldErrors.name || "Choose a memorable and descriptive name"}
+                  error={Boolean(fieldErrors.name)}
                   disabled={isEditing && loading}
                 />
               </Grid>
               
               <Grid item xs={12} md={6}>
-                <FormControl fullWidth required>
+                <FormControl fullWidth required error={Boolean(fieldErrors.category)}>
                   <InputLabel>Category</InputLabel>
                   <Select
                     value={form.category}
@@ -665,6 +721,9 @@ function SubmitAppPageContent() {
                       ))
                     )}
                   </Select>
+                  {fieldErrors.category && (
+                    <FormHelperText error>{fieldErrors.category}</FormHelperText>
+                  )}
                   {categoriesLoading && (
                     <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
                       Loading categories from database...
@@ -681,7 +740,8 @@ function SubmitAppPageContent() {
                   placeholder="A brief, compelling description of your app"
                   value={form.tagline}
                   onChange={(e) => handleChange("tagline", e.target.value)}
-                  helperText="A short, catchy description that appears in listings (max 100 characters)"
+                  helperText={fieldErrors.tagline || "A short, catchy description that appears in listings (max 100 characters)"}
+                  error={Boolean(fieldErrors.tagline)}
                 />
               </Grid>
 
@@ -694,7 +754,8 @@ function SubmitAppPageContent() {
                   fullWidth
                   value={form.description}
                   onChange={(e) => handleChange("description", e.target.value)}
-                  helperText="A concise description for listings and previews (100-200 characters)"
+                  helperText={fieldErrors.description || "A concise description for listings and previews (100-200 characters)"}
+                  error={Boolean(fieldErrors.description)}
                 />
               </Grid>
 
@@ -707,7 +768,9 @@ function SubmitAppPageContent() {
                   placeholder="Tell the full story of your app, its features, benefits, target audience, and what makes it unique"
                   value={form.fullDescription}
                   onChange={(e) => handleChange("fullDescription", e.target.value)}
-                  helperText="Detailed description for the app page. Include use cases, benefits, and what problems it solves."
+                  required
+                  helperText={fieldErrors.fullDescription || "Detailed description for the app page. Include use cases, benefits, and what problems it solves."}
+                  error={Boolean(fieldErrors.fullDescription)}
                 />
               </Grid>
 
@@ -798,7 +861,8 @@ function SubmitAppPageContent() {
                       </InputAdornment>
                     ),
                   }}
-                  helperText="Your app's main website or landing page"
+                  helperText={fieldErrors.website || "Your app's main website or landing page"}
+                  error={Boolean(fieldErrors.website)}
                 />
               </Grid>
 
@@ -839,17 +903,28 @@ function SubmitAppPageContent() {
                     placeholder="e.g. React, Node.js, MongoDB, AWS"
                     value={newTech}
                     onChange={(e) => setNewTech(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && addTech()}
-                    helperText="Press Enter or click Add to add a technology"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addTech();
+                      }
+                    }}
+                    helperText="Press Enter or tap + to add"
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            aria-label="Add technology"
+                            size="small"
+                            onClick={addTech}
+                            disabled={!newTech.trim()}
+                          >
+                            <Plus size={18} />
+                          </IconButton>
+                        </InputAdornment>
+                      )
+                    }}
                   />
-                  <Button
-                    variant="outlined"
-                    onClick={addTech}
-                    disabled={!newTech.trim()}
-                    sx={{ minWidth: 100 }}
-                  >
-                    Add
-                  </Button>
                 </Box>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                   {form.techStack.map((tech, index) => (
@@ -865,7 +940,7 @@ function SubmitAppPageContent() {
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <FormControl fullWidth required>
+                <FormControl fullWidth required error={Boolean(fieldErrors.pricing)}>
                   <InputLabel>Pricing Model</InputLabel>
                   <Select
                     value={form.pricing}
@@ -876,6 +951,9 @@ function SubmitAppPageContent() {
                       <MenuItem key={option} value={option}>{option}</MenuItem>
                     ))}
                   </Select>
+                  {fieldErrors.pricing && (
+                    <FormHelperText error>{fieldErrors.pricing}</FormHelperText>
+                  )}
                 </FormControl>
               </Grid>
 
@@ -891,17 +969,28 @@ function SubmitAppPageContent() {
                     placeholder="e.g. Real-time collaboration, AI-powered suggestions, Cross-platform sync..."
                     value={newFeature}
                     onChange={(e) => setNewFeature(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && addFeature()}
-                    helperText="Press Enter or click Add to add a feature"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addFeature();
+                      }
+                    }}
+                    helperText="Press Enter or tap + to add"
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            aria-label="Add feature"
+                            size="small"
+                            onClick={addFeature}
+                            disabled={!newFeature.trim()}
+                          >
+                            <Plus size={18} />
+                          </IconButton>
+                        </InputAdornment>
+                      )
+                    }}
                   />
-                  <Button
-                    variant="outlined"
-                    onClick={addFeature}
-                    disabled={!newFeature.trim()}
-                    sx={{ minWidth: 100 }}
-                  >
-                    Add
-                  </Button>
                 </Box>
                 
                 {/* Features List */}
@@ -947,6 +1036,11 @@ function SubmitAppPageContent() {
                     </Paper>
                   ))}
                 </Box>
+                {fieldErrors.features && (
+                  <Typography variant="caption" color="error" display="block" sx={{ mt: -2, mb: 2 }}>
+                    {fieldErrors.features}
+                  </Typography>
+                )}
                 
                 <Typography variant="caption" color="text.secondary" mt={1} display="block">
                   Focus on the most important features that solve real problems for your users
@@ -968,7 +1062,8 @@ function SubmitAppPageContent() {
                   required
                   value={form.authorName}
                   onChange={(e) => handleChange("authorName", e.target.value)}
-                  helperText="Your name or company name"
+                  helperText={fieldErrors.authorName || "Your name or company name"}
+                  error={Boolean(fieldErrors.authorName)}
                 />
               </Grid>
 
@@ -980,7 +1075,8 @@ function SubmitAppPageContent() {
                   required
                   value={form.authorEmail}
                   onChange={(e) => handleChange("authorEmail", e.target.value)}
-                  helperText="We'll use this to contact you about your submission"
+                  helperText={fieldErrors.authorEmail || "We'll use this to contact you about your submission"}
+                  error={Boolean(fieldErrors.authorEmail)}
                 />
               </Grid>
 
@@ -1201,6 +1297,12 @@ function SubmitAppPageContent() {
                   </Grid>
                 </Grid>
                 
+                {fieldErrors.selectedPremiumPlan && (
+                  <Typography variant="caption" color="error" display="block" sx={{ mt: 2 }}>
+                    {fieldErrors.selectedPremiumPlan}
+                  </Typography>
+                )}
+
                 {selectedPremiumPlan === 'premium' && (
                   <Box sx={{ mt: 3, p: 2, backgroundColor: `${theme.palette.primary.main}08`, borderRadius: 2, border: `1px solid ${theme.palette.primary.main}20` }}>
                     <Typography variant="body2" color="primary" fontWeight={500}>

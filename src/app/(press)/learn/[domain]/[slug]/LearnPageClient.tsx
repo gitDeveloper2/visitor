@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Container,
@@ -18,6 +18,7 @@ import {
   List,
   ListItemButton,
   ListItemText,
+  Button,
 } from "@mui/material";
 import Link from "next/link";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -68,8 +69,37 @@ const LearnPageClient: React.FC<LearnPageClientProps> = ({
     }
   }, [page?.content]);
 
+  // Wrap tables in a responsive container to enable horizontal scrolling on mobile
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const wrapper = document.querySelector('#learn-wrapper');
+    if (!wrapper) return;
+    const tables = wrapper.querySelectorAll('table');
+    tables.forEach((table) => {
+      const parent = table.parentElement as HTMLElement | null;
+      if (!parent) return;
+      if (parent.classList.contains('table-responsive')) return;
+      const container = document.createElement('div');
+      container.className = 'table-responsive content-scroll';
+      parent.insertBefore(container, table);
+      container.appendChild(table);
+    });
+  }, [page?.content]);
+
   const wordCount = page.content?.replace(/<[^>]*>/g, '').split(/\s+/).length || 0;
   const readTime = Math.ceil(wordCount / 200);
+
+  // Derive tags from page.keywords
+  const tags: string[] = Array.isArray(page.keywords)
+    ? page.keywords
+    : (page.keywords || "")
+        .split(",")
+        .map((k: string) => k.trim())
+        .filter(Boolean);
+
+  const INITIAL_TAGS = 15;
+  const INCREMENT_TAGS = 15;
+  const [tagShowCount, setTagShowCount] = useState(INITIAL_TAGS);
 
   return (
     <>
@@ -176,11 +206,39 @@ const LearnPageClient: React.FC<LearnPageClientProps> = ({
             </Box>
           </Box>
 
-          {page.keywords && (
-            <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              {page.keywords.split(',').map((keyword: string, index: number) => (
-                <Chip key={index} label={keyword.trim()} size="small" variant="outlined" sx={{ borderColor: theme.palette.divider }} />
-              ))}
+          {tags.length > 0 && (
+            <Box sx={{ mt: 2 }}>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {tags.slice(0, tagShowCount).map((keyword: string, index: number) => (
+                  <Chip
+                    key={`${keyword}-${index}`}
+                    label={keyword}
+                    size="small"
+                    variant="outlined"
+                    sx={{ borderColor: theme.palette.divider, maxWidth: '100%' }}
+                  />
+                ))}
+              </Box>
+              <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                {tagShowCount < tags.length && (
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => setTagShowCount((c) => Math.min(c + INCREMENT_TAGS, tags.length))}
+                  >
+                    Show more
+                  </Button>
+                )}
+                {tagShowCount > INITIAL_TAGS && (
+                  <Button
+                    size="small"
+                    variant="text"
+                    onClick={() => setTagShowCount(INITIAL_TAGS)}
+                  >
+                    Show less
+                  </Button>
+                )}
+              </Box>
             </Box>
           )}
         </Container>
@@ -237,16 +295,50 @@ const LearnPageClient: React.FC<LearnPageClientProps> = ({
                 <Typography variant="subtitle1" sx={{ mb: 1.5, fontWeight: 700 }}>Related</Typography>
                 <Divider sx={{ mb: 1.5 }} />
                 <List dense disablePadding>
-                  {relatedPages.slice(0, 6).map((relatedPage: any, index: number) => (
-                    <ListItemButton key={index} component="a" href={relatedPage.url} sx={{ borderRadius: 1, mb: 0.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <LinkIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                      <ListItemText
-                        primary={relatedPage.title}
-                        primaryTypographyProps={{ variant: 'body2', sx: { fontWeight: 600 } }}
-                      />
-                      <ChevronRight sx={{ fontSize: 18, color: 'text.disabled', ml: 'auto' }} />
-                    </ListItemButton>
-                  ))}
+                  {relatedPages.slice(0, 6).map((relatedPage: any, index: number) => {
+                    const excerpt: string | undefined = relatedPage.meta_description || undefined;
+                    return (
+                      <ListItemButton
+                        key={index}
+                        component="a"
+                        href={relatedPage.url}
+                        sx={{
+                          borderRadius: 1,
+                          mb: 0.75,
+                          alignItems: 'flex-start',
+                          flexDirection: 'column',
+                          gap: 0.5,
+                          p: 1.25,
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                          <LinkIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                            {relatedPage.title}
+                          </Typography>
+                        </Box>
+                        {excerpt && (
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{
+                              display: '-webkit-box',
+                              WebkitLineClamp: 3,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                              width: '100%',
+                            }}
+                          >
+                            {excerpt}
+                          </Typography>
+                        )}
+                        <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, color: 'primary.main', mt: 0.25 }}>
+                          <Typography variant="caption" sx={{ color: 'primary.main' }}>Read more</Typography>
+                          <ChevronRight sx={{ fontSize: 16, color: 'primary.main' }} />
+                        </Box>
+                      </ListItemButton>
+                    );
+                  })}
                 </List>
               </Paper>
             )}

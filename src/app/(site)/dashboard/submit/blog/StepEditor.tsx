@@ -9,7 +9,7 @@ import Underline from "@tiptap/extension-underline";
 import Image from "@tiptap/extension-image";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { common } from 'lowlight';
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, Alert } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { Color, TextStyle } from '@tiptap/extension-text-style'
 
@@ -18,6 +18,7 @@ interface StepEditorProps {
     content: string;
   };
   setFormData: (data: Partial<{ content: string }>) => void;
+  errorText?: string;
 }
 
 // --- Menu Bar ---
@@ -61,7 +62,7 @@ const MenuBar = ({ editor }: { editor: any }) => {
 };
 
 // --- Component ---
-export default function StepEditor({ formData, setFormData }: StepEditorProps) {
+export default function StepEditor({ formData, setFormData, errorText }: StepEditorProps) {
   const theme = useTheme();
 
   const editor = useEditor({
@@ -109,6 +110,11 @@ export default function StepEditor({ formData, setFormData }: StepEditorProps) {
       <Typography variant="h6" gutterBottom>
         Blog Content
       </Typography>
+      {errorText && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {errorText}
+        </Alert>
+      )}
       <MenuBar editor={editor} />
       <EditorContent editor={editor} />
     </Box>

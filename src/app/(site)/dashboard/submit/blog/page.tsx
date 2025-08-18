@@ -25,12 +25,14 @@ import PremiumBlogSubscription from "../../../../../components/premium/PremiumBl
 import { Clock, AlertTriangle } from "lucide-react";
 
 import { useSearchParams } from 'next/navigation';
+import { useAuthState } from '@/hooks/useAuth';
 
 const steps = ["Blog Info", "Write Blog", "Review & Submit"];
 
 function BlogSubmitPageContent() {
   const theme = useTheme();
   const searchParams = useSearchParams();
+  const { user } = useAuthState();
   const [activeStep, setActiveStep] = React.useState(0);
   const [formData, setFormData] = React.useState({
     title: "",
@@ -39,6 +41,7 @@ function BlogSubmitPageContent() {
     category: "",
     tags: [] as string[],
     authorBio: "",
+    excerpt: "",
     content: "",
     isFounderStory: false,
     founderUrl: "",
@@ -55,6 +58,7 @@ function BlogSubmitPageContent() {
   const [draftId, setDraftId] = useState<string | null>(null);
   const [isPremiumUser, setIsPremiumUser] = useState(false);
   const [draftExpiryDate, setDraftExpiryDate] = useState<Date | null>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // Debug: Log form data changes
   useEffect(() => {
@@ -109,6 +113,7 @@ function BlogSubmitPageContent() {
           category: draft.category || '',
           tags: Array.isArray(draft.tags) ? draft.tags : [],
           authorBio: draft.authorBio || '',
+          excerpt: draft.excerpt || '',
           content: draft.content || '',
           isFounderStory: draft.isFounderStory || false,
           founderUrl: draft.founderUrl || '',
@@ -186,7 +191,57 @@ function BlogSubmitPageContent() {
     return null;
   };
 
-  const handleNext = () => setActiveStep((prev) => prev + 1);
+  const validateMetadata = () => {
+    const errors: Record<string, string> = {};
+    if (!formData.title?.trim()) errors.title = "Title is required";
+    if (!formData.author?.trim()) errors.author = "Author name is required";
+    if (!formData.role?.trim()) errors.role = "Author role is required";
+    if (!formData.category?.toString().trim()) errors.category = "Category is required";
+    if (!formData.authorBio?.trim()) errors.authorBio = "Author bio is required";
+    if (!Array.isArray(formData.tags) || formData.tags.length === 0) errors.tags = "At least one tag is required";
+    if (!formData.excerpt?.trim()) errors.excerpt = "Excerpt is required";
+    if (formData.isFounderStory) {
+      const status = formData.founderDomainCheck?.status;
+      if (!formData.founderUrl?.trim()) {
+        errors.founderUrl = "Founder story URL is required";
+      } else if (status === "invalid" || status === "taken") {
+        errors.founderUrl = formData.founderDomainCheck?.message || "Invalid founder story URL";
+      } else if (status === "checking") {
+        errors.founderUrl = "Please wait for domain check to complete";
+      }
+    }
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const stripHtml = (html: string) => {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html || '';
+    return tmp.textContent || tmp.innerText || '';
+  };
+
+  const validateContent = () => {
+    const errors: Record<string, string> = {};
+    const text = stripHtml(formData.content || "").trim();
+    if (!text || text.length < 30) {
+      errors.content = "Please write at least 30 characters of content";
+    }
+    setValidationErrors(prev => ({ ...prev, ...errors }));
+    return !errors.content;
+  };
+
+  const handleNext = () => {
+    if (activeStep === 0 && !validateMetadata()) {
+      setError("Please fix the highlighted fields before continuing.");
+      return;
+    }
+    if (activeStep === 1 && !validateContent()) {
+      setError("Please add more content before continuing.");
+      return;
+    }
+    setError(null);
+    setActiveStep((prev) => prev + 1);
+  };
   const handleBack = () => setActiveStep((prev) => prev - 1);
   const handleFormDataChange = (data: Partial<typeof formData>) => {
     console.log('🔄 Form data change requested:', data);
@@ -198,7 +253,33 @@ function BlogSubmitPageContent() {
     });
   };
 
+  // Prefill author fields from session for new submissions only (do not override drafts/edits)
+  useEffect(() => {
+    if (!user) return;
+    const hasDraftParam = Boolean(searchParams.get('draftId') || searchParams.get('draft'));
+    if (hasDraftParam) return; // editing/restoring
+    setFormData(prev => ({
+      ...prev,
+      author: prev.author || (user as any)?.name || "",
+      role: prev.role || ((user as any)?.jobTitle || "Author"),
+      authorBio: prev.authorBio || (user as any)?.bio || "",
+    }));
+  }, [user, searchParams]);
+
   const handleSubmit = async () => {
+    // Final validation before submit
+    const metaOk = validateMetadata();
+    const contentOk = validateContent();
+    if (!metaOk) {
+      setActiveStep(0);
+      setError("Please complete required blog info.");
+      return;
+    }
+    if (!contentOk) {
+      setActiveStep(1);
+      setError("Please complete the blog content.");
+      return;
+    }
     setLoading(true);
     setError(null);
     setSuccess(false);
@@ -239,6 +320,7 @@ function BlogSubmitPageContent() {
         author: formData.author,
         role: formData.role,
         authorBio: formData.authorBio,
+        excerpt: formData.excerpt,
         founderUrl: formData.founderUrl,
         isFounderStory: formData.isFounderStory,
         imageUrl,
@@ -441,10 +523,27 @@ function BlogSubmitPageContent() {
           }}
         >
           {activeStep === 0 && (
-            <StepMetadata formData={formData} setFormData={handleFormDataChange} />
+            <StepMetadata 
+              formData={formData} 
+              setFormData={handleFormDataChange}
+              errors={{
+                title: validationErrors.title,
+                author: validationErrors.author,
+                role: validationErrors.role,
+                category: validationErrors.category,
+                authorBio: validationErrors.authorBio,
+                founderUrl: validationErrors.founderUrl,
+                tags: validationErrors.tags,
+                excerpt: validationErrors.excerpt,
+              }}
+            />
           )}
           {activeStep === 1 && (
-            <StepEditor formData={formData} setFormData={handleFormDataChange} />
+            <StepEditor 
+              formData={formData} 
+              setFormData={handleFormDataChange}
+              errorText={validationErrors.content}
+            />
           )}
           {activeStep === 2 && (
             <>

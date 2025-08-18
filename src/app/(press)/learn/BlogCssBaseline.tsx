@@ -146,12 +146,25 @@ export default function BlogCssBaseline() {
         th, td { padding: 1rem; text-align: left; border-bottom: 1px solid ${theme.palette.divider}; }
         th { background: ${theme.palette.mode === 'light' ? theme.palette.action.hover : theme.palette.action.selected}; font-weight: 600; color: ${theme.palette.text.primary}; }
 
+        /* Responsive table wrapper */
+        .table-responsive {
+          width: 100%;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          margin: 1.5rem 0;
+        }
+        .table-responsive > table { margin: 0; }
+
         /* Responsive improvements */
         @media (max-width: 768px) {
           h1, h2, h3, h4, h5, h6 { margin: 1.5rem 0 0.75rem 0; }
           p, li { font-size: 1rem; line-height: 1.6; }
           pre { padding: 1rem; font-size: 0.875rem; }
           blockquote { padding: 1rem 1.25rem; margin: 1.25rem 0; }
+          /* Keep cells on a single line; rely on horizontal scroll */
+          th, td { white-space: nowrap; }
+          /* Avoid overly squished tables */
+          table { min-width: 640px; }
         }
 
         /* Glass sections */

@@ -25,8 +25,6 @@ import { usePathname } from "next/navigation";
 import Auth from "./Auth";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
-import { DonateButton } from "@/features/shared/components/PaypallDonation";
-import { BuyMeCoffee } from "@/features/shared/components/BuyMeCofee";
 import ThemeToggle from "@/app/components/ThemeToggle";
 import { authClient } from "../../auth-client";
 import { useRouter } from "next/navigation";
@@ -123,20 +121,12 @@ const NavBar: React.FC = () => {
               </IconButton>
             </Box>
 
-            {/* Profile Section */}
+            {/* Profile Section - compact, minimal surface */}
             {!isPending && session?.user ? (
-              <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: 2,
-                p: 2,
-                borderRadius: 2,
-                bgcolor: 'action.hover',
-                mb: 2
-              }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, px: 2, py: 1, mb: 1.5 }}>
                 <Avatar
                   src={session.user.image || undefined}
-                  alt={session.user.name || "User"}
+                  alt={session.user.name || 'User'}
                   sx={{ width: 48, height: 48 }}
                 />
                 <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -159,34 +149,8 @@ const NavBar: React.FC = () => {
             {/* Quick Actions */}
             {!isPending && session?.user && (
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button
-                  component={Link}
-                  href="/dashboard"
-                  variant="contained"
-                  size="small"
-                  fullWidth
-                  onClick={handleDrawerClose}
-                  sx={{ 
-                    fontSize: '0.875rem',
-                    py: 1
-                  }}
-                >
-                  Dashboard
-                </Button>
-                <Button
-                  component={Link}
-                  href="/dashboard/profile"
-                  variant="outlined"
-                  size="small"
-                  fullWidth
-                  onClick={handleDrawerClose}
-                  sx={{ 
-                    fontSize: '0.875rem',
-                    py: 1
-                  }}
-                >
-                  Profile
-                </Button>
+                <Button component={Link} href="/dashboard" variant="outlined" size="small" fullWidth onClick={handleDrawerClose} sx={{ fontSize: '0.875rem', py: 1 }}>Dashboard</Button>
+                <Button component={Link} href="/dashboard/profile" variant="text" size="small" fullWidth onClick={handleDrawerClose} sx={{ fontSize: '0.875rem', py: 1 }}>Profile</Button>
               </Box>
             )}
           </Box>
@@ -224,10 +188,12 @@ const NavBar: React.FC = () => {
             ))}
           </List>
 
-          {/* Footer with Auth */}
-          <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-            <Auth isMobile={true} />
-          </Box>
+          {/* Footer Auth only when logged out */}
+          {(!session?.user && !isPending) && (
+            <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+              <Auth isMobile={true} />
+            </Box>
+          )}
         </Box>
       </Drawer>
     </>

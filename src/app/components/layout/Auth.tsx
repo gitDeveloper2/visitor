@@ -55,25 +55,31 @@ const Auth: React.FC<AuthProps> = ({ isMobile }) => {
     return (
       <Box
         sx={{
-          display: "flex",
-          gap: 2,
-          justifyContent: isMobile ? "flex-start" : "center",
-          alignItems: "center",
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? 1.25 : 2,
+          justifyContent: isMobile ? 'stretch' : 'center',
+          alignItems: isMobile ? 'stretch' : 'center',
+          width: '100%'
         }}
       >
-        <Button 
-          component={Link}
-          href="/auth/signup"
-          variant="outlined"
-        >
-          Sign Up
-        </Button>
-        <Button 
+        <Button
           component={Link}
           href="/auth/signin"
           variant="contained"
+          fullWidth={isMobile}
+          sx={{ py: 1 }}
         >
           Login
+        </Button>
+        <Button
+          component={Link}
+          href="/auth/signup"
+          variant="outlined"
+          fullWidth={isMobile}
+          sx={{ py: 1 }}
+        >
+          Create account
         </Button>
       </Box>
     );

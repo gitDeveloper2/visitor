@@ -113,21 +113,21 @@ export default async function Page({
       },
     },
   };
-
+  
   const hasFaqData = Array.isArray(page.faqs) && page.faqs.length > 0;
 
   const faqJsonLd = hasFaqData
     ? {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
         "mainEntity": page.faqs.map((faq: FAQ) => ({
-          "@type": "Question",
-          "name": faq.question,
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": faq.answer
-          }
-        }))
+      "@type": "Question",
+      "name": faq.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": faq.answer
+      }
+    }))
       }
     : null;
 
@@ -137,7 +137,7 @@ export default async function Page({
       url: page.image_url,
     };
   }
-
+ 
   if (page.canonical_url) {
     jsonLd.mainEntityOfPage = {
       "@type": "WebPage",
@@ -186,7 +186,7 @@ export default async function Page({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       )}
-      {faqJsonLd && (
+       {faqJsonLd && (
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
@@ -208,4 +208,4 @@ export default async function Page({
       />
     </>
   );
-} 
+}  

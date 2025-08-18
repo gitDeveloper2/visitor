@@ -17,6 +17,7 @@ import {
   Alert,
   IconButton,
   Paper,
+  FormHelperText,
 } from "@mui/material";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
 import { getSubcategorySuggestions, type BlogCategory, fetchCategoryNames } from "../../../../../utils/categories";
@@ -36,6 +37,7 @@ export interface BlogMetadata {
   category: BlogCategory | "";
   subcategories: string[];
   authorBio: string;
+  excerpt: string;
   content: string;
   isFounderStory?: boolean;
   founderUrl?: string;
@@ -46,6 +48,17 @@ export interface BlogMetadata {
 interface StepMetadataProps {
   formData: BlogMetadata;
   setFormData: (data: Partial<BlogMetadata>) => void;
+  errors?: Partial<Record<
+    | "title"
+    | "author"
+    | "role"
+    | "category"
+    | "authorBio"
+    | "founderUrl"
+    | "tags"
+    | "excerpt",
+    string
+  >>;
 }
 
 function extractDomain(url: string) {
@@ -57,7 +70,7 @@ function extractDomain(url: string) {
   }
 }
 
-export default function StepMetadata({ formData, setFormData }: StepMetadataProps) {
+export default function StepMetadata({ formData, setFormData, errors = {} }: StepMetadataProps) {
   const [imageError, setImageError] = useState<string | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
@@ -188,16 +201,19 @@ export default function StepMetadata({ formData, setFormData }: StepMetadataProp
       <Grid container spacing={3}>
         {/* Existing fields (title, author, role, tags, authorBio) unchanged */}
         <Grid item xs={12}>
-          <TextField fullWidth label="Title" value={formData.title} onChange={(e) => setFormData({ title: e.target.value })} required />
+          <TextField fullWidth label="Title" value={formData.title} onChange={(e) => setFormData({ title: e.target.value })} required error={Boolean(errors.title)} helperText={errors.title}
+          />
         </Grid>
         <Grid item xs={12} sm={6}>
-          <TextField fullWidth label="Author Name" value={formData.author} onChange={(e) => setFormData({ author: e.target.value })} required />
+          <TextField fullWidth label="Author Name" value={formData.author} onChange={(e) => setFormData({ author: e.target.value })} required error={Boolean(errors.author)} helperText={errors.author}
+          />
         </Grid>
         <Grid item xs={12} sm={6}>
-          <TextField fullWidth label="Author Role" value={formData.role} onChange={(e) => setFormData({ role: e.target.value })} required />
+          <TextField fullWidth label="Author Role" value={formData.role} onChange={(e) => setFormData({ role: e.target.value })} required error={Boolean(errors.role)} helperText={errors.role}
+          />
         </Grid>
         <Grid item xs={12}>
-          <FormControl fullWidth required>
+          <FormControl fullWidth required error={Boolean(errors.category)}>
             <InputLabel>Category</InputLabel>
             <Select
               value={formData.category}
@@ -213,6 +229,9 @@ export default function StepMetadata({ formData, setFormData }: StepMetadataProp
                 ))
               )}
             </Select>
+            {errors.category && (
+              <FormHelperText error>{errors.category}</FormHelperText>
+            )}
           </FormControl>
         </Grid>
 
@@ -268,7 +287,39 @@ export default function StepMetadata({ formData, setFormData }: StepMetadataProp
           </Typography>
         </Grid>
         <Grid item xs={12}>
-          <TextField fullWidth multiline minRows={3} maxRows={5} label="Author Bio" value={formData.authorBio} onChange={(e) => setFormData({ authorBio: e.target.value })} required />
+          <TextField fullWidth multiline minRows={3} maxRows={5} label="Author Bio" value={formData.authorBio} onChange={(e) => setFormData({ authorBio: e.target.value })} required error={Boolean(errors.authorBio)} helperText={errors.authorBio}
+          />
+        </Grid>
+
+        {/* Tags input */}
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            label="Tags (comma separated)"
+            placeholder="e.g. nextjs, seo, performance"
+            value={(formData as any).tagsInput || (formData as any).tags?.join(', ') || ''}
+            onChange={(e) => setFormData({ ...(formData as any), tagsInput: e.target.value, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) as any })}
+            required
+            error={Boolean(errors.tags)}
+            helperText={errors.tags || "Use 3-8 relevant tags for discoverability"}
+          />
+        </Grid>
+
+        {/* Excerpt */}
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            multiline
+            minRows={2}
+            label="Excerpt"
+            placeholder="Short summary for previews and SEO snippets"
+            value={formData.excerpt || ''}
+            onChange={(e) => setFormData({ excerpt: e.target.value })}
+            inputProps={{ maxLength: 160 }}
+            required
+            error={Boolean(errors.excerpt)}
+            helperText={errors.excerpt || `${(formData.excerpt || '').length}/160`}
+          />
         </Grid>
 
         {/* Blog Image Upload */}
@@ -362,6 +413,10 @@ export default function StepMetadata({ formData, setFormData }: StepMetadataProp
                 onChange={(e) => setFormData({ founderUrl: e.target.value })}
                 helperText="One founder story allowed per domain. We'll check domain availability."
                 required
+                error={Boolean(errors.founderUrl)}
+                FormHelperTextProps={{ error: Boolean(errors.founderUrl) }}
+                // Show validation error if present
+                
               />
             </Grid>
             <Grid item xs={12}>

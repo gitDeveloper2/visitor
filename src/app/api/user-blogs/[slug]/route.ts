@@ -58,6 +58,7 @@ export async function PATCH(
       author,
       role,
       authorBio,
+      excerpt,
       founderUrl,
       isFounderStory
     } = await request.json();
@@ -94,6 +95,7 @@ export async function PATCH(
       author: author || session.user.name,
       role: role || 'Author',
       authorBio: authorBio || '',
+      excerpt: excerpt || '',
       founderUrl: founderUrl || '',
       // Update metadata
       readTime: Math.ceil(content.replace(/<[^>]*>/g, '').split(' ').length / 200),

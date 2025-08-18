@@ -378,27 +378,29 @@ interface CodeBoxProps {
   theme?: 'light' | 'dark'; // Optional prop to specify the theme
 }
 
-const CodeContainer = styled(Box)({
-  background: '#f4f4f4',
+const CodeContainer = styled(Box)(({ theme }) => ({
+  backgroundColor:
+    theme.palette.mode === 'dark'
+      ? (theme.palette.background.paper || '#0b0b0c')
+      : (theme.palette.grey[100] || '#f4f4f4'),
+  color: theme.palette.text.primary,
   padding: '1rem',
-  borderRadius: '4px',
-  fontFamily: 'Monospace',
-  whiteSpace: 'pre-wrap',
+  borderRadius: '6px',
+  border: `1px solid ${theme.palette.divider}`,
+  fontFamily:
+    'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+  fontSize: '0.9rem',
+  lineHeight: 1.6,
+  whiteSpace: 'pre',
   margin: '16px 0',
   maxWidth: '100%',
   overflowX: 'auto',
-  
-});
+}));
 
-export const CodeBox: React.FC<CodeBoxProps> = ({ children, language = 'javascript', theme = 'light' }) => {
-  // const style = theme === 'dark' ? solarizeddark : solarizedlight;
-  const style = theme === 'dark' ? customTheme : customTheme;
-
+export const CodeBox: React.FC<CodeBoxProps> = ({ children }) => {
   return (
-    <CodeContainer>
-      {/* <SyntaxHighlighter language={language} style={style}> */}
-        {children}
-      {/* </SyntaxHighlighter> */}
+    <CodeContainer component="pre">
+      {children}
     </CodeContainer>
   );
 };
