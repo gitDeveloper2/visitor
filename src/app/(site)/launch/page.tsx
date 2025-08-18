@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react';
 import { Container, Typography, Box, CircularProgress } from '@mui/material';
 import AppsMainPage from './AppsMainPage';
+import { fetchCategoryNames } from '@/utils/categories';
 import { connectToDatabase } from '../../../lib/mongodb';
 import { verifyAppPremiumStatus } from '../../../utils/premiumVerification';
 import { sortByScore, computeAppScore } from '@/features/ranking/score';
@@ -81,6 +82,31 @@ export default async function LaunchPage() {
         _id: { $nin: featuredAppIds }
       });
 
+    // Compute category counts for the "Browse by Category" chips (mirror blogs logic)
+    let categoryNames: string[] = [];
+    try {
+      categoryNames = await fetchCategoryNames('app');
+    } catch (e) {
+      categoryNames = [];
+    }
+
+    // Use apps from last 7 days for counts (to keep parity with blogs page logic)
+    const recentAppsForCounts = await db.collection('userapps')
+      .find({ status: 'approved', createdAt: { $gte: sevenDaysAgo } })
+      .project({ category: 1 })
+      .toArray();
+
+    const categoryCounts = recentAppsForCounts.reduce((acc: any, app: any) => {
+      const cat = app.category || 'Uncategorized';
+      acc[cat] = (acc[cat] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const categoryChips = categoryNames.map((category) => ({
+      category,
+      count: categoryCounts[category] || 0,
+    }));
+
     // Serialize MongoDB objects before passing to client component
     const serializedApps = serializeMongoObject(allApps);
     const serializedFeaturedApps = serializeMongoObject(featuredApps);
@@ -96,6 +122,7 @@ export default async function LaunchPage() {
             initialApps={serializedApps}
             initialFeaturedApps={serializedFeaturedApps}
             initialTotalApps={totalApps}
+            categoryChips={categoryChips}
           />
         </Suspense>
       </Container>

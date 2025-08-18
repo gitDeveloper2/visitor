@@ -14,6 +14,7 @@ import {
   Avatar,
   Button,
   Pagination,
+  useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { Search, AppWindow, DollarSign } from 'lucide-react';
@@ -48,6 +49,7 @@ interface LaunchCategoryPageProps {
   initialApps: App[];
   initialFeaturedApps: App[];
   initialTotalApps: number;
+  categoryChips?: { category: string; count: number }[];
 }
 
 export default function LaunchCategoryPage({ 
@@ -56,9 +58,11 @@ export default function LaunchCategoryPage({
   tag, 
   initialApps, 
   initialFeaturedApps, 
-  initialTotalApps 
+  initialTotalApps,
+  categoryChips = []
 }: LaunchCategoryPageProps) {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [apps, setApps] = useState<App[]>(initialApps);
   const [featuredApps, setFeaturedApps] = useState<App[]>(initialFeaturedApps);
   const [loading, setLoading] = useState(false);
@@ -69,6 +73,10 @@ export default function LaunchCategoryPage({
   const [totalPages, setTotalPages] = useState(Math.ceil(initialTotalApps / 12));
   const [totalApps, setTotalApps] = useState(initialTotalApps);
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+  const categoryCountMap: Record<string, number> = (categoryChips || []).reduce((acc, item) => {
+    acc[item.category] = item.count;
+    return acc;
+  }, {} as Record<string, number>);
 
   // Filter apps based on search query
   const filteredApps = apps.filter(app => {
@@ -495,59 +503,56 @@ export default function LaunchCategoryPage({
       <Paper
         elevation={0}
         sx={{
-          mb: 6,
-          px: 3,
-          py: 4,
+          mb: { xs: 4, sm: 6 },
+          px: { xs: 2, sm: 3 },
+          py: { xs: 3, sm: 4 },
           borderRadius: "1rem",
           ...getGlassStyles(theme),
           boxShadow: getShadow(theme, "elegant"),
         }}
       >
-        <TextField
-          fullWidth
-          size="medium"
-                     placeholder="Search apps, tags, or authors..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search size={20} />
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            mb: 3,
-            "& .MuiOutlinedInput-root": {
-              borderRadius: 2,
-            },
-          }}
-        />
-        
-                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
-           <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 600, alignSelf: 'center' }}>
-             Browse other categories:
-           </Typography>
-           {availableCategories.map((categoryName) => (
-             <Chip
-               key={categoryName}
-               label={categoryName}
-               onClick={() => handleCategoryClick(categoryName)}
-               color="default"
-               variant="outlined"
-               size="small"
-               sx={{ 
-                 fontWeight: 500, 
-                 cursor: "pointer",
-                 "&:hover": {
-                   backgroundColor: theme.palette.primary.main,
-                   color: theme.palette.primary.contrastText,
-                   borderColor: theme.palette.primary.main,
-                 }
-               }}
-             />
-           ))}
-         </Box>
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant={isMobile ? "h6" : "h6"} sx={{ fontWeight: 700, mb: 1 }}>
+            Browse by Category
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Explore apps organized by categories and pricing
+          </Typography>
+        </Box>
+
+        <Box sx={{ 
+          display: "flex", 
+          gap: { xs: 0.5, sm: 1 }, 
+          flexWrap: "wrap", 
+          justifyContent: "center", 
+          mt: { xs: 2, sm: 3 } 
+        }}>
+          {availableCategories.map((categoryName) => (
+            <Chip
+              key={categoryName}
+              component={Link as any}
+              href={`/launch/category/${categoryName.toLowerCase().replace(/\s+/g, '-')}`}
+              clickable
+              label={
+                categoryCountMap[categoryName] !== undefined
+                  ? `${categoryName} (${categoryCountMap[categoryName]})`
+                  : categoryName
+              }
+              variant="outlined"
+              size={isMobile ? "small" : "medium"}
+              sx={{ 
+                fontWeight: 500, 
+                cursor: "pointer",
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                '&:hover': {
+                  backgroundColor: theme.palette.primary.main,
+                  color: theme.palette.primary.contrastText,
+                  borderColor: theme.palette.primary.main,
+                }
+              }}
+            />
+          ))}
+        </Box>
       </Paper>
 
       {/* Featured Apps */}

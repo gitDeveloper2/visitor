@@ -99,6 +99,25 @@ export default async function BlogCategoryPageWrapper({
     const totalBlogs = await db.collection('userblogs')
       .countDocuments(query);
 
+    // Compute category counts to replicate Browse by Category from /blogs (7-day window)
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    let categories: string[] = [];
+    try {
+      categories = await fetchCategoryNames('blog');
+    } catch (e) {
+      categories = [];
+    }
+    const recentBlogsForCounts = await db.collection('userblogs')
+      .find({ status: 'approved', createdAt: { $gte: sevenDaysAgo } })
+      .project({ category: 1 })
+      .toArray();
+    const categoryCounts = recentBlogsForCounts.reduce((acc: any, b: any) => {
+      const cat = b.category || 'Uncategorized';
+      acc[cat] = (acc[cat] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    const categoryChips = categories.map((c) => ({ category: c, count: categoryCounts[c] || 0 }));
+
     // Transform the database documents
     const transformedBlogs = blogs.map((blog: any) => ({
       _id: blog._id.toString(),
@@ -158,6 +177,7 @@ export default async function BlogCategoryPageWrapper({
             tag={tag}
             initialBlogs={transformedBlogs}
             totalBlogs={totalBlogs}
+            categoryChips={categoryChips}
           />
         </Suspense>
       </Container>

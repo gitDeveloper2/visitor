@@ -49,6 +49,7 @@ interface BlogCategoryPageProps {
   tag?: string;
   initialBlogs?: BlogPost[];
   totalBlogs?: number;
+  categoryChips?: { category: string; count: number }[];
 }
 
 export default function BlogCategoryPage({ 
@@ -56,7 +57,8 @@ export default function BlogCategoryPage({
   page, 
   tag, 
   initialBlogs = [], 
-  totalBlogs = 0 
+  totalBlogs = 0,
+  categoryChips = []
 }: BlogCategoryPageProps) {
   const theme = useTheme();
   const [blogs, setBlogs] = useState<BlogPost[]>(initialBlogs);
@@ -67,6 +69,196 @@ export default function BlogCategoryPage({
   const [currentPage, setCurrentPage] = useState(page);
   const [totalPages, setTotalPages] = useState(Math.ceil(totalBlogs / 12));
   const [totalBlogsCount, setTotalBlogsCount] = useState(totalBlogs);
+  const categoryCountMap: Record<string, number> = (categoryChips || []).reduce((acc, item) => {
+    acc[item.category] = item.count;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const renderMetaInfo = (date: string, readTime: string, views?: number, likes?: number) => (
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        color: "text.secondary",
+        fontSize: "0.75rem",
+      }}
+    >
+      <Box sx={{ display: "flex", gap: 3 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          <Calendar size={14} />
+          {date}
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          <Clock size={14} />
+          {readTime}
+        </Box>
+      </Box>
+      <Box sx={{ display: "flex", gap: 2 }}>
+        {views && (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <Eye size={14} />
+            {views}
+          </Box>
+        )}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          <ThumbsUp size={14} />
+          {likes || 0}
+        </Box>
+      </Box>
+    </Box>
+  );
+
+  const renderBlogCard = (blog: BlogPost) => {
+    const fallbackExcerpt = blog.content.replace(/<[^>]*>/g, '').slice(0, 120) + '...';
+    const excerpt = (blog as any).excerpt?.trim() ? (blog as any).excerpt : fallbackExcerpt;
+    const readTime = blog.readTime || Math.ceil(blog.content.replace(/<[^>]*>/g, '').split(' ').length / 200);
+
+    return (
+      <Paper
+        key={blog._id}
+        sx={{
+          p: 3,
+          borderRadius: 3,
+          boxShadow: getShadow(theme, "elegant"),
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
+          "&:hover": {
+            transform: "translateY(-2px)",
+            boxShadow: getShadow(theme, "neon"),
+          },
+        }}
+      >
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
+          <Typography variant="h6" sx={{ flex: 1, mr: 2, lineHeight: 1.3 }}>
+            {blog.title}
+          </Typography>
+          {blog.isFounderStory && (
+            <Badge variant="founder" label="Founder" />
+          )}
+        </Box>
+
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ mb: 2, flex: 1 }}
+        >
+          {excerpt}
+        </Typography>
+
+        {/* Categories and Subcategories */}
+        <Box sx={{ mb: 2 }}>
+          <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+            {/* Main Category */}
+            {blog.category && (
+              <Chip 
+                size="small" 
+                label={blog.category} 
+                variant="filled"
+                sx={{
+                  fontWeight: 600,
+                  color: theme.palette.primary.contrastText,
+                  backgroundColor: theme.palette.primary.main,
+                  fontSize: "0.7rem",
+                }}
+              />
+            )}
+            {/* Additional Categories (Subcategories) */}
+            {blog.subcategories?.slice(0, 2).map((subcat, i) => (
+              <Chip 
+                key={`subcat-${i}`} 
+                size="small" 
+                label={subcat} 
+                variant="outlined"
+                sx={{
+                  fontWeight: 500,
+                  color: theme.palette.text.primary,
+                  borderColor: theme.palette.divider,
+                  backgroundColor: theme.palette.background.paper,
+                  fontSize: "0.7rem",
+                  "&:hover": {
+                    backgroundColor: theme.palette.action.hover,
+                    borderColor: theme.palette.primary.main,
+                  },
+                }}
+              />
+            ))}
+            {/* Show total count if there are more subcategories */}
+            {blog.subcategories && blog.subcategories.length > 2 && (
+              <Chip 
+                size="small" 
+                label={`+${blog.subcategories.length - 2}`} 
+                variant="outlined"
+                sx={{
+                  fontWeight: 500,
+                  color: theme.palette.text.secondary,
+                  borderColor: theme.palette.divider,
+                  backgroundColor: theme.palette.background.paper,
+                  fontSize: "0.7rem",
+                }}
+              />
+            )}
+          </Box>
+        </Box>
+
+        {/* Tags - Show separately if exists */}
+        {blog.tags && blog.tags.length > 0 && (
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1, fontWeight: 600 }}>
+              Tags
+            </Typography>
+            <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+              {blog.tags.slice(0, 3).map((tag, i) => (
+                <Chip 
+                  key={`tag-${i}`} 
+                  size="small" 
+                  label={tag} 
+                  variant="outlined"
+                  sx={{
+                    fontWeight: 500,
+                    color: theme.palette.text.secondary,
+                    borderColor: theme.palette.divider,
+                    backgroundColor: theme.palette.background.paper,
+                    fontSize: "0.7rem",
+                  }}
+                />
+              ))}
+              {blog.tags.length > 3 && (
+                <Chip 
+                  size="small" 
+                  label={`+${blog.tags.length - 3}`} 
+                  variant="outlined"
+                  sx={{
+                    fontWeight: 500,
+                    color: theme.palette.text.secondary,
+                    borderColor: theme.palette.divider,
+                    backgroundColor: theme.palette.background.paper,
+                    fontSize: "0.7rem",
+                  }}
+                />
+              )}
+            </Box>
+          </Box>
+        )}
+
+        {renderMetaInfo(
+          new Date(blog.createdAt).toLocaleDateString(),
+          `${readTime} min read`,
+          blog.views,
+          blog.likes
+        )}
+
+        {/* Subtle inline text link cue (card is already wrapped in Link) */}
+        <Box sx={{ mt: 1 }}>
+          <Typography variant="body2" sx={{ color: 'primary.main', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+            Read more →
+          </Typography>
+        </Box>
+      </Paper>
+    );
+  };
 
   // Get unique tags from the blogs in this category
   const getUniqueTags = (blogs: BlogPost[]) => {
@@ -168,39 +360,49 @@ export default function BlogCategoryPage({
 
   return (
     <Box>
-      {/* Search and Filters */}
-      <Box sx={{ mb: 4 }}>
-        <TextField
-          fullWidth
-          placeholder="Search blogs..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search />
-              </InputAdornment>
-            ),
-          }}
-          sx={{ mb: 2 }}
-        />
-
-        {/* Available tags for this category - only show if there are tags */}
-        {getUniqueTags(blogs).length > 0 && (
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-            {getUniqueTags(blogs).map((tag) => (
-              <Chip
-                key={tag}
-                label={tag}
-                onClick={() => handleTagClick(tag)}
-                color={selectedTag === tag ? "primary" : "default"}
-                variant={selectedTag === tag ? "filled" : "outlined"}
-                size="small"
-              />
-            ))}
-          </Box>
-        )}
-      </Box>
+      {/* Browse by Category - replica of blogs root */}
+      <Paper
+        elevation={0}
+        sx={{
+          mb: { xs: 4, sm: 6 },
+          px: { xs: 2, sm: 3 },
+          py: { xs: 3, sm: 4 },
+          borderRadius: "1rem",
+          ...getGlassStyles(theme),
+          boxShadow: getShadow(theme, "elegant"),
+        }}
+      >
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
+            Browse by Category
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Explore blogs organized by topic categories
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center', mt: { xs: 2, sm: 3 } }}>
+          {Object.keys(categoryCountMap).map((categoryName) => (
+            <Chip
+              key={categoryName}
+              component={Link as any}
+              href={`/blogs/category/${categoryName.toLowerCase().replace(/\s+/g, '-')}`}
+              clickable
+              label={`${categoryName} (${categoryCountMap[categoryName]})`}
+              variant="outlined"
+              size="small"
+              sx={{
+                fontWeight: 500,
+                cursor: 'pointer',
+                '&:hover': {
+                  backgroundColor: theme.palette.primary.main,
+                  color: theme.palette.primary.contrastText,
+                  borderColor: theme.palette.primary.main,
+                },
+              }}
+            />
+          ))}
+        </Box>
+      </Paper>
 
       {/* Results count */}
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -209,186 +411,12 @@ export default function BlogCategoryPage({
       </Typography>
 
       {/* Blog Grid */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Grid container spacing={{ xs: 2, sm: 3, md: 4 }} sx={{ mb: 4 }}>
         {filteredBlogs.map((blog) => (
           <Grid item xs={12} sm={6} md={4} key={blog._id}>
-            <Paper
-              key={blog._id}
-              sx={{
-                borderRadius: "1rem",
-                overflow: "hidden",
-                background: theme.palette.background.paper,
-                boxShadow: getShadow(theme, "elegant"),
-                display: "flex",
-                flexDirection: "column",
-                height: "100%",
-                transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
-                "&:hover": {
-                  transform: "translateY(-4px)",
-                  boxShadow: getShadow(theme, "neon"),
-                },
-              }}
-            >
-              {blog.imageUrl && (
-                <Box sx={{ position: "relative" }}>
-                  <Box
-                    sx={{
-                      height: 200,
-                      backgroundImage: `url('${blog.imageUrl}')`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      borderTopLeftRadius: 'inherit',
-                      borderTopRightRadius: 'inherit',
-                    }}
-                  />
-                  {blog.isFounderStory && (
-                    <Box sx={{ position: "absolute", top: 12, left: 12 }}>
-                      <Badge variant="founder" label="Founder Story" />
-                    </Box>
-                  )}
-                </Box>
-              )}
-
-              <Box sx={{ p: 3, flex: 1, display: "flex", flexDirection: "column" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
-                  <Avatar alt={blog.author} sx={{ width: 36, height: 36 }} />
-                  <Box>
-                    <Typography variant="body2" fontWeight={600}>{blog.author}</Typography>
-                    <Typography variant="caption" color="text.secondary">{blog.role}</Typography>
-                  </Box>
-                </Box>
-
-                {!blog.imageUrl && blog.isFounderStory && (
-                  <Box sx={{ mb: 2 }}>
-                    <Badge variant="founder" label="Founder Story" />
-                  </Box>
-                )}
-
-                <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, lineHeight: 1.3 }}>
-                  {blog.title}
-                </Typography>
-
-                <Typography 
-                  variant="body2" 
-                  color="text.secondary" 
-                  sx={{ mb: 2, flex: 1 }}
-                >
-                  {blog.content.replace(/<[^>]*>/g, '').slice(0, 120)}...
-                </Typography>
-
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                    <Clock size={14} />
-                    <Typography variant="caption">{blog.readTime || 5} min read</Typography>
-                  </Box>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                    <Calendar size={14} />
-                    <Typography variant="caption">
-                      {new Date(blog.createdAt).toLocaleDateString()}
-                    </Typography>
-                  </Box>
-                </Box>
-
-                {/* Categories and Subcategories */}
-                <Box sx={{ mb: 2 }}>
-                  <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-                    {/* Main Category */}
-                    {blog.category && (
-                      <Chip 
-                        size="small" 
-                        label={blog.category} 
-                        variant="filled"
-                        sx={{
-                          fontWeight: 600,
-                          color: theme.palette.primary.contrastText,
-                          backgroundColor: theme.palette.primary.main,
-                          fontSize: "0.7rem",
-                        }}
-                      />
-                    )}
-                    
-                                         {/* Additional Categories (Subcategories) */}
-                     {blog.subcategories && blog.subcategories.length > 0 && blog.subcategories.slice(0, 2).map((subcat, i) => (
-                       <Chip 
-                         key={`subcat-${i}`} 
-                         size="small" 
-                         label={subcat} 
-                         variant="outlined"
-                         sx={{
-                           fontWeight: 500,
-                           color: theme.palette.text.primary,
-                           borderColor: theme.palette.divider,
-                           backgroundColor: theme.palette.background.paper,
-                           fontSize: "0.7rem",
-                         }}
-                       />
-                     ))}
-                     
-                     {/* Show total count if there are more subcategories */}
-                     {blog.subcategories && blog.subcategories.length > 2 && (
-                       <Chip 
-                         size="small" 
-                         label={`+${blog.subcategories.length - 2}`} 
-                         variant="outlined"
-                         sx={{
-                           fontWeight: 500,
-                           color: theme.palette.text.secondary,
-                           borderColor: theme.palette.divider,
-                           backgroundColor: theme.palette.background.paper,
-                           fontSize: "0.7rem",
-                         }}
-                       />
-                     )}
-                  </Box>
-                </Box>
-
-                {/* Tags - Show separately if exists */}
-                {blog.tags && blog.tags.length > 0 && (
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1, fontWeight: 600 }}>
-                      Tags
-                    </Typography>
-                    <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-                                             {blog.tags && blog.tags.length > 0 && blog.tags.slice(0, 3).map((tag, i) => (
-                         <Chip 
-                           key={`tag-${i}`} 
-                           size="small" 
-                           label={tag} 
-                           variant="outlined"
-                           sx={{
-                             fontWeight: 500,
-                             color: theme.palette.text.secondary,
-                             borderColor: theme.palette.divider,
-                             backgroundColor: theme.palette.background.paper,
-                             fontSize: "0.7rem",
-                           }}
-                         />
-                       ))}
-                       {blog.tags && blog.tags.length > 3 && (
-                         <Chip 
-                           size="small" 
-                           label={`+${blog.tags.length - 3}`} 
-                           variant="outlined"
-                           sx={{
-                             fontWeight: 500,
-                             color: theme.palette.text.secondary,
-                             borderColor: theme.palette.divider,
-                             backgroundColor: theme.palette.background.paper,
-                             fontSize: "0.7rem",
-                           }}
-                         />
-                       )}
-                    </Box>
-                  </Box>
-                )}
-
-                <Link href={`/blogs/${blog.slug}`} style={{ textDecoration: 'none' }}>
-                  <Button variant="contained" fullWidth>
-                    Read More
-                  </Button>
-                </Link>
-              </Box>
-            </Paper>
+            <Link href={`/blogs/${blog.slug || blog._id}`} style={{ textDecoration: 'none' }}>
+              {renderBlogCard(blog)}
+            </Link>
           </Grid>
         ))}
       </Grid>

@@ -340,12 +340,14 @@ interface BlogMainPageProps {
   initialBlogs: BlogPost[];
   initialFeaturedBlogs: BlogPost[];
   initialFounderStories: BlogPost[];
+  categoryChips?: { category: string; count: number }[];
 }
 
 export default function BlogMainPage({ 
   initialBlogs, 
   initialFeaturedBlogs, 
-  initialFounderStories 
+  initialFounderStories,
+  categoryChips = []
 }: BlogMainPageProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -587,6 +589,13 @@ export default function BlogMainPage({
           blog.views,
           blog.likes
         )}
+
+        {/* Subtle inline text link cue (card is already wrapped in Link) */}
+        <Box sx={{ mt: 1 }}>
+          <Typography variant="body2" sx={{ color: 'primary.main', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+            Read more →
+          </Typography>
+        </Box>
       </Paper>
     );
   };
@@ -684,6 +693,62 @@ export default function BlogMainPage({
       </Paper>
       */}
 
+      {/* Browse by Category - replicated design from Apps page */}
+      {categoryChips.length > 0 && (
+        <Paper
+          elevation={0}
+          sx={{
+            mt: { xs: 4, sm: 6 },
+            mb: { xs: 4, sm: 6 },
+            px: { xs: 2, sm: 3 },
+            py: { xs: 3, sm: 4 },
+            borderRadius: "1rem",
+            ...getGlassStyles(theme),
+            boxShadow: getShadow(theme, "elegant"),
+          }}
+        >
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography variant={isMobile ? "h6" : "h6"} sx={{ fontWeight: 700, mb: 1 }}>
+              Browse by Category
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Explore blogs organized by topic categories
+            </Typography>
+          </Box>
+
+          <Box sx={{ 
+            display: "flex", 
+            gap: { xs: 0.5, sm: 1 }, 
+            flexWrap: "wrap", 
+            justifyContent: "center", 
+            mt: { xs: 2, sm: 3 } 
+          }}>
+            {categoryChips.map(({ category, count }) => (
+              <Chip
+                key={category}
+                label={`${category} (${count})`}
+                component={Link as any}
+                href={`/blogs/category/${encodeURIComponent(category.toLowerCase().replace(/\s+/g, '-'))}`}
+                clickable
+                variant="outlined"
+                sx={{
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                  opacity: count > 0 ? 1 : 0.6,
+                  borderColor: count > 0 ? 'primary.main' : 'text.disabled',
+                  color: count > 0 ? 'text.primary' : 'text.secondary',
+                  '&:hover': {
+                    backgroundColor: count > 0 ? 'primary.main' : 'action.hover',
+                    color: count > 0 ? 'white' : 'text.secondary',
+                  },
+                }}
+              />
+            ))}
+          </Box>
+        </Paper>
+      )}
+
       {/* CTA unified with Launch */}
       <UnifiedCTA 
         title="Share your story with the community ✍️"
@@ -694,7 +759,7 @@ export default function BlogMainPage({
 
       {/* Featured Articles Section */}
       {featuredBlogs.length > 0 && (
-        <Box sx={{ mb: { xs: 4, sm: 6 } }}>
+        <Box sx={{ mt: { xs: 4, sm: 6 }, mb: { xs: 4, sm: 6 } }}>
           <Typography 
             variant={isMobile ? "h6" : "h6"} 
             sx={{ 
@@ -756,7 +821,7 @@ export default function BlogMainPage({
                 fontSize: { xs: '0.75rem', sm: '0.875rem' }
               }}
             >
-              View All Stories
+              View All Founder Stories
             </Button>
           </Box>
 

@@ -161,6 +161,30 @@ export default async function LaunchCategoryPageWrapper({
         _id: { $nin: featuredAppIds }
       });
 
+    // Compute category counts for the Browse by Category chips (mirror /launch root)
+    let categoryNames: string[] = [];
+    try {
+      categoryNames = await fetchCategoryNames('app');
+    } catch (e) {
+      categoryNames = [];
+    }
+
+    const recentAppsForCounts = await db.collection('userapps')
+      .find({ status: 'approved', createdAt: { $gte: sevenDaysAgo } })
+      .project({ category: 1 })
+      .toArray();
+
+    const categoryCounts = recentAppsForCounts.reduce((acc: any, app: any) => {
+      const cat = app.category || 'Uncategorized';
+      acc[cat] = (acc[cat] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const categoryChips = categoryNames.map((name) => ({
+      category: name,
+      count: categoryCounts[name] || 0,
+    }));
+
     // Serialize MongoDB objects before passing to client component
     const serializedApps = serializeMongoObject(allApps);
     const serializedFeaturedApps = serializeMongoObject(featuredApps);
@@ -203,6 +227,7 @@ export default async function LaunchCategoryPageWrapper({
             initialApps={serializedApps}
             initialFeaturedApps={serializedFeaturedApps}
             initialTotalApps={totalApps}
+            categoryChips={categoryChips}
           />
         </Suspense>
       </Container>

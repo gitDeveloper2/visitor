@@ -43,12 +43,14 @@ interface AppsMainPageProps {
   initialApps: any[];
   initialFeaturedApps: any[];
   initialTotalApps: number;
+  categoryChips?: { category: string; count: number }[];
 }
 
 export default function AppsMainPage({ 
   initialApps, 
   initialFeaturedApps, 
-  initialTotalApps 
+  initialTotalApps,
+  categoryChips = []
 }: AppsMainPageProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -637,7 +639,19 @@ export default function AppsMainPage({
   }
 
   // Get unique filters (combine categories and common tags)
-  const allFilters = ["All", ...categories.map(cat => ({ name: cat.name, slug: cat.slug })), "Free", "Freemium", "Premium"];
+  // If server-provided categoryChips are available, include counts in the label
+  const categoryCountMap: Record<string, number> = (categoryChips || []).reduce((acc, item) => {
+    acc[item.category] = item.count;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const allFilters = [
+    "All",
+    ...categories.map(cat => ({ name: cat.name, slug: cat.slug })),
+    "Free",
+    "Freemium",
+    "Premium"
+  ];
 
   return (
     <Box component="main" sx={{ bgcolor: "background.default", py: { xs: 4, sm: 6, md: 10 } }}>
@@ -686,6 +700,14 @@ export default function AppsMainPage({
           boxShadow: getShadow(theme, "elegant"),
         }}
       >
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant={isMobile ? "h6" : "h6"} sx={{ fontWeight: 700, mb: 1 }}>
+            Browse by Category
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Explore apps organized by categories and pricing
+          </Typography>
+        </Box>
         {/**
         <Grid container spacing={3} alignItems="center">
           <Grid item xs={12}>
@@ -759,18 +781,24 @@ export default function AppsMainPage({
               return (
                 <Chip
                   key={filter.slug}
-                  label={filter.name}
-                  onClick={() => {
-                    // Navigate to category page using slug
-                    window.location.href = `/launch/category/${filter.slug}`;
-                  }}
-                  color={selectedFilter === filter.name ? "primary" : "default"}
-                  variant={selectedFilter === filter.name ? "filled" : "outlined"}
+                  label={
+                    categoryCountMap[filter.name] !== undefined
+                      ? `${filter.name} (${categoryCountMap[filter.name]})`
+                      : filter.name
+                  }
+                  component={Link as any}
+                  href={`/launch/category/${filter.slug}`}
+                  clickable
+                  variant="outlined"
                   size={isMobile ? "small" : "medium"}
                   sx={{ 
                     fontWeight: 500, 
                     cursor: "pointer",
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    '&:hover': {
+                      backgroundColor: 'primary.main',
+                      color: 'white',
+                    },
                   }}
                 />
               );

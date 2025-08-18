@@ -174,56 +174,6 @@ export default async function BlogsPage() {
 
     return (
       <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
-        {/* Browse by Category Section */}
-        <Box sx={{ mb: { xs: 4, sm: 6 } }}>
-          <Typography 
-            variant="h5" 
-            sx={{ 
-              fontWeight: 700, 
-              mb: { xs: 2, sm: 3 },
-              fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' }
-            }}
-          >
-            Browse by Category
-          </Typography>
-          <Typography 
-            variant="body2" 
-            color="text.secondary" 
-            sx={{ 
-              mb: { xs: 2, sm: 3 },
-              fontSize: { xs: '0.875rem', sm: '1rem' }
-            }}
-          >
-            Explore blogs organized by topic categories
-          </Typography>
-          <Grid container spacing={{ xs: 1, sm: 2 }}>
-            {categoryChips.map(({ category, count }) => (
-              <Grid item key={category}>
-                <Link href={`/blogs/category/${encodeURIComponent(category.toLowerCase().replace(/\s+/g, '-'))}`} style={{ textDecoration: 'none' }}>
-                  <Chip
-                    label={`${category} (${count})`}
-                    variant={count > 0 ? "outlined" : "outlined"}
-                    sx={{
-                      fontWeight: 600,
-                      fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                      px: { xs: 1.5, sm: 2 },
-                      py: { xs: 0.75, sm: 1 },
-                      cursor: 'pointer',
-                      opacity: count > 0 ? 1 : 0.6, // Dim categories with no blogs
-                      borderColor: count > 0 ? 'primary.main' : 'text.disabled', // Different border color
-                      color: count > 0 ? 'text.primary' : 'text.secondary', // Different text color
-                      '&:hover': {
-                        backgroundColor: count > 0 ? 'primary.main' : 'action.hover',
-                        color: count > 0 ? 'white' : 'text.secondary',
-                      },
-                    }}
-                  />
-                </Link>
-              </Grid>
-            ))}
-          </Grid>
-        </Box>
-
         <Suspense fallback={
           <Box sx={{ display: 'flex', justifyContent: 'center', py: { xs: 4, sm: 8 } }}>
             <CircularProgress />
@@ -233,8 +183,11 @@ export default async function BlogsPage() {
             initialBlogs={allBlogs}
             initialFeaturedBlogs={featuredBlogs}
             initialFounderStories={founderStories}
+            categoryChips={categoryChips}
           />
         </Suspense>
+
+        {/* Browse by Category handled within BlogMainPage for consistency */}
       </Container>
     );
   } catch (error) {
