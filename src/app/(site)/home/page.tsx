@@ -10,6 +10,7 @@ import BlogSection from "../../components/BlogSection";
 import DonateButton from "../../components/DonateButton";
 import Footer from "../../components/Footer";
 
+
 export const dynamic="force-static"
 export const revalidate = 345600;
 

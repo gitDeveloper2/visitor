@@ -5,6 +5,7 @@ import { connectToDatabase } from '../../../lib/mongodb';
 import { sortByScore, computeBlogScore } from '@/features/ranking/score';
 import Link from 'next/link';
 import { fetchCategoryNames } from '../../../utils/categories';
+import { adRegistry } from '@/app/components/adds/google/AdRegistry';
 
 // Transform database document to BlogPost interface
 const transformBlogDocument = (doc: any) => ({
@@ -174,6 +175,11 @@ export default async function BlogsPage() {
 
     return (
       <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
+        {/* Blog List Header Ad */}
+        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
+          {adRegistry[20]}
+        </Box>
+        
         <Suspense fallback={
           <Box sx={{ display: 'flex', justifyContent: 'center', py: { xs: 4, sm: 8 } }}>
             <CircularProgress />
@@ -187,7 +193,7 @@ export default async function BlogsPage() {
           />
         </Suspense>
 
-        {/* Browse by Category handled within BlogMainPage for consistency */}
+
       </Container>
     );
   } catch (error) {

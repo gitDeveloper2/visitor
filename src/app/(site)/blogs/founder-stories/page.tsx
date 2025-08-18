@@ -20,6 +20,7 @@ import { useTheme } from "@mui/material/styles";
 import { Search, Clock, Calendar, Plus } from "lucide-react";
 import { getGlassStyles, getShadow, typographyVariants, commonStyles } from "../../../../utils/themeUtils";
 import Link from "next/link";
+import { adRegistry } from "@/app/components/adds/google/AdRegistry";
 
 interface BlogPost {
   _id: string;
@@ -183,6 +184,11 @@ export default function FounderStoriesPage() {
   return (
     <Box component="main" sx={{ bgcolor: "background.default", py: 10 }}>
       <Container maxWidth="lg">
+        {/* Founder Stories Header Ad */}
+        <Box sx={{ mb: 6, display: 'flex', justifyContent: 'center' }}>
+          {adRegistry[20]}
+        </Box>
+        
         {/* Hero Section */}
         <Box sx={{ textAlign: "center", mb: 8 }}>
           <Typography variant="h1" sx={typographyVariants.heroTitle}>
@@ -288,6 +294,8 @@ export default function FounderStoriesPage() {
             />
           </Box>
         )}
+        
+
       </Container>
     </Box>
   );

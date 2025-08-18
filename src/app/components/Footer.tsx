@@ -43,11 +43,16 @@ const Footer = () => {
     ],
   };
 
-  const legalLinks = [
+  const legalLinks: Array<{
+    label: string;
+    href: string;
+    onClick?: () => void;
+  }> = [
     { label: "Privacy Policy", href: "/privacy" },
     { label: "Terms of Use", href: "/terms" },
     { label: "Disclaimer", href: "/disclaimer" },
     { label: "DMCA", href: "/dcma-policy" },
+    { label: "Privacy & Cookies", href: "#", onClick: () => window.dispatchEvent(new CustomEvent('openCookiePreferences')) },
     // { label: "Legal", href: "/legal" },
   ];
 
@@ -63,13 +68,30 @@ const Footer = () => {
   const RenderLink = ({
     href,
     children,
+    onClick,
     ...props
   }: {
     href: string;
     children: React.ReactNode;
+    onClick?: () => void;
     [key: string]: any;
   }) => {
-    if (isExternal(href)) {
+    if (onClick) {
+      // Link with custom onClick handler
+      return (
+        <Link
+          href={href}
+          onClick={(e) => {
+            e.preventDefault();
+            onClick();
+          }}
+          sx={{ cursor: 'pointer' }}
+          {...props}
+        >
+          {children}
+        </Link>
+      );
+    } else if (isExternal(href)) {
       // External link
       return (
         <Link
@@ -87,7 +109,7 @@ const Footer = () => {
         <Link href={href} {...props}>
           {children}
         </Link>
-      );
+        );
     } else {
       // Internal page link, use NextLink for SPA navigation
       return (
@@ -267,6 +289,7 @@ const Footer = () => {
                 <RenderLink
                   key={link.label}
                   href={link.href}
+                  onClick={link.onClick}
                   sx={{
                     color: theme.palette.text.secondary,
                     fontSize: "0.875rem",

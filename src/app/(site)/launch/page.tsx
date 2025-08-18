@@ -5,6 +5,7 @@ import { fetchCategoryNames } from '@/utils/categories';
 import { connectToDatabase } from '../../../lib/mongodb';
 import { verifyAppPremiumStatus } from '../../../utils/premiumVerification';
 import { sortByScore, computeAppScore } from '@/features/ranking/score';
+import { adRegistry } from '@/app/components/adds/google/AdRegistry';
 
 // Helper function to serialize MongoDB objects
 function serializeMongoObject(obj: any): any {
@@ -113,6 +114,11 @@ export default async function LaunchPage() {
 
     return (
       <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
+        {/* Launch Header Ad */}
+        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
+          {adRegistry[30]}
+        </Box>
+        
         <Suspense fallback={
           <Box sx={{ display: 'flex', justifyContent: 'center', py: { xs: 4, sm: 8 } }}>
             <CircularProgress />

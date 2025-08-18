@@ -28,6 +28,7 @@ import { BLOG_QUALITY_CONFIG } from '@/features/ranking/config';
 
 import { useSearchParams } from 'next/navigation';
 import { useAuthState } from '@/hooks/useAuth';
+import { adRegistry } from '@/app/components/adds/google/AdRegistry';
 
 const steps = ["Blog Info", "Write Blog", "Review & Submit"];
 
@@ -676,15 +677,19 @@ function BlogSubmitPageContent() {
             </Step>
           ))}
         </Stepper>
-        <Paper
-          sx={{
-            p: 4,
-            borderRadius: 3,
-            ...getGlassStyles(theme),
-            boxShadow: getShadow(theme, "elegant"),
-            minHeight: 500,
-          }}
-        >
+
+
+        <Box sx={{ display: 'flex', gap: 3 }}>
+          <Paper
+            sx={{
+              p: 4,
+              borderRadius: 3,
+              ...getGlassStyles(theme),
+              boxShadow: getShadow(theme, "elegant"),
+              minHeight: 500,
+              flex: 1,
+            }}
+          >
           {activeStep === 0 && (
             <StepMetadata 
               formData={formData as any}
@@ -773,6 +778,9 @@ function BlogSubmitPageContent() {
             </>
           )}
         </Paper>
+        
+
+      </Box>
         <Box mt={4} display="flex" justifyContent="space-between">
           <Button
             disabled={activeStep === 0 || loading}

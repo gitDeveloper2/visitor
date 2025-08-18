@@ -15,6 +15,11 @@ import { Analytics } from "@vercel/analytics/next"
 import Footer from "@components/Footer";
 import DonateButton from "@components/DonateButton";
 import AuthProvider from "../context/authContexts";
+// import CookieConsent from "@components/CookieConsent";
+import { CookieConsentProvider } from "../context/CookieConsentContext";
+
+import CookieConsent from "@/components/CookieConsent";
+import AdSenseLoader from "@/components/AdSenseLoader";
 
 const APPID=process.env.NEXT_PUBLIC_FACEBOOK_APPID
 const ADMINID=process.env.NEXT_PUBLIC_FACEBOOK_ADMIN_ID
@@ -50,12 +55,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         }}
       />
 
-      <Script
-        async
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5389930223435032"
-        crossOrigin="anonymous"
-        strategy="afterInteractive"
-      />
+      {/* AdSense script moved to ConsentAwareScripts component */}
        
         <Script
           async
@@ -69,25 +69,34 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <AppRouterCacheProvider>
             <ThemeProvider> 
               <AuthProvider>
-                <GlobalStyles />
-                <Analytics/>
-                <div style={{ 
-                  minHeight: "100vh",
-                  display: "flex", 
-                  flexDirection: "column",
-                  overflow: "hidden" // Prevent horizontal scroll
-                }}>
-                  <Navbar />
-                  <DonateButton/>
-                  <main id="main-content" tabIndex={-1} style={{ flex: 1 }}>
-                    {children}
-                  </main>
-                  <div style={{ width: '100%', maxWidth: '300px', margin: '10px auto', textAlign: 'center' }}>
-          
+                <CookieConsentProvider>
+                  <GlobalStyles />
+                  <Analytics/>
+                  <div style={{ 
+                    minHeight: "100vh",
+                    display: "flex", 
+                    flexDirection: "column",
+                    overflow: "hidden" // Prevent horizontal scroll
+                  }}>
+                    <Navbar />
+                    <DonateButton/>
+                    <main id="main-content" tabIndex={-1} style={{ flex: 1 }}>
+                      {children}
+                    </main>
+                    <div style={{ width: '100%', maxWidth: '300px', margin: '10px auto', textAlign: 'center' }}>
+            
+                    </div>
+                    {/* Footer removed - now handled by individual pages */}
+                    <Footer/>
                   </div>
-                  {/* Footer removed - now handled by individual pages */}
-                  <Footer/>
-                </div>
+                  
+                  {/* Cookie Consent Banner */}
+                  <CookieConsent />
+                  
+                  {/* AdSense Script Loader */}
+                  <AdSenseLoader />
+                  
+                </CookieConsentProvider>
               </AuthProvider>
             </ThemeProvider>
         </AppRouterCacheProvider>

@@ -31,6 +31,7 @@ import { useTheme as useMuiTheme } from "@mui/material/styles";
 import { authClient } from "@/app/auth-client";
 import { AuthGuard, OnboardingGuard } from "@/components/auth/client";
 import { useAuthState } from "@/hooks/useAuth";
+import { adRegistry } from "@/app/components/adds/google/AdRegistry";
 
 // Icons
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -528,10 +529,24 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         component="main"
         sx={{
           flex: 1,
-          minHeight: isMobile ? 'calc(100vh - 64px)' : 'auto'
+          minHeight: isMobile ? 'calc(100vh - 64px)' : 'auto',
+          display: 'flex',
+          gap: 3,
+          px: { xs: 2, md: 4 },
+          py: 3
         }}
       >
-        {children}
+        {/* Main Content Area */}
+        <Box sx={{ flex: 1 }}>
+          {/* Dashboard Header Ad */}
+          <Box sx={{ mb: 3, display: { xs: 'none', md: 'block' } }}>
+            {adRegistry[10]}
+          </Box>
+          
+          {children}
+        </Box>
+        
+
       </Box>
     </Box>
   );
