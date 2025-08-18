@@ -18,7 +18,6 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { Search, Clock, Calendar, Plus } from "lucide-react";
-import Badge from "@components/badges/Badge";
 import { getGlassStyles, getShadow, typographyVariants, commonStyles } from "../../../../utils/themeUtils";
 import Link from "next/link";
 
@@ -79,18 +78,11 @@ function FounderStoryCard({ blog }: FounderStoryCardProps) {
               backgroundPosition: "center",
             }}
           />
-          <Box sx={{ position: "absolute", top: 12, left: 12 }}>
-            <Badge variant="founder" label="Founder Story" />
-          </Box>
         </Box>
       )}
 
       <Box sx={{ p: 3, flex: 1, display: "flex", flexDirection: "column" }}>
-        {!blog.imageUrl && (
-          <Box sx={{ mb: 2 }}>
-            <Badge variant="founder" label="Founder Story" />
-          </Box>
-        )}
+        {/* Founder badge removed for uniformity with /blogs cards */}
         
         <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1, lineHeight: 1.3 }}>
           {blog.title}
@@ -151,12 +143,8 @@ export default function FounderStoriesPage() {
     fetchFounderStories();
   }, []);
 
-  // Filter logic
-  const filteredStories = founderStories.filter((story) =>
-    story.title.toLowerCase().includes(search.toLowerCase()) ||
-    story.content.toLowerCase().includes(search.toLowerCase()) ||
-    story.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase()))
-  );
+  // No search on founder stories page to match /blogs simplicity
+  const filteredStories = founderStories;
 
   // Pagination logic
   const totalPages = Math.ceil(filteredStories.length / itemsPerPage);
@@ -169,10 +157,7 @@ export default function FounderStoriesPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Reset to first page when search changes
-  React.useEffect(() => {
-    setCurrentPage(1);
-  }, [search]);
+  // No search, no reset needed
 
   if (loading) {
     return (
@@ -220,38 +205,7 @@ export default function FounderStoriesPage() {
           </Typography>
         </Box>
 
-        {/* Search Section */}
-        <Paper
-          elevation={0}
-          sx={{
-            mb: 6,
-            px: 3,
-            py: 4,
-            borderRadius: "1rem",
-            ...getGlassStyles(theme),
-            boxShadow: getShadow(theme, "elegant"),
-          }}
-        >
-          <TextField
-            fullWidth
-            size="medium"
-            placeholder="Search founder stories..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search size={20} />
-                </InputAdornment>
-              ),
-            }}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: 2,
-              },
-            }}
-          />
-        </Paper>
+        {/* Search Section removed for parity with /blogs */}
 
         {/* Write Founder Story CTA */}
         <Box sx={{ textAlign: "center", mb: 6 }}>
