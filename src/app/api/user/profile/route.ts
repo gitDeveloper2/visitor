@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from '@/lib/auth';
 import { connectToDatabase, dbObject } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
-
+export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const session = await getServerSession();
