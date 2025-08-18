@@ -110,7 +110,46 @@ export default function BlogPageWrapper() {
   }
 
   return (
-    <BlogArticlePage
+    <>
+      {/* SEO JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            ...require('../../../../lib/JsonLd').buildWebsiteJsonLd(),
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            require('../../../../lib/JsonLd').buildBreadcrumbJsonLd([
+              { name: 'Home', url: require('../../../../lib/JsonLd').getAbsoluteUrl('/') },
+              { name: 'Blogs', url: require('../../../../lib/JsonLd').getAbsoluteUrl('/blogs') },
+              { name: blog.title, url: require('../../../../lib/JsonLd').getAbsoluteUrl(`/blogs/${blog.slug}`) },
+            ])
+          ),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            require('../../../../lib/JsonLd').buildArticleJsonLd({
+              title: blog.title,
+              description: blog.excerpt || blog.content?.slice(0, 160) || '',
+              canonicalUrl: require('../../../../lib/JsonLd').getAbsoluteUrl(`/blogs/${blog.slug}`),
+              imageUrl: blog.imageUrl,
+              authorName: blog.author || blog.authorName,
+              datePublished: blog.createdAt,
+              dateModified: blog.updatedAt,
+            })
+          ),
+        }}
+      />
+
+      <BlogArticlePage
       author={blog.author || blog.authorName || "Author"}
       role={blog.role || "Author"}
       authorBio={blog.authorBio}
@@ -121,7 +160,8 @@ export default function BlogPageWrapper() {
       likes={0} // You can add like tracking later
       tags={blog.tags}
       content={blog.content}
-    />
+      />
+    </>
   );
 }
 

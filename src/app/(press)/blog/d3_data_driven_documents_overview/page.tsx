@@ -1,5 +1,6 @@
 import React, { ReactElement } from "react";
 import { generatePageMetadata } from "../../../../lib/MetadataGenerator";
+import { buildWebsiteJsonLd, buildBreadcrumbJsonLd, buildArticleJsonLd, getAbsoluteUrl } from "../../../../lib/JsonLd";
 import PrismaSelfRelations from "./content";
 
 
@@ -8,7 +9,8 @@ export async function generateMetadata() {
     title: "Key Concepts of D3.js. (A d3 data driven documents overview)",
     description: "Learn about D3.js with a focus on D3.js data visualization and D3.js examples. Explore D3.js in React, its applications, and see how it compares to Chart.js and Sigma.js. Discover if D3.js is obsolete, its prerequisites, and how it is used by companies. Get insights into the D3.js GitHub repository and why you might choose or avoid D3.js for your projects.",
     keywords: "D3.js, D3.js data visualization, D3.js examples, D3.js in React, D3.js GitHub, D3.js applications, Is D3.js obsolete, D3.js vs Chart.js, D3.js vs Sigma.js, D3.js prerequisites, companies using D3.js",
-    canonicalUrl: "/blog/d3_data_driven_documents_overview"
+    canonicalUrl: "/blog/d3_data_driven_documents_overview",
+    type: "article",
   });
 }
 
@@ -18,6 +20,37 @@ export default function Test() {
   
 
   return (
-   <PrismaSelfRelations/>
+   <>
+     <script
+       type="application/ld+json"
+       dangerouslySetInnerHTML={{ __html: JSON.stringify(buildWebsiteJsonLd()) }}
+     />
+     <script
+       type="application/ld+json"
+       dangerouslySetInnerHTML={{
+         __html: JSON.stringify(
+           buildBreadcrumbJsonLd([
+             { name: "Home", url: getAbsoluteUrl("/") },
+             { name: "Blog", url: getAbsoluteUrl("/blog") },
+             { name: "D3 Data Driven Documents Overview", url: getAbsoluteUrl("/blog/d3_data_driven_documents_overview") },
+           ])
+         ),
+       }}
+     />
+     <script
+       type="application/ld+json"
+       dangerouslySetInnerHTML={{
+         __html: JSON.stringify(
+           buildArticleJsonLd({
+             title: "Key Concepts of D3.js. (A d3 data driven documents overview)",
+             description:
+               "Learn about D3.js with a focus on D3.js data visualization and D3.js examples. Explore D3.js in React, its applications, and see how it compares to Chart.js and Sigma.js. Discover if D3.js is obsolete, its prerequisites, and how it is used by companies. Get insights into the D3.js GitHub repository and why you might choose or avoid D3.js for your projects.",
+             canonicalUrl: getAbsoluteUrl("/blog/d3_data_driven_documents_overview"),
+           })
+         ),
+       }}
+     />
+     <PrismaSelfRelations/>
+   </>
   );
 }

@@ -4,6 +4,8 @@ interface PageMetaProps {
   keywords?: string; // Optional keywords
   canonicalUrl:string;
   updatedAt?:string;
+  type?: "website" | "article";
+  imageUrlOverride?: string;
 }
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://basicutils.com";
@@ -14,7 +16,7 @@ const imageUrl = process.env.NEXT_PUBLIC_IMAGE_PATH || "/logo.png";
 const author = "Joseph Horace";
 const robots = "index, follow";
 
-export function generatePageMetadata({ title, description, keywords, canonicalUrl,updatedAt }: PageMetaProps) {
+export function generatePageMetadata({ title, description, keywords, canonicalUrl,updatedAt, type, imageUrlOverride }: PageMetaProps) {
  canonicalUrl=`${baseUrl}${canonicalUrl}`
   return {
     
@@ -27,23 +29,21 @@ export function generatePageMetadata({ title, description, keywords, canonicalUr
       url: canonicalUrl,
       images: [
         {
-          url: imageUrl,
+          url: imageUrlOverride || imageUrl,
           width: 800,
           height: 600,
           alt: 'Og Image Alt',
         },
       ],
       siteName: "Basic Utils",
-      type: "website",
+      type: type || "website",
       locale: "en_US",
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
-      images: [
-        imageUrl,
-      ],
+      images: [imageUrlOverride || imageUrl],
       site: "@BasicUtils",
       creator: "@BasicUtils",
     },
