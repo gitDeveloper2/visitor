@@ -330,7 +330,7 @@ export default function AppsMainPage({
         </Typography>
 
         {/* Category and Additional Categories */}
-        <Box sx={{ mb: 3 }}>
+        <Box sx={{ mb: 2 }}>
           <Typography 
             variant="caption" 
             color="text.secondary" 
@@ -341,7 +341,7 @@ export default function AppsMainPage({
               fontSize: { xs: '0.7rem', sm: '0.75rem' }
             }}
           >
-            Categories
+            Category
           </Typography>
           <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
             {/* Main Category */}
@@ -397,6 +397,55 @@ export default function AppsMainPage({
             )}
           </Box>
         </Box>
+
+        {/* Tags - align with blogs */}
+        {app.tags?.length > 0 && (
+          <Box sx={{ mb: 2 }}>
+            <Typography 
+              variant="caption" 
+              color="text.secondary" 
+              sx={{ 
+                display: "block", 
+                mb: 1, 
+                fontWeight: 600,
+                fontSize: { xs: '0.7rem', sm: '0.75rem' }
+              }}
+            >
+              Tags
+            </Typography>
+            <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+              {app.tags?.slice(0, 3).map((tag, i) => (
+                <Chip 
+                  key={`tag-${i}`} 
+                  size="small" 
+                  label={tag} 
+                  variant="outlined"
+                  sx={{
+                    fontWeight: 500,
+                    color: theme.palette.text.secondary,
+                    borderColor: theme.palette.divider,
+                    backgroundColor: theme.palette.background.paper,
+                    fontSize: "0.7rem",
+                  }}
+                />
+              ))}
+              {app.tags && app.tags.length > 3 && (
+                <Chip 
+                  size="small" 
+                  label={`+${app.tags.length - 3}`} 
+                  variant="outlined"
+                  sx={{
+                    fontWeight: 500,
+                    color: theme.palette.text.secondary,
+                    borderColor: theme.palette.divider,
+                    backgroundColor: theme.palette.background.paper,
+                    fontSize: "0.7rem",
+                  }}
+                />
+              )}
+            </Box>
+          </Box>
+        )}
 
         {/* Tech Stack - Show separately if exists */}
         {app.techStack?.length > 0 && (
@@ -543,15 +592,17 @@ export default function AppsMainPage({
             <Button
               component={Link}
               href={`/launch/${app.slug}`}
-              variant="contained"
+              variant="outlined"
               size={isMobile ? "small" : "small"}
               sx={{ 
                 flex: 1, 
                 fontWeight: 600,
-                backgroundColor: theme.palette.primary.main,
+                borderColor: theme.palette.divider,
                 fontSize: { xs: '0.75rem', sm: '0.875rem' },
                 "&:hover": {
-                  backgroundColor: theme.palette.primary.dark,
+                  borderColor: theme.palette.primary.main,
+                  backgroundColor: theme.palette.primary.main,
+                  color: theme.palette.primary.contrastText,
                 }
               }}
             >
@@ -623,7 +674,7 @@ export default function AppsMainPage({
         </Typography>
       </Box>
 
-      {/* Filter Section */}
+      {/* Filter Section (search commented out for later enablement) */}
       <Paper
         elevation={0}
         sx={{
@@ -635,6 +686,7 @@ export default function AppsMainPage({
           boxShadow: getShadow(theme, "elegant"),
         }}
       >
+        {/**
         <Grid container spacing={3} alignItems="center">
           <Grid item xs={12}>
             <TextField
@@ -658,6 +710,7 @@ export default function AppsMainPage({
             />
           </Grid>
         </Grid>
+        */}
         
         <Box sx={{ 
           display: "flex", 

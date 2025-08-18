@@ -253,26 +253,8 @@ function FeaturedBlogCard({ blog, isFounderStory = false }: FeaturedBlogCardProp
           )}
         </Box>
 
-        {/* Action Buttons */}
-        <Box sx={{ display: "flex", gap: 1, width: "100%" }}>
-          <Button
-            component={Link}
-            href={`/blogs/${blog.slug}`}
-            variant="contained"
-            size={isMobile ? "small" : "small"}
-            sx={{ 
-              flex: 1, 
-              fontWeight: 600,
-              backgroundColor: theme.palette.primary.main,
-              fontSize: { xs: '0.75rem', sm: '0.875rem' },
-              "&:hover": {
-                backgroundColor: theme.palette.primary.dark,
-              }
-            }}
-          >
-            Read More
-          </Button>
-        </Box>
+        {/* Action Buttons intentionally removed to avoid contained buttons inside cards.
+            Card is wrapped with a Link outside, so click-through is preserved. */}
       </Box>
     </Paper>
   );
@@ -663,7 +645,7 @@ export default function BlogMainPage({
         </Typography>
       </Box>
 
-      {/* Search and Filter Section */}
+      {/* Search and Filter Section (commented out for later enablement)
       <Paper
         elevation={0}
         sx={{
@@ -699,6 +681,7 @@ export default function BlogMainPage({
           </Grid>
         </Grid>
       </Paper>
+      */}
 
       {/* Featured Articles Section */}
       {featuredBlogs.length > 0 && (
