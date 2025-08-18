@@ -149,36 +149,54 @@ const LearnIndexClient: React.FC<LearnIndexClientProps> = ({
       {/* Hero Section */}
       <Box
         sx={{
-          minHeight: { xs: "calc(100vh - 64px)", sm: "100vh" },
+          minHeight: { xs: "60vh", sm: "70vh" }, // shorter hero
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           position: "relative",
           overflow: "hidden",
-          pt: { xs: 4, sm: 6, md: 8 },
+          pt: { xs: 4, sm: 6 },
           pb: { xs: 4, sm: 6 },
           px: { xs: 1, sm: 2 },
+          // no hard border; rely on gradient fade
         }}
       >
-        {/* Background Effects */}
+        {/* Background Effects - softer */}
         <Box
           sx={{
             position: "absolute",
             inset: 0,
             background: theme.custom?.gradients?.hero || 'linear-gradient(135deg, hsl(263 70% 50%) 0%, hsl(220 70% 50%) 50%, hsl(280 70% 50%) 100%)',
-            opacity: theme.palette.mode === 'light' ? 0.06 : 0.10,
-            zIndex: 0
+            opacity: theme.palette.mode === 'light' ? 0.02 : 0.04,
+            zIndex: 0,
+            WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 45%, rgba(0,0,0,0.4) 70%, rgba(0,0,0,0) 100%)',
+            maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 45%, rgba(0,0,0,0.4) 70%, rgba(0,0,0,0) 100%)',
           }}
         />
+        {/* extra bottom fade to neutralize any residual color banding */}
+        <Box
+          sx={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: { xs: 140, sm: 180 },
+            pointerEvents: 'none',
+            background: `linear-gradient(to bottom, rgba(0,0,0,0) 0%, ${theme.palette.background.default} 80%, ${theme.palette.background.default} 100%)`,
+            zIndex: 1,
+          }}
+        />
+
+        {/* Shapes toned down */}
         <Box
           sx={{
             position: "absolute",
-            top: "25%",
-            left: { xs: "5%", sm: "25%" },
-            width: { xs: 150, sm: 288 },
-            height: { xs: 150, sm: 288 },
+            top: "22%",
+            left: { xs: "6%", sm: "25%" },
+            width: { xs: 120, sm: 220 },
+            height: { xs: 120, sm: 220 },
             bgcolor: theme.palette.primary.main,
-            opacity: theme.palette.mode === 'light' ? 0.10 : 0.2,
+            opacity: theme.palette.mode === 'light' ? 0.05 : 0.10,
             borderRadius: "50%",
             filter: "blur(48px)",
             animation: theme.custom?.animations?.float || "float 6s ease-in-out infinite",
@@ -187,12 +205,12 @@ const LearnIndexClient: React.FC<LearnIndexClientProps> = ({
         <Box
           sx={{
             position: "absolute",
-            bottom: "25%",
-            right: { xs: "5%", sm: "25%" },
-            width: { xs: 180, sm: 384 },
-            height: { xs: 180, sm: 384 },
+            bottom: "22%",
+            right: { xs: "6%", sm: "25%" },
+            width: { xs: 150, sm: 300 },
+            height: { xs: 150, sm: 300 },
             bgcolor: theme.palette.primary.main,
-            opacity: theme.palette.mode === 'light' ? 0.06 : 0.1,
+            opacity: theme.palette.mode === 'light' ? 0.04 : 0.08,
             borderRadius: "50%",
             filter: "blur(48px)",
             animation: theme.custom?.animations?.float || "float 6s ease-in-out infinite",
@@ -200,7 +218,7 @@ const LearnIndexClient: React.FC<LearnIndexClientProps> = ({
           }}
         />
 
-        <Container maxWidth="md" sx={{ position: "relative", zIndex: 1, textAlign: "center" }}>
+        <Container maxWidth="md" sx={{ position: "relative", zIndex: 2, textAlign: "center" }}>
           {/* Badge */}
           <Paper
             elevation={3}
@@ -210,7 +228,7 @@ const LearnIndexClient: React.FC<LearnIndexClientProps> = ({
               gap: 1,
               px: { xs: 2, sm: 4 },
               py: { xs: 1, sm: 2 },
-              mb: { xs: 4, sm: 6, md: 8 },
+              mb: { xs: 3, sm: 5 },
               borderRadius: "999px",
               ...getGlassStyles(theme),
               boxShadow: theme.custom?.shadows?.elegant || "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
@@ -235,27 +253,21 @@ const LearnIndexClient: React.FC<LearnIndexClientProps> = ({
           <Typography
             component="h1"
             sx={{
-              fontSize: { xs: '1.75rem', sm: '2.5rem', md: '3.5rem', lg: '4rem' },
+              fontSize: { xs: '1.75rem', sm: '2.4rem', md: '3rem' },
               fontWeight: 800,
-              lineHeight: { xs: 1.2, md: 1.05 },
+              lineHeight: { xs: 1.2, md: 1.1 },
               letterSpacing: { xs: '-0.02em', md: '-0.03em' },
               color: theme.palette.text.primary,
-              mb: { xs: 2, sm: 3, md: 4 },
-              fontFamily: '"Outfit", "Poppins", sans-serif',
-              textAlign: 'center',
-              maxWidth: '100%',
-              mx: 'auto',
-              px: { xs: 0.5, sm: 0 }
+              mb: { xs: 1.5, sm: 2.5 },
             }}
           >
-            Master{" "}
+            Master {" "}
             <Box
               component="span"
               sx={{
                 display: "inline-block",
                 ...commonStyles.textGradient(theme),
                 fontWeight: 800,
-                fontFamily: '"Outfit", "Poppins", sans-serif',
               }}
             >
               Development Skills
@@ -266,11 +278,11 @@ const LearnIndexClient: React.FC<LearnIndexClientProps> = ({
           <Typography
             variant="h6"
             sx={{
-              mb: { xs: 4, sm: 6, md: 8 },
+              mb: { xs: 3, sm: 5 },
               maxWidth: 700,
               mx: "auto",
               color: theme.palette.text.secondary,
-              fontSize: { xs: '1rem', sm: '1.125rem', md: '1.25rem' },
+              fontSize: { xs: '1rem', sm: '1.125rem' },
               lineHeight: 1.6,
               px: { xs: 1, sm: 0 }
             }}
@@ -332,16 +344,17 @@ const LearnIndexClient: React.FC<LearnIndexClientProps> = ({
         </Container>
       </Box>
 
-      {/* Search and Filter Section */}
-      <Container maxWidth="lg" sx={{ py: { xs: 4, sm: 6 } }}>
+      {/* Search and Filter Section with eased top spacing */}
+      <Container maxWidth="lg" sx={{ pt: { xs: 2, sm: 3 }, mt: { xs: -14, sm: -16 }, position: 'relative', zIndex: 2, pb: { xs: 4, sm: 6 } }}>
         <Paper
           elevation={0}
           sx={{
             p: { xs: 2, sm: 3 },
             mb: 4,
-            borderRadius: "20px",
-            ...getGlassStyles(theme),
-            boxShadow: getShadow(theme, 'elegant'),
+            borderRadius: "16px",
+            backgroundColor: 'transparent',
+            border: 'none',
+            boxShadow: 'none',
           }}
         >
           <Grid container spacing={3} alignItems="center">

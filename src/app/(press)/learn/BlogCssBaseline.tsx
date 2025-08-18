@@ -69,18 +69,10 @@ export default function BlogCssBaseline() {
         ul li { list-style-type: disc; }
         ol li { list-style-type: decimal; }
 
-        /* Table of Contents (softened) */
-        #toc-header {
-          font-size: 1.1rem;
-          font-weight: 600;
-          color: ${theme.palette.primary.main};
-          margin-bottom: 0.75rem;
-          padding: 0.75rem 1rem;
-          background: ${theme.palette.mode === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255,255,255,0.03)'};
-          border-radius: 10px;
-          border: 1px solid ${theme.palette.divider};
-        }
+        /* Hide legacy separate header to ensure single TOC card */
+        #toc-header { display: none !important; }
 
+        /* TOC - single container */
         #toc {
           background: ${theme.palette.background.paper};
           border: 1px dashed ${theme.palette.divider};
@@ -89,9 +81,23 @@ export default function BlogCssBaseline() {
           margin: 1rem 0 1.5rem 0;
         }
 
-        #toc li { margin: 0.4rem 0; font-size: 0.95rem; }
-        #toc a { color: ${theme.palette.primary.main}; text-decoration: none; font-weight: 500; }
-        #toc a:hover { color: ${theme.palette.primary.dark}; text-decoration: underline; }
+        #toc .toc-header {
+          font-size: 1.1rem;
+          font-weight: 600;
+          color: ${theme.palette.primary.main};
+          margin-bottom: 0.5rem;
+          padding: 0.25rem 0;
+        }
+
+        #toc .toc-list {
+          list-style: decimal inside;
+          padding-left: 0.25rem;
+          margin: 0;
+        }
+
+        #toc .toc-list li { margin: 0.4rem 0; font-size: 0.95rem; }
+        #toc .toc-list a { color: ${theme.palette.primary.main}; text-decoration: none; font-weight: 500; }
+        #toc .toc-list a:hover { color: ${theme.palette.primary.dark}; text-decoration: underline; }
 
         /* Code Blocks */
         code {
