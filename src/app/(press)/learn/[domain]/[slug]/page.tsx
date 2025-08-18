@@ -1,14 +1,11 @@
 import { connectToDatabase } from "../../../../../lib/mongodb";
-// import PrismaSelfRelations from "./content";
 import { Metadata } from "next";
-import { notFound } from "next/navigation"; // To handle not found cases
+import { notFound } from "next/navigation";
 import { generatePageMetadata } from "../../../../../lib/MetadataGenerator";
-import BlogComponentContainer, {
-  RelatedPagesDocument,
-} from "@components/blog/BloogComponentContainer";
+import { RelatedPagesDocument } from "../../../../components/blog/BloogComponentContainer";
 import { AuthorProfile } from "../../../../../types/Author";
-import { BibliographyState } from "../../../../../hooks/useBibliography";
-import { FAQ } from "@components/libs/faqReducer";
+import { FAQ } from "@/app/components/libs/faqReducer";
+import LearnPageClient from "./LearnPageClient";
 
 export const revalidate = 345600;
 
@@ -30,14 +27,12 @@ export async function generateMetadata({
     notFound();
   }
 
-
   return generatePageMetadata({
     title: page.title,
     description: page.meta_description,
     keywords: page.keywords,
     canonicalUrl: page.canonical_url,
-    ...(page.updated_at && { updatedAt: page.updated_at }), // Only pass updatedAt if it exists
-
+    ...(page.updated_at && { updatedAt: page.updated_at }),
   });
 }
 
@@ -62,44 +57,53 @@ export default async function Page({
   const page = await db
     .collection("pages")
     .findOne({ domain: params.domain, slug: params.slug });
-  const indexCollection = db.collection("index");
-  const relatedPagesDoc = await indexCollection.findOne<RelatedPagesDocument>({
-    page: page.canonical_url,
-  });
-  const authorFromDB = await db.collection("authors").findOne({ authorId: page.authorId });
-  const { _id, ...serializedAuthor } = authorFromDB; // This removes _id from the result
-const author:AuthorProfile=serializedAuthor
-  if (!author) {
-    notFound();
-  }
-  const relatedPages = relatedPagesDoc?.relatedPages;
-
-  // selectiveLogger.info("/learn loaded successfully");
+  
   if (!page) {
     notFound();
   }
+  
   if (!page.isPublished) {
     notFound();
   }
 
+  const indexCollection = db.collection("index");
+  const relatedPagesDoc = await indexCollection.findOne<RelatedPagesDocument>({
+    page: page.canonical_url,
+  });
+  
+  const authorFromDB = await db.collection("authors").findOne({ authorId: page.authorId });
+  if (!authorFromDB) {
+    notFound();
+  }
+  const { _id, ...serializedAuthor } = authorFromDB;
+  const author: AuthorProfile = serializedAuthor as any;
+  
+  const relatedPages = relatedPagesDoc?.relatedPages || [];
+
+  // Serialize Mongo/BSON objects to plain JSON-safe objects
+  const safePage = JSON.parse(JSON.stringify(page));
+  const safeAuthor = JSON.parse(JSON.stringify(author));
+  const safeRelated = JSON.parse(JSON.stringify(relatedPages));
+
+  // JSON-LD
   const jsonLd: any = {
     "@context": "https://schema.org",
-    "@type": "Article",  // Or "BlogPosting" if it's a blog post
-    headline: page.title || "Default Title", // Fallback for title
-    description: page.meta_description || "Default description", // Fallback for meta description
+    "@type": "Article",
+    headline: page.title || "Default Title",
+    description: page.meta_description || "Default description",
     author: {
       "@type": "Person",
-      name: author.name, // Replace with dynamic author name if available
-      url: author.socialLinks?.link || "", // Optional URL for the author
+      name: author.name,
+      url: (author as any).socialLinks?.link || "",
     },
     creator: {
       "@type": "Person",
-      name: author.name, // Replace with dynamic creator name if available
-      url: author.socialLinks?.link || "", // Optional URL for the creator
+      name: author.name,
+      url: (author as any).socialLinks?.link || "",
     },
-    datePublished: page.created_at || new Date().toISOString(), // Set publish date as created_at
-    created_at: page.created_at || new Date().toISOString(), // Optional created_at
-    updated_at: page.updated_at || new Date().toISOString(), // Optional updated_at
+    datePublished: page.created_at || new Date().toISOString(),
+    created_at: page.created_at || new Date().toISOString(),
+    updated_at: page.updated_at || new Date().toISOString(),
     publisher: {
       "@type": "Organization",
       name: "basicUtils.com",
@@ -109,23 +113,23 @@ const author:AuthorProfile=serializedAuthor
       },
     },
   };
-  
-  
+
   const hasFaqData = Array.isArray(page.faqs) && page.faqs.length > 0;
 
   const faqJsonLd = hasFaqData
-  ?{
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": page.faqs.map((faq) => ({
-      "@type": "Question",
-      "name": faq.question,
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": faq.answer
+    ? {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": page.faqs.map((faq: FAQ) => ({
+          "@type": "Question",
+          "name": faq.question,
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": faq.answer
+          }
+        }))
       }
-    }))
-  }:null;
+    : null;
 
   if (page.image_url) {
     jsonLd.image = {
@@ -133,7 +137,7 @@ const author:AuthorProfile=serializedAuthor
       url: page.image_url,
     };
   }
- 
+
   if (page.canonical_url) {
     jsonLd.mainEntityOfPage = {
       "@type": "WebPage",
@@ -141,38 +145,32 @@ const author:AuthorProfile=serializedAuthor
     };
   }
 
-  const relatedPagesJsonLd = relatedPages
+  const relatedPagesJsonLd = relatedPages.length
     ? {
         "@context": "https://schema.org",
         "@type": "ItemList",
         itemListElement: relatedPages
-          .filter((relatedPage) => relatedPage.url && relatedPage.title) // Filter out items with missing url or title
+          .filter((relatedPage) => relatedPage.url && relatedPage.title)
           .map((relatedPage, index) => ({
             "@type": "ListItem",
             position: index + 1,
-            url: relatedPage.url, // URL of the related page
-            name: relatedPage.title, // Title of the related page
+            url: relatedPage.url,
+            name: relatedPage.title,
           })),
       }
     : null;
 
-  // Define JSON-LD for the website
   const websiteJsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    url: "https://basicutils.com", // Replace with your website's URL
+    url: "https://basicutils.com",
     name: "basicutils.com",
     potentialAction: {
       "@type": "SearchAction",
-      target: "https://basicutils.com/search?q={search_term_string}", // Replace with your search URL
+      target: "https://basicutils.com/search?q={search_term_string}",
       "query-input": "required name=search_term_string",
     },
   };
-  const typedRef:BibliographyState=page.refs
-  const typedUrl:string=page.canonical_url
-  const typedFAQS:FAQ[]=page.faqs
-  
-
 
   return (
     <>
@@ -188,13 +186,12 @@ const author:AuthorProfile=serializedAuthor
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       )}
-       {faqJsonLd && (
+      {faqJsonLd && (
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
         />
       )}
-
       {relatedPagesJsonLd && (
         <script
           type="application/ld+json"
@@ -204,28 +201,11 @@ const author:AuthorProfile=serializedAuthor
         />
       )}
       
-
-      <BlogComponentContainer
-      type="blog"
-   
-      metadata={{
-        dates: {
-          created: page?.created_at || undefined,
-          modified: page?.updated_at || undefined,
-        },
-        tags: page?.keywords?.trim() ? page.keywords : undefined,
-      }}
-  author={author}
-  url={page?.canonical_url || ""}
-  relatedPages={relatedPages || []}
-  refs={page?.refs || {}}
-  content={page?.content || ""}
-  parentPath={page?.parentPath || ""}
-  thisPagePath={page?.thisPagePath || ""}
-  faqs={page?.faqs || []}
-  // dates={{created:page.created_at,modified:page.updated_at }}
-/>
-
+      <LearnPageClient 
+        page={safePage}
+        author={safeAuthor}
+        relatedPages={safeRelated}
+      />
     </>
   );
-}  
+} 

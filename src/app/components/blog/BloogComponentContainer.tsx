@@ -8,9 +8,7 @@ import {
 } from "../../../utils/transformers/htmlProcessing" ;
 import { BibliographyState } from "../../../hooks/useBibliography";
 import { AuthorProfile } from "../../../types/Author";
-import { FAQ } from "@components/libs/faqReducer";
-// import AuthorProfile from "../../(site)/author/[authorId]/AuthorProfile";
-
+import { FAQ } from "../../../libs/faqReducer";
 
 export interface RelatedPage {
   url: string;
@@ -23,10 +21,12 @@ export interface RelatedPagesDocument {
   page: string;
   relatedPages: RelatedPage[];
 }
+
 export interface Dates{
   created:string;
   modified:string;
 }
+
 export interface Metadata {
   dates?: {
     created?: string;
@@ -34,22 +34,19 @@ export interface Metadata {
   };
   tags?: string;
 }
+
 interface BloogComponentContainerProps {
   type?:"news"|"blog";
-  parentPath: string;
+  parentPath?: string; // Made optional since it's not used
   refs:BibliographyState;
   relatedPages:RelatedPage[];
-  thisPagePath: string;
+  thisPagePath?: string; // Made optional since it's not used
   content: string;
   url:string;
-  author:AuthorProfile
+  author:AuthorProfile;
   faqs:FAQ[];
-  metadata?: Metadata;  // Make `metadata` optional
-
- 
+  metadata?: Metadata;
 }
-
-
 
 const BlogComponentContainer: React.FC<BloogComponentContainerProps> = ({
   relatedPages,
@@ -60,27 +57,22 @@ const BlogComponentContainer: React.FC<BloogComponentContainerProps> = ({
   faqs,
   type,
   metadata
-  
 }) => {
-
-
   const theme = useTheme();
-  const newContent =  replaceTags(content,type,metadata,author.name,url);
-  
+  const newContent = replaceTags(content, type, metadata, author.name, url);
 
   return (
-    
     <StyledSectionGrid theme={theme} container gap={1} y16>
       <Grid item xs={12}>
-      <BlogComponent type={type} relatedPages={relatedPages}
-       blogComponent={<>{newContent}</>}
-       refs={refs}
-       url={url}
-       author={author}
-       faqs={faqs}
+        <BlogComponent 
+          type={type} 
+          relatedPages={relatedPages}
+          blogComponent={<>{newContent}</>}
+          refs={refs}
+          url={url}
+          author={author}
+          faqs={faqs}
         />
-        
-      
       </Grid>
     </StyledSectionGrid>
   );

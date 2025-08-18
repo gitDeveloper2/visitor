@@ -1,8 +1,8 @@
 import React from "react";
 import { Element } from "html-react-parser";
 import { renderChildren } from "./recursiveRender";
-import ImageWithCaption from "@components/customhtml/ImageWithCaption";
-import { CodeBox } from "@styles/globalStyles";
+import ImageWithCaption from "../../../app/components/customhtml/ImageWithCaption";
+import { CodeBox } from "../../../app/styles/globalStyles";
 import {
   Card,
   CardContent,
@@ -12,11 +12,11 @@ import {
   Typography,
 } from "@mui/material"; // Import MUI's Link component
 import { Error, Info, InfoOutlined, Warning } from "@mui/icons-material";
-import { Dates, Metadata } from "@components/blog/BloogComponentContainer";
+import { Dates, Metadata } from "../../../app/components/blog/BloogComponentContainer";
 import { date } from "zod";
-import HrAd from "@components/adds/google/GoogleAd";
-import GoogleAd from "@components/adds/google/GoogleAd";
-import PostMeta from "@components/blog/PostMetaData";
+import HrAd from "../../../app/components/adds/google/GoogleAd";
+import GoogleAd from "../../../app/components/adds/google/GoogleAd";
+import PostMeta from "../../../app/components/blog/PostMetaData";
 
 // import { ResponsiveNativeBannerAd } from "@components/adds/ResponsiveNativeBannerAd";
 

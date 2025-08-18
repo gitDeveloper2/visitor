@@ -2,10 +2,10 @@ import parse, {  DOMNode, Element } from "html-react-parser";
 import { stripContentEditable, stripStyles } from "./stripAttributes";
 import { addAds, addH1Ads, replaceCodeTags, replaceContextCard, replaceImgTags, replaceReferenceSpan } from "./tagReplacements";
 import { insertAdMarkers, removeRelFromTOCLinks, wrapH2InSections } from "../HtmlStrings";
-import { Dates, Metadata } from "@components/blog/BloogComponentContainer";
-import MuiTable from "@components/blog/Table";
+import { Dates, Metadata } from "../../../app/components/blog/BloogComponentContainer";
+import MuiTable from "../../../app/components/blog/Table";
 import { processTableNode } from "./processTableNode";
-import MyAdComponent from "@components/adds/google/MyAdComponent";
+import MyAdComponent from "../../../app/components/adds/google/MyAdComponent";
 export const replaceTags = (OGhtml: string,type?:"news"|"blog",metadata?:Metadata,author?:string,url?:string,dates?:Dates) => {
   
     let h2Count = 0;
