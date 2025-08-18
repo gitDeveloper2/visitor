@@ -137,7 +137,7 @@ export const createAppTheme = (mode: "light" | "dark") => {
       tonalOffset: 0.15,
     },
     shape: {
-      borderRadius: 12,
+      borderRadius: 3,
     },
     typography: {
       fontFamily: '"Inter", "Plus Jakarta Sans", "Roboto", "Helvetica", "Arial", sans-serif',

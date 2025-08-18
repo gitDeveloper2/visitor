@@ -60,7 +60,7 @@ const Auth: React.FC<AuthProps> = ({ isMobile }) => {
           gap: isMobile ? 1.25 : 2,
           justifyContent: isMobile ? 'stretch' : 'center',
           alignItems: isMobile ? 'stretch' : 'center',
-          width: '100%'
+          width: isMobile ? '100%' : 'auto'
         }}
       >
         <Button

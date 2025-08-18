@@ -67,7 +67,7 @@ const NavBar: React.FC = () => {
     <>
       <AppBar position="sticky" color="default" elevation={0}>
         <Container maxWidth="lg">
-          <Toolbar disableGutters sx={{ justifyContent: "space-between" }}>
+          <Toolbar disableGutters sx={{ justifyContent: "space-between", position: 'relative' }}>
             <NavLogo />
             {mounted &&
               (isMobile ? (
@@ -79,9 +79,15 @@ const NavBar: React.FC = () => {
                 </Box>
               ) : (
                 <>
-                  <NavLinks />
-                  <ThemeToggle />
-                  <Auth isMobile={isMobile}/>
+                  {/* Centered navigation links */}
+                  <Box sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <NavLinks />
+                  </Box>
+                  {/* Right cluster */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 'auto' }}>
+                    <ThemeToggle />
+                    <Auth isMobile={isMobile}/>
+                  </Box>
                 </>
               ))}
           </Toolbar>

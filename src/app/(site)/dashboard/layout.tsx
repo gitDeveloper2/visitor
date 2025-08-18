@@ -352,7 +352,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             <Stack
               direction="row"
               alignItems="center"
-              justifyContent="space-between"
+              justifyContent="flex-start"
               spacing={2}
             >
               {/* Left Section - Main Navigation */}
@@ -415,7 +415,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               </Stack>
 
               {/* Right Section - Actions */}
-              <Stack direction="row" spacing={1} alignItems="center">
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ ml: 2 }}>
                 {/* Submit Menu */}
                 <Button
                   startIcon={<AddIcon />}

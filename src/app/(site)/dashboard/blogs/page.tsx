@@ -176,7 +176,6 @@ export default function ManageBlogsPage() {
                 p: 3,
                 borderRadius: 3,
                 textAlign: 'center',
-                ...getGlassStyles(theme),
                 boxShadow: getShadow(theme, "elegant"),
               }}
             >
@@ -196,7 +195,6 @@ export default function ManageBlogsPage() {
                 p: 3,
                 borderRadius: 3,
                 textAlign: 'center',
-                ...getGlassStyles(theme),
                 boxShadow: getShadow(theme, "elegant"),
               }}
             >
@@ -216,7 +214,6 @@ export default function ManageBlogsPage() {
                 p: 3,
                 borderRadius: 3,
                 textAlign: 'center',
-                ...getGlassStyles(theme),
                 boxShadow: getShadow(theme, "elegant"),
               }}
             >
@@ -236,7 +233,6 @@ export default function ManageBlogsPage() {
                 p: 3,
                 borderRadius: 3,
                 textAlign: 'center',
-                ...getGlassStyles(theme),
                 boxShadow: getShadow(theme, "elegant"),
               }}
             >

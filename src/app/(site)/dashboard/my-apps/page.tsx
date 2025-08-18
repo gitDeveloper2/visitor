@@ -29,11 +29,12 @@ import {
   Card,
   CardContent,
   CardActions,
+  Container,
   useTheme,
   useMediaQuery,
 } from "@mui/material";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import { getShadow } from "../../../../utils/themeUtils";
+import { getShadow, getGlassStyles, typographyVariants, commonStyles } from "../../../../utils/themeUtils";
 import { InfoOutlined } from "@mui/icons-material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import Badge from "@components/badges/Badge";
@@ -429,18 +430,43 @@ export default function ManageAppsPage() {
   }
 
   return (
-    <Box>
+    <Box sx={{ py: 4 }}>
+      <Container maxWidth="lg">
       <Box sx={{ 
         display: 'flex', 
         flexDirection: { xs: 'column', sm: 'row' },
         justifyContent: 'space-between', 
         alignItems: { xs: 'stretch', sm: 'center' }, 
-        mb: { xs: 2, sm: 3 },
-        gap: { xs: 2, sm: 0 }
+        mb: 6,
+        gap: { xs: 2, sm: 3 },
+        flexWrap: 'wrap'
       }}>
-        <Typography variant={isMobile ? "h5" : "h5"} sx={{ fontWeight: 600 }}>
-          Manage Submitted Apps
-        </Typography>
+        <Box>
+          <Typography variant="h4" sx={typographyVariants.sectionTitle} gutterBottom>
+            Manage Your {""}
+            <Box component="span" sx={commonStyles.textGradient(theme)}>
+              Apps
+            </Box>
+          </Typography>
+          <Typography variant="h6" color="text.secondary" sx={{ mb: 3 }}>
+            Track your app submissions, manage drafts, and monitor their status
+          </Typography>
+          <Button
+            component={Link}
+            href="/dashboard/submission/app"
+            variant="contained"
+            color="primary"
+            startIcon={<Plus fontSize="small" />}
+            sx={{ 
+              fontWeight: 600,
+              px: 3,
+              py: 1.5,
+              borderRadius: 2,
+            }}
+          >
+            Submit New App
+          </Button>
+        </Box>
         <Stack 
           direction="row" 
           spacing={1} 
@@ -497,6 +523,7 @@ export default function ManageAppsPage() {
                 p: { xs: 2, sm: 3 },
                 borderRadius: 3,
                 textAlign: 'center',
+                ...getGlassStyles(theme),
                 boxShadow: getShadow(theme, "elegant"),
                 minHeight: { xs: 100, sm: 120 },
                 display: 'flex',
@@ -535,6 +562,7 @@ export default function ManageAppsPage() {
                 p: { xs: 2, sm: 3 },
                 borderRadius: 3,
                 textAlign: 'center',
+                ...getGlassStyles(theme),
                 boxShadow: getShadow(theme, "elegant"),
                 minHeight: { xs: 100, sm: 120 },
                 display: 'flex',
@@ -573,6 +601,7 @@ export default function ManageAppsPage() {
                 p: { xs: 2, sm: 3 },
                 borderRadius: 3,
                 textAlign: 'center',
+                ...getGlassStyles(theme),
                 boxShadow: getShadow(theme, "elegant"),
                 minHeight: { xs: 100, sm: 120 },
                 display: 'flex',
@@ -611,6 +640,7 @@ export default function ManageAppsPage() {
                 p: { xs: 2, sm: 3 },
                 borderRadius: 3,
                 textAlign: 'center',
+                ...getGlassStyles(theme),
                 boxShadow: getShadow(theme, "elegant"),
                 minHeight: { xs: 100, sm: 120 },
                 display: 'flex',
@@ -1347,6 +1377,7 @@ export default function ManageAppsPage() {
           {snack.message}
         </Alert>
       </Snackbar>
+      </Container>
     </Box>
   );
 }
