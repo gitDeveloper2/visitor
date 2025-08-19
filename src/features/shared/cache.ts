@@ -79,4 +79,10 @@ type CacheEntry<T> = {
   
   export const npmHistoryCache = globalCache.bind("npm-history");
   export const gitstarCache = globalCache.bind("gitstar");
+
+// Re-export the Redis-backed cache facade so imports from
+// `@/features/shared/cache` resolve correctly to our new module too.
+// IMPORTANT: Point explicitly to './cache/index' to avoid resolving this file ('cache.ts').
+export { Cache } from './cache/index';
+export { CachePolicy } from './cache/policy';
   

@@ -5,9 +5,11 @@ import { connectToDatabase } from '../../../lib/mongodb';
 import { sortByScore, computeBlogScore } from '@/features/ranking/score';
 import Link from 'next/link';
 import { fetchCategoryNames } from '../../../utils/categories';
+import { Cache, CachePolicy } from '@/features/shared/cache';
 import AdSlot from '@/app/components/adds/google/AdSlot';
 
-export const revalidate = 300;
+// Main page should revalidate after 24 hours per requirement
+export const revalidate = 86400;
 
 // Transform database document to BlogPost interface
 const transformBlogDocument = (doc: any) => ({
@@ -104,41 +106,37 @@ export default async function BlogsPage() {
     // Get blogs from the last 7 days for featured selection
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     
-    // Fetch categories for the "Browse by Topic" section
-    let categories: string[] = [];
-    try {
-      console.log('Fetching categories for blogs page...');
-      // Temporarily fetch all categories to see what's available
-      categories = await fetchCategoryNames(); // No type filter = all active categories
-      console.log('Categories fetched:', categories);
-      console.log('Number of categories:', categories.length);
-      
-      // Also try to fetch blog-specific categories
-      try {
-        const blogCategories = await fetchCategoryNames('blog');
-        console.log('Blog-specific categories:', blogCategories);
-        console.log('Number of blog categories:', blogCategories.length);
-      } catch (blogError) {
-        console.log('Could not fetch blog categories:', blogError);
+    // Fetch categories for the "Browse by Topic" section (cached)
+    const categories: string[] = await Cache.getOrSet(
+      Cache.keys.categories('blog'),
+      CachePolicy.page.blogsCategory,
+      async () => {
+        try {
+          const all = await fetchCategoryNames();
+          return all;
+        } catch {
+          return [
+            'Technology', 'Business', 'Development', 'Design', 'Marketing',
+            'Startup', 'Productivity', 'AI', 'Web Development', 'Mobile Development'
+          ];
+        }
       }
-      
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-      // Fallback categories if API fails
-      categories = [
-        "Technology", "Business", "Development", "Design", "Marketing",
-        "Startup", "Productivity", "AI", "Web Development", "Mobile Development"
-      ];
-    }
+    ) as any;
     
     // Fetch all approved blogs
-    const rawBlogs = await db.collection('userblogs')
-      .find({ 
-        status: 'approved',
-        createdAt: { $gte: sevenDaysAgo }
-      })
-      .sort({ createdAt: -1 })
-      .toArray();
+    const rawBlogs = await Cache.getOrSet(
+      Cache.keys.blogsIndex,
+      CachePolicy.page.blogsIndex,
+      async () => {
+        return await db.collection('userblogs')
+          .find({ 
+            status: 'approved',
+            createdAt: { $gte: sevenDaysAgo }
+          })
+          .sort({ createdAt: -1 })
+          .toArray();
+      }
+    ) as any[];
     
     console.log("raw blogs",rawBlogs)
     // Transform the database documents to match BlogPost interface

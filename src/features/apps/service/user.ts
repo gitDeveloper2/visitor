@@ -2,6 +2,7 @@
 
 import { connectToDatabase } from "@lib/mongodb";
 import { cache } from 'react';
+// Note: Higher-level caching is added at caller level using our Cache module to avoid caching payment/verification dynamics here.
 import { ObjectId } from "mongodb";
 
 export type AppRecord = {

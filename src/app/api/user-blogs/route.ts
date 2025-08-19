@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { revalidateTag, revalidatePath } from 'next/cache';
+import { kvDelByPrefix } from '@/features/shared/cache/kv';
+import { Cache, CachePolicy } from '@/features/shared/cache';
 import { getSession } from '@/features/shared/utils/auth';
 import { connectToDatabase } from '@lib/mongodb';
 import { generateUniqueSlug } from '../../../utils/slugGenerator';
@@ -121,6 +123,18 @@ export async function POST(request: Request) {
         const catSlug = String(newBlog.category).toLowerCase().replace(/\s+/g, '-');
         revalidatePath(`/blogs/category/${catSlug}`);
       }
+      // KV invalidation
+      kvDelByPrefix('blog:index:');
+      kvDelByPrefix(`blog:post:v1:${newBlog.slug}`);
+      if (newBlog.category) kvDelByPrefix(`blog:category:v1:${String(newBlog.category).toLowerCase().replace(/\s+/g, '-')}`);
+      if (Array.isArray(newBlog.tags)) newBlog.tags.forEach((t: string) => kvDelByPrefix(`blog:tag:v1:${t}`));
+      // v2 keys (new cache)
+      kvDelByPrefix(Cache.keys.blogPost(newBlog.slug));
+      kvDelByPrefix(Cache.keys.blogsIndex);
+      if (newBlog.category) kvDelByPrefix(Cache.keys.blogsCategory(String(newBlog.category).toLowerCase().replace(/\s+/g, '-')));
+      if (Array.isArray(newBlog.tags)) newBlog.tags.forEach((t: string) => kvDelByPrefix(Cache.keys.blogsTag(t)));
+      // API per-user list caches
+      kvDelByPrefix(`api:userblogs:list:v1:${session.user.id}`);
     } catch {}
 
     return NextResponse.json(
@@ -177,19 +191,30 @@ export async function GET(request: Request) {
       .limit(limit)
       .toArray();
 
-    // Get total count for pagination
-    const totalCount = await db.collection('userblogs').countDocuments(filter);
+    // Cache GET list response briefly to reduce redundant DB hits per user+query
+    const userId = session.user.id as string;
+    const queryIdentity = Cache.hash.hashObject({ status, authorId: filter.authorId, category, subcategory, approved, limit, page });
+    const cacheKey = Cache.keys.apiUserBlogsList(userId, queryIdentity);
 
-    return NextResponse.json({ 
-      blogs,
-      pagination: {
-        page,
-        limit,
-        total: totalCount,
-        totalPages: Math.ceil(totalCount / limit)
+    const responsePayload = await Cache.getOrSet(
+      cacheKey,
+      CachePolicy.api.userBlogsList,
+      async () => {
+        const totalCount = await db.collection('userblogs').countDocuments(filter);
+        return {
+          blogs,
+          pagination: {
+            page,
+            limit,
+            total: totalCount,
+            totalPages: Math.ceil(totalCount / limit)
+          }
+        };
       }
-    }, { status: 200 });
+    );
+
+    return NextResponse.json(responsePayload, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ message: 'Failed to fetch blogs.', error: error?.toString() }, { status: 500 });
+    return NextResponse.json({ message: 'Failed to fetch blogs.', error: (error as any)?.toString?.() }, { status: 500 });
   }
 }

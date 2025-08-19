@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { revalidateTag, revalidatePath } from 'next/cache';
+import { kvDelByPrefix } from '@/features/shared/cache/kv';
+import { Cache, CachePolicy } from '@/features/shared/cache';
 import { getSession } from '@/features/shared/utils/auth';
 import { connectToDatabase } from '@lib/mongodb';
 import { getCheckoutUrl, VARIANT_IDS } from '@lib/lemonsqueezy';
@@ -132,6 +134,16 @@ export async function POST(request: Request) {
       if (newApp.category) revalidateTag(`launch:category:${newApp.category}`);
       revalidateTag(`app:${result.insertedId.toString()}`);
       revalidatePath('/launch');
+      // KV invalidation
+      kvDelByPrefix('launch:index:');
+      kvDelByPrefix(`app:v1:${result.insertedId.toString()}`);
+      if (newApp.category) kvDelByPrefix(`launch:category:v1:${String(newApp.category).toLowerCase().replace(/\s+/g, '-')}`);
+      // v2 keys (new cache)
+      kvDelByPrefix(Cache.keys.launchIndex);
+      if (newApp.category) kvDelByPrefix(Cache.keys.launchCategory(String(newApp.category).toLowerCase().replace(/\s+/g, '-')));
+      kvDelByPrefix(Cache.keys.appDetail(result.insertedId.toString()));
+      // API per-user list caches
+      kvDelByPrefix(`api:userapps:list:v1:${session.user.id}`);
     } catch {}
 
     return NextResponse.json(
@@ -304,19 +316,28 @@ export async function GET(request: Request) {
       console.log(`✅ After payment verification: ${apps.length} apps remain`);
     }
 
-    // Get total count for pagination
-    const totalCount = await db.collection('userapps').countDocuments(filter);
-    console.log(`📊 Total Count: ${totalCount}`);
+    const queryIdentity = Cache.hash.hashObject({ status, authorId: filter.authorId, category, subcategory, approved, featured, pricing, verificationStatus, requiresVerification, limit, page, sortOptions });
+    const cacheKey = Cache.keys.apiUserAppsList(session.user.id as string, queryIdentity);
 
-    const response = NextResponse.json({ 
-      apps,
-      pagination: {
-        page,
-        limit,
-        total: totalCount,
-        totalPages: Math.ceil(totalCount / limit)
+    const payload = await Cache.getOrSet(
+      cacheKey,
+      CachePolicy.api.userAppsList,
+      async () => {
+        const totalCount = await db.collection('userapps').countDocuments(filter);
+        console.log(`📊 Total Count: ${totalCount}`);
+        return {
+          apps,
+          pagination: {
+            page,
+            limit,
+            total: totalCount,
+            totalPages: Math.ceil(totalCount / limit)
+          }
+        };
       }
-    }, { status: 200 });
+    );
+
+    const response = NextResponse.json(payload, { status: 200 });
     
     // Add cache control headers to prevent caching
     response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');

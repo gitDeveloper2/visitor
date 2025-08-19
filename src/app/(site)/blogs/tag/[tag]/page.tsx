@@ -1,11 +1,13 @@
 import React, { Suspense } from 'react';
 import { Container, Typography, Box, CircularProgress } from '@mui/material';
 import { connectToDatabase } from '../../../../../lib/mongodb';
+import { Cache, CachePolicy } from '@/features/shared/cache';
 import { notFound } from 'next/navigation';
 import TagBlogList from './TagBlogList';
 import AdSlot from '@/app/components/adds/google/AdSlot';
 
-export const revalidate = 1200;
+// Tag pages can be revalidated weekly
+export const revalidate = 604800;
 
 // Transform database document to BlogPost interface
 const transformBlogDocument = (doc: any) => ({
@@ -54,14 +56,20 @@ export default async function TagPage({ params }: TagPageProps) {
       .distinct('tags');
     console.log('Available tags in database:', allTags);
     
-    // Find blogs that contain this tag in their tags array
-    const rawBlogs = await db.collection('userblogs')
-      .find({ 
-        status: 'approved',
-        tags: { $in: [tag] }
-      })
-      .sort({ createdAt: -1 })
-      .toArray();
+    // Find blogs that contain this tag in their tags array (cached)
+    const rawBlogs = await Cache.getOrSet(
+      Cache.keys.blogsTag(tag),
+      CachePolicy.page.blogsTag,
+      async () => {
+        return await db.collection('userblogs')
+          .find({ 
+            status: 'approved',
+            tags: { $in: [tag] }
+          })
+          .sort({ createdAt: -1 })
+          .toArray();
+      }
+    ) as any[];
     
     console.log(`Found ${rawBlogs.length} blogs with tag: "${tag}"`);
     

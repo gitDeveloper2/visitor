@@ -3,7 +3,7 @@ import { connectToDatabase } from "../../../../lib/mongodb";
 import { generatePageMetadata } from "../../../../lib/MetadataGenerator";
 import { buildWebsiteJsonLd, buildBreadcrumbJsonLd, buildArticleJsonLd, getAbsoluteUrl } from "../../../../lib/JsonLd";
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const { db } = await connectToDatabase();

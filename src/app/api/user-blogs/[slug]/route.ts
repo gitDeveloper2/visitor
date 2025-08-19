@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
 import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@lib/mongodb';
+import { kvDelByPrefix } from '@/features/shared/cache/kv';
+import { Cache, CachePolicy } from '@/features/shared/cache';
 import { computeBlogQuality, finalizeBlogQualityScore } from '@/features/ranking/quality';
 import { getSession } from '@/features/shared/utils/auth';
 
@@ -19,12 +21,19 @@ export async function GET(
     // Find blog by slug and only return approved blogs for public access
     console.log("connecting to db",params.slug)
 
-    const blog = await db
-      .collection('userblogs')
-      .findOne({ 
-        slug: params.slug,
-        status: 'approved' // Only show approved blogs publicly
-      });
+    const blog = await Cache.getOrSet(
+      Cache.keys.blogPost(params.slug),
+      CachePolicy.page.blogPost,
+      async () => {
+        const doc = await db
+          .collection('userblogs')
+          .findOne({ 
+            slug: params.slug,
+            status: 'approved'
+          });
+        return doc as any;
+      }
+    );
 
     if (!blog) {
       return NextResponse.json({ message: 'Blog not found' }, { status: 404 });
@@ -144,6 +153,16 @@ export async function PATCH(
         const catSlug = String(existingBlog.category).toLowerCase().replace(/\s+/g, '-');
         revalidatePath(`/blogs/category/${catSlug}`);
       }
+      // KV invalidation (best-effort)
+      kvDelByPrefix('blog:index:');
+      kvDelByPrefix(`blog:post:v1:${params.slug}`);
+      kvDelByPrefix(Cache.keys.blogPost(params.slug));
+      if (existingBlog.category) kvDelByPrefix(`blog:category:v1:${String(existingBlog.category).toLowerCase().replace(/\s+/g, '-')}`);
+      if (Array.isArray(updateData.tags)) updateData.tags.forEach((t: string) => kvDelByPrefix(`blog:tag:v1:${t}`));
+      // v2 keys (new cache)
+      kvDelByPrefix(Cache.keys.blogsIndex);
+      if (existingBlog.category) kvDelByPrefix(Cache.keys.blogsCategory(String(existingBlog.category).toLowerCase().replace(/\s+/g, '-')));
+      if (Array.isArray(updateData.tags)) updateData.tags.forEach((t: string) => kvDelByPrefix(Cache.keys.blogsTag(t)));
     } catch {}
 
     return NextResponse.json({ message: 'Blog updated successfully' }, { status: 200 });
@@ -196,6 +215,16 @@ export async function PUT(
         const catSlug = String(existing.category).toLowerCase().replace(/\s+/g, '-');
         revalidatePath(`/blogs/category/${catSlug}`);
       }
+      // KV invalidation (best-effort)
+      kvDelByPrefix('blog:index:');
+      kvDelByPrefix(`blog:post:v1:${params.slug}`);
+      if (existing?.category) kvDelByPrefix(`blog:category:v1:${String(existing.category).toLowerCase().replace(/\s+/g, '-')}`);
+      if (Array.isArray(existing?.tags)) existing?.tags.forEach((t: string) => kvDelByPrefix(`blog:tag:v1:${t}`));
+      // v2 keys (new cache)
+      kvDelByPrefix(Cache.keys.blogPost(params.slug));
+      kvDelByPrefix(Cache.keys.blogsIndex);
+      if (existing?.category) kvDelByPrefix(Cache.keys.blogsCategory(String(existing.category).toLowerCase().replace(/\s+/g, '-')));
+      if (Array.isArray(existing?.tags)) existing?.tags.forEach((t: string) => kvDelByPrefix(Cache.keys.blogsTag(t)));
     } catch {}
 
     return NextResponse.json({ message: 'Blog status updated successfully' }, { status: 200 });

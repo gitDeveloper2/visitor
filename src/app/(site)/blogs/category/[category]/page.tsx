@@ -2,10 +2,12 @@ import { Suspense } from 'react';
 import { Container, Typography, Box, CircularProgress } from '@mui/material';
 import BlogCategoryPage from './BlogCategoryPage';
 import { connectToDatabase } from '../../../../../lib/mongodb';
+import { Cache, CachePolicy } from '@/features/shared/cache';
 import { fetchCategoryNames } from '../../../../../utils/categories';
 import AdSlot from '@/app/components/adds/google/AdSlot';
 
-export const revalidate = 900;
+// Category pages are very static; extend to 7 days
+export const revalidate = 604800;
 
 export async function generateStaticParams() {
   // For static generation, we'll use a predefined list of common category slugs
@@ -90,17 +92,26 @@ export default async function BlogCategoryPageWrapper({
     const limit = 12;
     const skip = (page - 1) * limit;
     
-    // Fetch blogs for this category
-    const blogs = await db.collection('userblogs')
-      .find(query)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .toArray();
+    // Fetch blogs for this category (cached)
+    const blogs = await Cache.getOrSet(
+      Cache.keys.blogsCategory(category),
+      CachePolicy.page.blogsCategory,
+      async () => {
+        return await db.collection('userblogs')
+          .find(query)
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .toArray();
+      }
+    ) as any[];
     
     // Get total count for pagination
-    const totalBlogs = await db.collection('userblogs')
-      .countDocuments(query);
+    const totalBlogs = await Cache.getOrSet(
+      `${Cache.keys.blogsCategory(category)}:count:${page}:${tag || ''}`,
+      CachePolicy.page.blogsCategory,
+      async () => await db.collection('userblogs').countDocuments(query)
+    ) as number;
 
     // Compute category counts to replicate Browse by Category from /blogs (7-day window)
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);

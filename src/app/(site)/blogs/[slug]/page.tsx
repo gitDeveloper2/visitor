@@ -1,4 +1,5 @@
 import { connectToDatabase } from '../../../../lib/mongodb';
+import { Cache, CachePolicy } from '@/features/shared/cache';
 import Client, { BlogPost } from './Client';
 export async function generateStaticParams() {
   try {
@@ -15,11 +16,18 @@ export async function generateStaticParams() {
   }
 }
 
-export const revalidate = 3600;
+// Align detail page to 24h as requested
+export const revalidate = 86400;
 
 export default async function Page({ params }: { params: { slug: string } }) {
   const { db } = await connectToDatabase();
-  const blog = await db.collection('userblogs').findOne({ slug: params.slug, status: 'approved' });
+  const blog = await Cache.getOrSet(
+    Cache.keys.blogPost(params.slug),
+    CachePolicy.page.blogPost,
+    async () => {
+      return await db.collection('userblogs').findOne({ slug: params.slug, status: 'approved' });
+    }
+  );
   if (!blog) {
     // Let not-found bubble up (Next will render 404)
     return null as any;

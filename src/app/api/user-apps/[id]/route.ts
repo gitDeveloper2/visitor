@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { revalidateTag, revalidatePath } from 'next/cache';
+import { kvDelByPrefix } from '@/features/shared/cache/kv';
+import { Cache, CachePolicy } from '@/features/shared/cache';
 import { connectToDatabase } from '@lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { getSession } from '@/features/shared/utils/auth';
@@ -20,12 +22,18 @@ export async function GET(
       return NextResponse.json({ message: 'Invalid app ID' }, { status: 400 });
     }
 
-    const app = await db
-      .collection('userapps')
-      .findOne({ 
-        _id: new ObjectId(params.id),
-        authorId: session.user.id // Only allow users to access their own apps
-      });
+    const app = await Cache.getOrSet(
+      Cache.keys.apiUserAppDetail(session.user.id as string, params.id),
+      CachePolicy.api.userAppDetail,
+      async () => {
+        return await db
+          .collection('userapps')
+          .findOne({ 
+            _id: new ObjectId(params.id),
+            authorId: session.user.id // Only allow users to access their own apps
+          });
+      }
+    );
 
     if (!app) {
       return NextResponse.json({ message: 'App not found' }, { status: 404 });
@@ -121,6 +129,12 @@ export async function PUT(
             const catSlug = String(currentApp.category).toLowerCase().replace(/\s+/g, '-');
             revalidatePath(`/launch/category/${catSlug}`);
           }
+          // KV invalidation
+          kvDelByPrefix('launch:index:');
+          kvDelByPrefix(`app:v1:${currentApp._id?.toString?.()}`);
+          if (currentApp.category) kvDelByPrefix(`launch:category:v1:${String(currentApp.category).toLowerCase().replace(/\s+/g, '-')}`);
+          kvDelByPrefix(Cache.keys.appDetail(currentApp._id?.toString?.() || ''));
+          kvDelByPrefix(Cache.keys.apiUserAppDetail(session.user.id as string, currentApp._id?.toString?.() || ''));
         }
       } catch {}
       return NextResponse.json({ message: 'App status updated successfully' }, { status: 200 });
@@ -184,6 +198,12 @@ export async function PUT(
         revalidateTag(`app:${params.id}`);
         revalidatePath('/launch');
         // app slug may change, we cannot reliably revalidate that path here
+        // KV invalidation
+        kvDelByPrefix('launch:index:');
+        kvDelByPrefix(`app:v1:${params.id}`);
+        if (category) kvDelByPrefix(`launch:category:v1:${String(category).toLowerCase().replace(/\s+/g, '-')}`);
+        kvDelByPrefix(Cache.keys.appDetail(params.id));
+        kvDelByPrefix(Cache.keys.apiUserAppDetail(session.user.id as string, params.id));
       } catch {}
       return NextResponse.json({ message: 'App updated successfully' }, { status: 200 });
     }

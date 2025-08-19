@@ -3,9 +3,11 @@ import { Container, Typography, Box, CircularProgress } from '@mui/material';
 import { fetchCategoryNames, fetchCategoriesFromAPI } from '../../../../../utils/categories';
 import LaunchCategoryPage from './LaunchCategoryPage';
 import { connectToDatabase } from '../../../../../lib/mongodb';
+import { Cache, CachePolicy } from '@/features/shared/cache';
 import { verifyAppPremiumStatus } from '../../../../../utils/premiumVerification';
 
-export const revalidate = 1800;
+// Launch category pages are fairly static; revalidate weekly
+export const revalidate = 604800;
 
 // Helper function to serialize MongoDB objects
 function serializeMongoObject(obj: any): any {
@@ -120,15 +122,21 @@ export default async function LaunchCategoryPageWrapper({
     }
     
     // Fetch featured apps for this category (premium apps within last 7 days)
-    let featuredApps = await db.collection('userapps')
-      .find({ 
-        ...query,
-        isPremium: true,
-        createdAt: { $gte: sevenDaysAgo }
-      })
-      .sort({ createdAt: -1 })
-      .limit(6)
-      .toArray();
+    let featuredApps = await Cache.getOrSet(
+      `${Cache.keys.launchCategory(category)}:featured`,
+      CachePolicy.page.launchCategory,
+      async () => {
+        return await db.collection('userapps')
+          .find({ 
+            ...query,
+            isPremium: true,
+            createdAt: { $gte: sevenDaysAgo }
+          })
+          .sort({ createdAt: -1 })
+          .limit(6)
+          .toArray();
+      }
+    ) as any[];
     
     // Verify premium status for featured apps
     const verifiedFeaturedApps = [];
@@ -146,30 +154,41 @@ export default async function LaunchCategoryPageWrapper({
     const limit = 12;
     const skip = (page - 1) * limit;
     
-    const allApps = await db.collection('userapps')
-      .find({ 
-        ...query,
-        _id: { $nin: featuredAppIds }
-      })
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .toArray();
+    const allApps = await Cache.getOrSet(
+      `${Cache.keys.launchCategory(category)}:list:${page}:${tag || ''}`,
+      CachePolicy.page.launchCategory,
+      async () => {
+        return await db.collection('userapps')
+          .find({ 
+            ...query,
+            _id: { $nin: featuredAppIds }
+          })
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .toArray();
+      }
+    ) as any[];
     
     // Get total count for pagination
-    const totalApps = await db.collection('userapps')
-      .countDocuments({ 
-        ...query,
-        _id: { $nin: featuredAppIds }
-      });
+    const totalApps = await Cache.getOrSet(
+      `${Cache.keys.launchCategory(category)}:count:${page}:${tag || ''}`,
+      CachePolicy.page.launchCategory,
+      async () => await db.collection('userapps').countDocuments({ ...query, _id: { $nin: featuredAppIds } })
+    ) as number;
 
     // Compute category counts for the Browse by Category chips (mirror /launch root)
-    let categoryNames: string[] = [];
-    try {
-      categoryNames = await fetchCategoryNames('app');
-    } catch (e) {
-      categoryNames = [];
-    }
+    const categoryNames: string[] = await Cache.getOrSet(
+      Cache.keys.categories('app'),
+      CachePolicy.page.launchCategory,
+      async () => {
+        try {
+          return await fetchCategoryNames('app');
+        } catch {
+          return [] as string[];
+        }
+      }
+    ) as any;
 
     const recentAppsForCounts = await db.collection('userapps')
       .find({ status: 'approved', createdAt: { $gte: sevenDaysAgo } })

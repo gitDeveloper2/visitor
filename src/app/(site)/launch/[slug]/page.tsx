@@ -2,8 +2,10 @@ import React from "react";
 import { notFound } from "next/navigation";
 import AppClient from "./Client";
 import { getAppBySlug } from "@/features/apps/service/user";
+import { Cache, CachePolicy } from '@/features/shared/cache';
 
-export const revalidate = 3600;
+// Align detail page to 24h as requested
+export const revalidate = 86400;
 
 export async function generateStaticParams() {
   try {
@@ -36,7 +38,11 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function Page({ params }: { params: { slug: string } }) {
-  const app = await getAppBySlug(params.slug);
+  const app = await Cache.getOrSet(
+    Cache.keys.appDetail(params.slug),
+    CachePolicy.page.appDetail,
+    async () => await getAppBySlug(params.slug)
+  );
   if (!app) return notFound();
 
   const publicUrl = `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/apps/${app.slug}`;
