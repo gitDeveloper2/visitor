@@ -5,6 +5,8 @@ import { connectToDatabase } from '../../../../../lib/mongodb';
 import { fetchCategoryNames } from '../../../../../utils/categories';
 import AdSlot from '@/app/components/adds/google/AdSlot';
 
+export const revalidate = 900;
+
 export async function generateStaticParams() {
   // For static generation, we'll use a predefined list of common category slugs
   const commonCategorySlugs = [

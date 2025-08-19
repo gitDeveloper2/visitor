@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidateTag, revalidatePath } from 'next/cache';
 import { getSession } from '@/features/shared/utils/auth';
 import { connectToDatabase } from '@lib/mongodb';
 import { getCheckoutUrl, VARIANT_IDS } from '@lib/lemonsqueezy';
@@ -125,6 +126,13 @@ export async function POST(request: Request) {
     const responseMessage = premiumPlan === 'premium' 
       ? 'App submitted successfully. Premium status will be activated after payment verification.' 
       : 'App submitted successfully.';
+
+    try {
+      revalidateTag('launch:list');
+      if (newApp.category) revalidateTag(`launch:category:${newApp.category}`);
+      revalidateTag(`app:${result.insertedId.toString()}`);
+      revalidatePath('/launch');
+    } catch {}
 
     return NextResponse.json(
       { 

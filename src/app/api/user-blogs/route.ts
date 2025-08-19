@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidateTag, revalidatePath } from 'next/cache';
 import { getSession } from '@/features/shared/utils/auth';
 import { connectToDatabase } from '@lib/mongodb';
 import { generateUniqueSlug } from '../../../utils/slugGenerator';
@@ -108,6 +109,19 @@ export async function POST(request: Request) {
     };
 
     const result = await db.collection('userblogs').insertOne(newBlog);
+
+    try {
+      revalidateTag('blog:list');
+      revalidateTag(`blog:post:${result.insertedId.toString()}`);
+      if (newBlog.category) revalidateTag(`blog:category:${newBlog.category}`);
+      if (Array.isArray(newBlog.tags)) newBlog.tags.forEach((t: string) => revalidateTag(`blog:tag:${t}`));
+      revalidatePath('/blogs');
+      revalidatePath(`/blogs/${newBlog.slug}`);
+      if (newBlog.category) {
+        const catSlug = String(newBlog.category).toLowerCase().replace(/\s+/g, '-');
+        revalidatePath(`/blogs/category/${catSlug}`);
+      }
+    } catch {}
 
     return NextResponse.json(
       { message: 'Blog submitted successfully.', blog: { _id: result.insertedId, ...newBlog } },

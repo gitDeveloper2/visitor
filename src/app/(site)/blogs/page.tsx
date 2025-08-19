@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { fetchCategoryNames } from '../../../utils/categories';
 import AdSlot from '@/app/components/adds/google/AdSlot';
 
+export const revalidate = 300;
+
 // Transform database document to BlogPost interface
 const transformBlogDocument = (doc: any) => ({
   _id: doc._id.toString(),

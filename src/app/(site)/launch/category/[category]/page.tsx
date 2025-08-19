@@ -5,6 +5,8 @@ import LaunchCategoryPage from './LaunchCategoryPage';
 import { connectToDatabase } from '../../../../../lib/mongodb';
 import { verifyAppPremiumStatus } from '../../../../../utils/premiumVerification';
 
+export const revalidate = 1800;
+
 // Helper function to serialize MongoDB objects
 function serializeMongoObject(obj: any): any {
   if (obj === null || obj === undefined) return obj;

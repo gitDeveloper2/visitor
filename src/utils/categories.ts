@@ -97,7 +97,8 @@ export const getSubcategorySuggestions = async (mainCategory: string): Promise<s
     if (category && category._id) {
       // Fetch subcategories from the database
       const baseUrl = getBaseUrl();
-      const response = await fetch(`${baseUrl}/api/categories?getSubcategories=true&parentCategory=${category._id}`);
+      const subUrl = `${baseUrl}/api/categories?getSubcategories=true&parentCategory=${category._id}`;
+      const response = await fetch(subUrl, typeof window === 'undefined' ? { next: { revalidate: 3600, tags: ['categories', 'categories:subcategories'] } } as any : undefined);
       
       if (response.ok) {
         const data = await response.json();
@@ -126,7 +127,8 @@ export const getAllSubcategoriesFromDB = async (): Promise<string[]> => {
     for (const category of categories) {
       if (category._id) {
         const baseUrl = getBaseUrl();
-        const response = await fetch(`${baseUrl}/api/categories?getSubcategories=true&parentCategory=${category._id}`);
+        const subUrl = `${baseUrl}/api/categories?getSubcategories=true&parentCategory=${category._id}`;
+        const response = await fetch(subUrl, typeof window === 'undefined' ? { next: { revalidate: 3600, tags: ['categories', 'categories:subcategories'] } } as any : undefined);
         
         if (response.ok) {
           const data = await response.json();
@@ -181,7 +183,7 @@ export const fetchCategoriesFromAPI = async (type?: 'app' | 'blog' | 'both'): Pr
       throw new Error(`Invalid URL: ${url}`);
     }
     
-    const response = await fetch(url);
+    const response = await fetch(url, typeof window === 'undefined' ? { next: { revalidate: 3600, tags: ['categories', `categories:${type || 'both'}`] } } as any : undefined);
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);

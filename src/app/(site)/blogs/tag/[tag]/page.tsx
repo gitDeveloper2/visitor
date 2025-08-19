@@ -5,6 +5,8 @@ import { notFound } from 'next/navigation';
 import TagBlogList from './TagBlogList';
 import AdSlot from '@/app/components/adds/google/AdSlot';
 
+export const revalidate = 1200;
+
 // Transform database document to BlogPost interface
 const transformBlogDocument = (doc: any) => ({
   _id: doc._id.toString(),

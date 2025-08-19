@@ -1,6 +1,7 @@
 // lib/apps.ts
 
 import { connectToDatabase } from "@lib/mongodb";
+import { cache } from 'react';
 import { ObjectId } from "mongodb";
 
 export type AppRecord = {
@@ -27,7 +28,7 @@ export type AppRecord = {
   github?: string;
 };
 
-export async function getAppBySlug(slug: string): Promise<AppRecord | null> {
+export const getAppBySlug = cache(async function getAppBySlug(slug: string): Promise<AppRecord | null> {
   if (!slug || typeof slug !== "string") {
     console.error("Invalid slug:", slug);
     return null;
@@ -69,6 +70,6 @@ export async function getAppBySlug(slug: string): Promise<AppRecord | null> {
       installs: record.installs || record.stats?.installs || 0,
     },
   };
-}
+});
 
   

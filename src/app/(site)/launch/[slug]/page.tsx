@@ -3,6 +3,23 @@ import { notFound } from "next/navigation";
 import AppClient from "./Client";
 import { getAppBySlug } from "@/features/apps/service/user";
 
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  try {
+    const { db } = await (await import('../../../../lib/mongodb')).connectToDatabase();
+    const recent = await db.collection('userapps')
+      .find({ status: 'approved' })
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .project({ slug: 1 })
+      .toArray();
+    return recent.map((a: any) => ({ slug: a.slug }));
+  } catch {
+    return [];
+  }
+}
+
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   const app = await getAppBySlug(params.slug);
   if (!app) return { title: "App not found" };

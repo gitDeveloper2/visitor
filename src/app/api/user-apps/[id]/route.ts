@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidateTag, revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { getSession } from '@/features/shared/utils/auth';
@@ -109,6 +110,19 @@ export async function PUT(
       }
 
       console.log("✅ App status updated successfully");
+      try {
+        if (currentApp) {
+          revalidateTag('launch:list');
+          if (currentApp.category) revalidateTag(`launch:category:${currentApp.category}`);
+          revalidateTag(`app:${currentApp._id?.toString?.()}`);
+          revalidatePath('/launch');
+          revalidatePath(`/launch/${currentApp.slug}`);
+          if (currentApp.category) {
+            const catSlug = String(currentApp.category).toLowerCase().replace(/\s+/g, '-');
+            revalidatePath(`/launch/category/${catSlug}`);
+          }
+        }
+      } catch {}
       return NextResponse.json({ message: 'App status updated successfully' }, { status: 200 });
     } else {
       console.log("🔵 Full app update detected");
@@ -164,6 +178,13 @@ export async function PUT(
       }
 
       console.log("✅ Full app update successful");
+      try {
+        revalidateTag('launch:list');
+        if (category) revalidateTag(`launch:category:${category}`);
+        revalidateTag(`app:${params.id}`);
+        revalidatePath('/launch');
+        // app slug may change, we cannot reliably revalidate that path here
+      } catch {}
       return NextResponse.json({ message: 'App updated successfully' }, { status: 200 });
     }
   } catch (error) {

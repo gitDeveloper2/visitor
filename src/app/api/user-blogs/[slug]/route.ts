@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
+import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@lib/mongodb';
 import { computeBlogQuality, finalizeBlogQualityScore } from '@/features/ranking/quality';
 import { getSession } from '@/features/shared/utils/auth';
@@ -126,6 +128,24 @@ export async function PATCH(
       return NextResponse.json({ message: 'Blog not found' }, { status: 404 });
     }
 
+    try {
+      revalidateTag('blog:list');
+      revalidateTag(`blog:post:${existingBlog._id?.toString?.() || params.slug}`);
+      if (Array.isArray(updateData.tags)) {
+        updateData.tags.forEach((t: string) => revalidateTag(`blog:tag:${t}`));
+      }
+      if (existingBlog.category) {
+        revalidateTag(`blog:category:${existingBlog.category}`);
+      }
+      // Also invalidate ISR pages directly
+      revalidatePath('/blogs');
+      revalidatePath(`/blogs/${params.slug}`);
+      if (existingBlog.category) {
+        const catSlug = String(existingBlog.category).toLowerCase().replace(/\s+/g, '-');
+        revalidatePath(`/blogs/category/${catSlug}`);
+      }
+    } catch {}
+
     return NextResponse.json({ message: 'Blog updated successfully' }, { status: 200 });
   } catch (error) {
     return NextResponse.json({ message: 'Failed to update blog.', error: error?.toString() }, { status: 500 });
@@ -159,6 +179,24 @@ export async function PUT(
     if (result.matchedCount === 0) {
       return NextResponse.json({ message: 'Blog not found' }, { status: 404 });
     }
+
+    try {
+      // status change may move in/out of public lists
+      const existing = await db.collection('userblogs').findOne({ slug: params.slug });
+      revalidateTag('blog:list');
+      if (existing) {
+        revalidateTag(`blog:post:${existing._id?.toString?.()}`);
+        if (existing.category) revalidateTag(`blog:category:${existing.category}`);
+        if (Array.isArray(existing.tags)) existing.tags.forEach((t: string) => revalidateTag(`blog:tag:${t}`));
+      }
+      // Invalidate ISR pages directly
+      revalidatePath('/blogs');
+      revalidatePath(`/blogs/${params.slug}`);
+      if (existing?.category) {
+        const catSlug = String(existing.category).toLowerCase().replace(/\s+/g, '-');
+        revalidatePath(`/blogs/category/${catSlug}`);
+      }
+    } catch {}
 
     return NextResponse.json({ message: 'Blog status updated successfully' }, { status: 200 });
   } catch (error) {

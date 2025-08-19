@@ -7,6 +7,8 @@ import { verifyAppPremiumStatus } from '../../../utils/premiumVerification';
 import { sortByScore, computeAppScore } from '@/features/ranking/score';
 import AdSlot from '@/app/components/adds/google/AdSlot';
 
+export const revalidate = 600;
+
 // Helper function to serialize MongoDB objects
 function serializeMongoObject(obj: any): any {
   if (obj === null || obj === undefined) return obj;
