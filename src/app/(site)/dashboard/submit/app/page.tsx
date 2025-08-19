@@ -36,6 +36,26 @@ import { getGlassStyles, getShadow, typographyVariants, commonStyles } from "@/u
 import { useAuthState } from "@/hooks/useAuth";
 import { adRegistry } from "@/app/components/adds/google/AdRegistry";
 
+// App quality limits (similar to blog limits)
+const APP_LIMITS = {
+  nameMin: 3,
+  nameMax: 100,
+  taglineMin: 10,
+  taglineMax: 200,
+  descriptionMin: 50,
+  descriptionMax: 500,
+  fullDescriptionMin: 200,
+  fullDescriptionMax: 2000,
+  authorNameMin: 2,
+  authorNameMax: 100,
+  authorBioMin: 20,
+  authorBioMax: 500,
+  featuresMin: 1,
+  featuresMax: 10,
+  techStackMin: 1,
+  techStackMax: 15,
+} as const;
+
 function SubmitAppPageContent() {
   const theme = useTheme();
   const searchParams = useSearchParams();
@@ -51,6 +71,7 @@ function SubmitAppPageContent() {
   const [editingAppId, setEditingAppId] = useState<string | null>(null);
   const hasLoadedDataRef = useRef(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // Check for payment success on component mount
   React.useEffect(() => {
@@ -102,8 +123,119 @@ function SubmitAppPageContent() {
     }));
   }, [user, isEditing]);
 
+  // Validation functions
+  const validateAppMetadata = () => {
+    const errors: Record<string, string> = {};
+    
+    // Required fields
+    if (!form.name?.trim()) {
+      errors.name = "App name is required";
+    } else if (form.name.trim().length < APP_LIMITS.nameMin) {
+      errors.name = `App name must be at least ${APP_LIMITS.nameMin} characters`;
+    } else if (form.name.trim().length > APP_LIMITS.nameMax) {
+      errors.name = `App name must be under ${APP_LIMITS.nameMax} characters`;
+    }
+    
+    if (!form.tagline?.trim()) {
+      errors.tagline = "Tagline is required";
+    } else if (form.tagline.trim().length < APP_LIMITS.taglineMin) {
+      errors.tagline = `Tagline must be at least ${APP_LIMITS.taglineMin} characters`;
+    } else if (form.tagline.trim().length > APP_LIMITS.taglineMax) {
+      errors.tagline = `Tagline must be under ${APP_LIMITS.taglineMax} characters`;
+    }
+    
+    if (!form.description?.trim()) {
+      errors.description = "Description is required";
+    } else if (form.description.trim().length < APP_LIMITS.descriptionMin) {
+      errors.description = `Description must be at least ${APP_LIMITS.descriptionMin} characters`;
+    } else if (form.description.trim().length > APP_LIMITS.descriptionMax) {
+      errors.description = `Description must be under ${APP_LIMITS.descriptionMax} characters`;
+    }
+    
+    if (!form.fullDescription?.trim()) {
+      errors.fullDescription = "Full description is required";
+    } else if (form.fullDescription.trim().length < APP_LIMITS.fullDescriptionMin) {
+      errors.fullDescription = `Full description must be at least ${APP_LIMITS.fullDescriptionMin} characters`;
+    } else if (form.fullDescription.trim().length > APP_LIMITS.fullDescriptionMax) {
+      errors.fullDescription = `Full description must be under ${APP_LIMITS.fullDescriptionMax} characters`;
+    }
+    
+    if (!form.category?.trim()) {
+      errors.category = "Category is required";
+    }
+    
+    if (!form.website?.trim()) {
+      errors.website = "Website URL is required";
+    } else if (!isValidUrl(form.website)) {
+      errors.website = "Please enter a valid website URL";
+    }
+    
+    if (!form.authorName?.trim()) {
+      errors.authorName = "Author name is required";
+    } else if (form.authorName.trim().length < APP_LIMITS.authorNameMin) {
+      errors.authorName = `Author name must be at least ${APP_LIMITS.authorNameMin} characters`;
+    } else if (form.authorName.trim().length > APP_LIMITS.authorNameMax) {
+      errors.authorName = `Author name must be under ${APP_LIMITS.authorNameMax} characters`;
+    }
+    
+    if (!form.authorEmail?.trim()) {
+      errors.authorEmail = "Author email is required";
+    } else if (!isValidEmail(form.authorEmail)) {
+      errors.authorEmail = "Please enter a valid email address";
+    }
+    
+    if (!form.authorBio?.trim()) {
+      errors.authorBio = "Author bio is required";
+    } else if (form.authorBio.trim().length < APP_LIMITS.authorBioMin) {
+      errors.authorBio = `Author bio must be at least ${APP_LIMITS.authorBioMin} characters`;
+    } else if (form.authorBio.trim().length > APP_LIMITS.authorBioMax) {
+      errors.authorBio = `Author bio must be under ${APP_LIMITS.authorBioMax} characters`;
+    }
+    
+    // Array validations
+    if (!Array.isArray(form.features) || form.features.length < APP_LIMITS.featuresMin) {
+      errors.features = `Add at least ${APP_LIMITS.featuresMin} feature`;
+    } else if (form.features.length > APP_LIMITS.featuresMax) {
+      errors.features = `Keep features under ${APP_LIMITS.featuresMax}`;
+    }
+    
+    if (!Array.isArray(form.techStack) || form.techStack.length < APP_LIMITS.techStackMin) {
+      errors.techStack = `Add at least ${APP_LIMITS.techStackMin} technology`;
+    } else if (form.techStack.length > APP_LIMITS.techStackMax) {
+      errors.techStack = `Keep tech stack under ${APP_LIMITS.techStackMax}`;
+    }
+    
+    // Optional GitHub validation
+    if (form.github?.trim() && !isValidUrl(form.github)) {
+      errors.github = "Please enter a valid GitHub URL";
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const isValidUrl = (url: string): boolean => {
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const handleChange = (field: string, value: any) => {
     setForm(prev => ({ ...prev, [field]: value }));
+    // Clear validation errors for this field
+    setValidationErrors(prev => {
+      const copy = { ...prev };
+      delete copy[field];
+      return copy;
+    });
     setFieldErrors(prev => {
       const copy = { ...prev };
       delete copy[field];
@@ -118,6 +250,12 @@ function SubmitAppPageContent() {
         features: [...prev.features, newFeature.trim()]
       }));
       setNewFeature("");
+      // Clear validation error for features
+      setValidationErrors(prev => {
+        const copy = { ...prev };
+        delete copy.features;
+        return copy;
+      });
     }
   };
 
@@ -135,6 +273,12 @@ function SubmitAppPageContent() {
         techStack: [...prev.techStack, newTech.trim()]
       }));
       setNewTech("");
+      // Clear validation error for techStack
+      setValidationErrors(prev => {
+        const copy = { ...prev };
+        delete copy.techStack;
+        return copy;
+      });
     }
   };
 
@@ -152,9 +296,10 @@ function SubmitAppPageContent() {
     setSuccess(false);
     
     try {
-      // Basic validation
-      if (!form.name || !form.description) {
-        setError("Please fill in all required fields.");
+      // Validate all fields before submission
+      if (!validateAppMetadata()) {
+        setError("Please fix the highlighted validation errors before submitting.");
+        setLoading(false);
         return;
       }
       
@@ -242,6 +387,7 @@ function SubmitAppPageContent() {
         authorBio: "",
       });
       setSelectedPremiumPlan(null);
+      setValidationErrors({});
     } catch (err: any) {
       setError(err.message || "Unknown error");
     } finally {
@@ -328,13 +474,25 @@ function SubmitAppPageContent() {
                   required 
                   value={form.name}
                   onChange={(e) => handleChange("name", e.target.value)}
-                  helperText="Choose a memorable and descriptive name"
-                  error={Boolean(fieldErrors.name)}
+                  helperText={`Choose a memorable and descriptive name (${form.name.length}/${APP_LIMITS.nameMax})`}
+                  error={Boolean(validationErrors.name)}
+                  FormHelperTextProps={{
+                    sx: { 
+                      color: form.name.length > APP_LIMITS.nameMax ? 'error.main' : 'text.secondary',
+                      display: 'flex',
+                      justifyContent: 'space-between'
+                    }
+                  }}
                 />
+                {validationErrors.name && (
+                  <FormHelperText error sx={{ mt: 0.5 }}>
+                    {validationErrors.name}
+                  </FormHelperText>
+                )}
               </Grid>
               
               <Grid item xs={12} md={6}>
-                <FormControl fullWidth required>
+                <FormControl fullWidth required error={Boolean(validationErrors.category)}>
                   <InputLabel>Category</InputLabel>
                   <Select
                     value={form.category}
@@ -346,6 +504,11 @@ function SubmitAppPageContent() {
                     <MenuItem value="Design">Design</MenuItem>
                     <MenuItem value="Marketing">Marketing</MenuItem>
                   </Select>
+                  {validationErrors.category && (
+                    <FormHelperText error>
+                      {validationErrors.category}
+                    </FormHelperText>
+                  )}
                 </FormControl>
               </Grid>
 
@@ -357,8 +520,21 @@ function SubmitAppPageContent() {
                   placeholder="A brief, compelling description of your app"
                   value={form.tagline}
                   onChange={(e) => handleChange("tagline", e.target.value)}
-                  helperText="A short, catchy description that appears in listings"
+                  helperText={`A short, catchy description that appears in listings (${form.tagline.length}/${APP_LIMITS.taglineMax})`}
+                  error={Boolean(validationErrors.tagline)}
+                  FormHelperTextProps={{
+                    sx: { 
+                      color: form.tagline.length > APP_LIMITS.taglineMax ? 'error.main' : 'text.secondary',
+                      display: 'flex',
+                      justifyContent: 'space-between'
+                    }
+                  }}
                 />
+                {validationErrors.tagline && (
+                  <FormHelperText error sx={{ mt: 0.5 }}>
+                    {validationErrors.tagline}
+                  </FormHelperText>
+                )}
               </Grid>
 
               <Grid item xs={12}>
@@ -370,8 +546,21 @@ function SubmitAppPageContent() {
                   fullWidth
                   value={form.description}
                   onChange={(e) => handleChange("description", e.target.value)}
-                  helperText="A concise description for listings and previews"
+                  helperText={`A concise description for listings and previews (${form.description.length}/${APP_LIMITS.descriptionMax})`}
+                  error={Boolean(validationErrors.description)}
+                  FormHelperTextProps={{
+                    sx: { 
+                      color: form.description.length > APP_LIMITS.descriptionMax ? 'error.main' : 'text.secondary',
+                      display: 'flex',
+                      justifyContent: 'space-between'
+                    }
+                  }}
                 />
+                {validationErrors.description && (
+                  <FormHelperText error sx={{ mt: 0.5 }}>
+                    {validationErrors.description}
+                  </FormHelperText>
+                )}
               </Grid>
 
               <Grid item xs={12}>
@@ -384,8 +573,21 @@ function SubmitAppPageContent() {
                   value={form.fullDescription}
                   onChange={(e) => handleChange("fullDescription", e.target.value)}
                   required
-                  helperText="Detailed description for the app page"
+                  helperText={`Detailed description for the app page (${form.fullDescription.length}/${APP_LIMITS.fullDescriptionMax})`}
+                  error={Boolean(validationErrors.fullDescription)}
+                  FormHelperTextProps={{
+                    sx: { 
+                      color: form.fullDescription.length > APP_LIMITS.fullDescriptionMax ? 'error.main' : 'text.secondary',
+                      display: 'flex',
+                      justifyContent: 'space-between'
+                    }
+                  }}
                 />
+                {validationErrors.fullDescription && (
+                  <FormHelperText error sx={{ mt: 0.5 }}>
+                    {validationErrors.fullDescription}
+                  </FormHelperText>
+                )}
               </Grid>
 
               {/* Links */}
@@ -412,7 +614,13 @@ function SubmitAppPageContent() {
                     ),
                   }}
                   helperText="Your app's main website or landing page"
+                  error={Boolean(validationErrors.website)}
                 />
+                {validationErrors.website && (
+                  <FormHelperText error sx={{ mt: 0.5 }}>
+                    {validationErrors.website}
+                  </FormHelperText>
+                )}
               </Grid>
 
               <Grid item xs={12} md={6}>
@@ -430,7 +638,13 @@ function SubmitAppPageContent() {
                     ),
                   }}
                   helperText="Optional: Link to your open-source code"
+                  error={Boolean(validationErrors.github)}
                 />
+                {validationErrors.github && (
+                  <FormHelperText error sx={{ mt: 0.5 }}>
+                    {validationErrors.github}
+                  </FormHelperText>
+                )}
               </Grid>
 
               {/* Tech Stack */}
@@ -458,7 +672,7 @@ function SubmitAppPageContent() {
                         addTech();
                       }
                     }}
-                    helperText="Press Enter or tap + to add"
+                    helperText={`Press Enter or tap + to add (${form.techStack.length}/${APP_LIMITS.techStackMax})`}
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position="end">
@@ -466,7 +680,7 @@ function SubmitAppPageContent() {
                             aria-label="Add technology"
                             size="small"
                             onClick={addTech}
-                            disabled={!newTech.trim()}
+                            disabled={!newTech.trim() || form.techStack.length >= APP_LIMITS.techStackMax}
                           >
                             <Plus size={18} />
                           </IconButton>
@@ -486,6 +700,11 @@ function SubmitAppPageContent() {
                     />
                   ))}
                 </Box>
+                {validationErrors.techStack && (
+                  <FormHelperText error sx={{ mt: 1 }}>
+                    {validationErrors.techStack}
+                  </FormHelperText>
+                )}
               </Grid>
 
               <Grid item xs={12} md={6}>
@@ -521,7 +740,7 @@ function SubmitAppPageContent() {
                         addFeature();
                       }
                     }}
-                    helperText="Press Enter or tap + to add"
+                    helperText={`Press Enter or tap + to add (${form.features.length}/${APP_LIMITS.featuresMax})`}
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position="end">
@@ -529,7 +748,7 @@ function SubmitAppPageContent() {
                             aria-label="Add feature"
                             size="small"
                             onClick={addFeature}
-                            disabled={!newFeature.trim()}
+                            disabled={!newFeature.trim() || form.features.length >= APP_LIMITS.featuresMax}
                           >
                             <Plus size={18} />
                           </IconButton>
@@ -565,6 +784,11 @@ function SubmitAppPageContent() {
                     </Paper>
                   ))}
                 </Box>
+                {validationErrors.features && (
+                  <FormHelperText error sx={{ mt: 1 }}>
+                    {validationErrors.features}
+                  </FormHelperText>
+                )}
               </Grid>
 
               {/* Author Information */}
@@ -582,8 +806,21 @@ function SubmitAppPageContent() {
                   required
                   value={form.authorName}
                   onChange={(e) => handleChange("authorName", e.target.value)}
-                  helperText="Your name or company name"
+                  helperText={`Your name or company name (${form.authorName.length}/${APP_LIMITS.authorNameMax})`}
+                  error={Boolean(validationErrors.authorName)}
+                  FormHelperTextProps={{
+                    sx: { 
+                      color: form.authorName.length > APP_LIMITS.authorNameMax ? 'error.main' : 'text.secondary',
+                      display: 'flex',
+                      justifyContent: 'space-between'
+                    }
+                  }}
                 />
+                {validationErrors.authorName && (
+                  <FormHelperText error sx={{ mt: 0.5 }}>
+                    {validationErrors.authorName}
+                  </FormHelperText>
+                )}
               </Grid>
 
               <Grid item xs={12} md={6}>
@@ -595,7 +832,13 @@ function SubmitAppPageContent() {
                   value={form.authorEmail}
                   onChange={(e) => handleChange("authorEmail", e.target.value)}
                   helperText="We'll use this to contact you about your submission"
+                  error={Boolean(validationErrors.authorEmail)}
                 />
+                {validationErrors.authorEmail && (
+                  <FormHelperText error sx={{ mt: 0.5 }}>
+                    {validationErrors.authorEmail}
+                  </FormHelperText>
+                )}
               </Grid>
 
               <Grid item xs={12}>
@@ -607,8 +850,21 @@ function SubmitAppPageContent() {
                   placeholder="Tell us about yourself and what inspired you to create this app"
                   value={form.authorBio}
                   onChange={(e) => handleChange("authorBio", e.target.value)}
-                  helperText="A brief bio that will be displayed on your app page"
+                  helperText={`A brief bio that will be displayed on your app page (${form.authorBio.length}/${APP_LIMITS.authorBioMax})`}
+                  error={Boolean(validationErrors.authorBio)}
+                  FormHelperTextProps={{
+                    sx: { 
+                      color: form.authorBio.length > APP_LIMITS.authorBioMax ? 'error.main' : 'text.secondary',
+                      display: 'flex',
+                      justifyContent: 'space-between'
+                    }
+                  }}
                 />
+                {validationErrors.authorBio && (
+                  <FormHelperText error sx={{ mt: 0.5 }}>
+                    {validationErrors.authorBio}
+                  </FormHelperText>
+                )}
               </Grid>
 
               {/* Premium Upgrade Option */}
@@ -785,7 +1041,7 @@ function SubmitAppPageContent() {
                     size="large" 
                     sx={{ borderRadius: "999px", px: 6, py: 1.5 }}
                     startIcon={<Star size={20} />}
-                    disabled={loading || !form.name || !form.description}
+                    disabled={loading || Object.keys(validationErrors).length > 0}
                   >
                     {loading ? 'Submitting...' : 'Submit App for Review'}
                   </Button>
