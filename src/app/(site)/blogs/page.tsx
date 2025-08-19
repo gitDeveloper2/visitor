@@ -5,7 +5,7 @@ import { connectToDatabase } from '../../../lib/mongodb';
 import { sortByScore, computeBlogScore } from '@/features/ranking/score';
 import Link from 'next/link';
 import { fetchCategoryNames } from '../../../utils/categories';
-import { adRegistry } from '@/app/components/adds/google/AdRegistry';
+import AdSlot from '@/app/components/adds/google/AdSlot';
 
 // Transform database document to BlogPost interface
 const transformBlogDocument = (doc: any) => ({
@@ -177,7 +177,7 @@ export default async function BlogsPage() {
       <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
         {/* Blog List Header Ad */}
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
-          {adRegistry[20]}
+          <AdSlot slot={20} />
         </Box>
         
         <Suspense fallback={

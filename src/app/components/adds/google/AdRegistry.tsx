@@ -1,3 +1,5 @@
+"use client";
+
 // components/ads/AdRegistry.tsx
 import React from "react";
 import GoogleAd from "./GoogleAd";

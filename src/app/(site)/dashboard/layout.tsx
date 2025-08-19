@@ -31,7 +31,7 @@ import { useTheme as useMuiTheme } from "@mui/material/styles";
 import { authClient } from "@/app/auth-client";
 import { AuthGuard, OnboardingGuard } from "@/components/auth/client";
 import { useAuthState } from "@/hooks/useAuth";
-import { adRegistry } from "@/app/components/adds/google/AdRegistry";
+import AdSlot from "@/app/components/adds/google/AdSlot";
 
 // Icons
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -55,8 +55,8 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AuthGuard redirectTo="/auth/signin">
-      <OnboardingGuard redirectTo="/onboarding">
+    <AuthGuard redirectTo="/auth/signin" fallback={<Box sx={{ p: 4 }}><Typography>Checking authentication…</Typography></Box>}>
+      <OnboardingGuard redirectTo="/onboarding" fallback={<Box sx={{ p: 4 }}><Typography>Preparing your dashboard…</Typography></Box>}>
         <DashboardContent>{children}</DashboardContent>
       </OnboardingGuard>
     </AuthGuard>
@@ -71,7 +71,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const [legacyMenuAnchor, setLegacyMenuAnchor] = React.useState<null | HTMLElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'), { noSsr: true });
   const isAdmin = session?.user?.role === 'admin';
 
   const handleAdminMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -540,7 +540,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         <Box sx={{ flex: 1 }}>
           {/* Dashboard Header Ad */}
           <Box sx={{ mb: 3, display: { xs: 'none', md: 'block' } }}>
-            {adRegistry[10]}
+            <AdSlot slot={10} />
           </Box>
           
           {children}

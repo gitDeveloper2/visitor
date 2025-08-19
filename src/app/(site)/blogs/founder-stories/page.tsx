@@ -20,7 +20,7 @@ import { useTheme } from "@mui/material/styles";
 import { Search, Clock, Calendar, Plus } from "lucide-react";
 import { getGlassStyles, getShadow, typographyVariants, commonStyles } from "../../../../utils/themeUtils";
 import Link from "next/link";
-import { adRegistry } from "@/app/components/adds/google/AdRegistry";
+import AdSlot from "@/app/components/adds/google/AdSlot";
 
 interface BlogPost {
   _id: string;
@@ -186,7 +186,7 @@ export default function FounderStoriesPage() {
       <Container maxWidth="lg">
         {/* Founder Stories Header Ad */}
         <Box sx={{ mb: 6, display: 'flex', justifyContent: 'center' }}>
-          {adRegistry[20]}
+          <AdSlot slot={20} />
         </Box>
         
         {/* Hero Section */}

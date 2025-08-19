@@ -1,5 +1,5 @@
 import React from "react";
-import { adRegistry } from "@/app/components/adds/google/AdRegistry";
+import AdSlot from "@/app/components/adds/google/AdSlot";
 import { isDevelopment, isProduction } from "@/lib/config/environment";
 
 export default function DemoAdsPage() {
@@ -28,7 +28,7 @@ export default function DemoAdsPage() {
             <div className="bg-white p-4 rounded-lg mb-4">
               <h3 className="font-semibold mb-2">Dashboard Header Ad (Slot 10)</h3>
               <div className="border-2 border-dashed border-blue-300 p-2 rounded">
-                {adRegistry[10]}
+                <AdSlot slot={10} />
               </div>
             </div>
             
@@ -55,7 +55,7 @@ export default function DemoAdsPage() {
         <div className="bg-white p-4 rounded-lg mb-4">
           <h3 className="font-semibold mb-2">Blog List Header Ad (Slot 20)</h3>
           <div className="border-2 border-dashed border-purple-300 p-2 rounded">
-            {adRegistry[20]}
+            <AdSlot slot={20} />
           </div>
         </div>
         

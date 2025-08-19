@@ -173,9 +173,8 @@ export const fetchCategoriesFromAPI = async (type?: 'app' | 'blog' | 'both'): Pr
     const url = `${baseUrl}/api/categories?${params.toString()}`;
     
     // Debug logging
-    console.log('Fetching categories from:', url);
-    console.log('Environment:', process.env.NODE_ENV);
-    console.log('Base URL:', baseUrl);
+    console.log('[Categories] Fetching from:', url);
+    console.log('[Categories] Env:', process.env.NODE_ENV, 'Base URL:', baseUrl || '(empty client-relative)');
     
     // Validate URL before making the request
     if (!url.startsWith('http') && !url.startsWith('/')) {
@@ -197,7 +196,7 @@ export const fetchCategoriesFromAPI = async (type?: 'app' | 'blog' | 'both'): Pr
       throw new Error(data.error || 'Failed to fetch categories');
     }
   } catch (error) {
-    console.error('Error fetching categories:', error);
+    console.error('[Categories] Error fetching categories:', error);
     // Return emergency fallbacks in case of any error
     return emergencyFallbackCategories[type || 'both'].map((name, index) => ({
       _id: `fallback-${index}`,

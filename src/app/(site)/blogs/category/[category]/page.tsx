@@ -3,7 +3,7 @@ import { Container, Typography, Box, CircularProgress } from '@mui/material';
 import BlogCategoryPage from './BlogCategoryPage';
 import { connectToDatabase } from '../../../../../lib/mongodb';
 import { fetchCategoryNames } from '../../../../../utils/categories';
-import { adRegistry } from '@/app/components/adds/google/AdRegistry';
+import AdSlot from '@/app/components/adds/google/AdSlot';
 
 export async function generateStaticParams() {
   // For static generation, we'll use a predefined list of common category slugs
@@ -145,7 +145,7 @@ export default async function BlogCategoryPageWrapper({
       <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
         {/* Blog Category Header Ad */}
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
-          {adRegistry[20]}
+          <AdSlot slot={20} />
         </Box>
         
         <Box sx={{ mb: { xs: 3, sm: 4 } }}>
@@ -194,7 +194,7 @@ export default async function BlogCategoryPageWrapper({
       <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
         {/* Blog Category Header Ad */}
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
-          {adRegistry[20]}
+          <AdSlot slot={20} />
         </Box>
         
         <Box sx={{ mb: { xs: 3, sm: 4 } }}>

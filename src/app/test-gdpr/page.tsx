@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import AdDemo from "@/app/components/adds/google/AdDemo";
 import { useConsent } from "@/hooks/useConsent";

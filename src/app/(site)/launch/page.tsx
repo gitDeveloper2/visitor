@@ -5,7 +5,7 @@ import { fetchCategoryNames } from '@/utils/categories';
 import { connectToDatabase } from '../../../lib/mongodb';
 import { verifyAppPremiumStatus } from '../../../utils/premiumVerification';
 import { sortByScore, computeAppScore } from '@/features/ranking/score';
-import { adRegistry } from '@/app/components/adds/google/AdRegistry';
+import AdSlot from '@/app/components/adds/google/AdSlot';
 
 // Helper function to serialize MongoDB objects
 function serializeMongoObject(obj: any): any {
@@ -112,11 +112,16 @@ export default async function LaunchPage() {
     const serializedApps = serializeMongoObject(allApps);
     const serializedFeaturedApps = serializeMongoObject(featuredApps);
 
+    // Server-side diagnostics for /launch
+    console.log('[LaunchPage] Featured apps (verified) count:', serializedFeaturedApps?.length ?? 0);
+    console.log('[LaunchPage] Main apps count:', serializedApps?.length ?? 0, 'TotalApps:', totalApps);
+    console.log('[LaunchPage] Category chips:', categoryChips?.length ?? 0);
+
     return (
       <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
         {/* Launch Header Ad */}
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
-          {adRegistry[30]}
+          <AdSlot slot={30} />
         </Box>
         
         <Suspense fallback={
@@ -134,7 +139,7 @@ export default async function LaunchPage() {
       </Container>
     );
   } catch (error) {
-    console.error('Error fetching app data:', error);
+    console.error('[LaunchPage] Error fetching app data:', error);
     // Fallback with empty data
     return (
       <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>

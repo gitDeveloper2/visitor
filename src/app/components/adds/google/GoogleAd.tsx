@@ -23,6 +23,18 @@ export default function GoogleAd({ slot, className = "", style = {} }: GoogleAdP
   // Check if marketing consent is given (required for ads in Europe)
   const canShowAd = hasConsented && hasConsent('marketing');
 
+  // Always register the effect to keep hook order stable across renders.
+  // Only push ads when we're in production and consent allows it.
+  useEffect(() => {
+    if (isDevelopment()) return;
+    if (!canShowAd) return;
+    try {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    } catch (e) {
+      console.error(`Ad push failed for slot ${slot}:`, e);
+    }
+  }, [slot, canShowAd]);
+
   // In development, show placeholder only if consent is given
   if (isDevelopment()) {
     if (!canShowAd) {
@@ -67,14 +79,6 @@ export default function GoogleAd({ slot, className = "", style = {} }: GoogleAdP
   if (!canShowAd) {
     return null; // Don't show anything without consent in production
   }
-
-  useEffect(() => {
-    try {
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
-    } catch (e) {
-      console.error(`Ad push failed for slot ${slot}:`, e);
-    }
-  }, [slot]);
 
   return (
     <ins

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Box, Typography, Button, Paper, List, ListItem, ListItemText } from '@mui/material';
-import { useCookieConsent } from '../../hooks/useConsent';
+import { useCookieConsent } from '@/context/CookieConsentContext';
 
 const TestCookieConsentPage = () => {
   const { hasConsent, hasConsented, preferences, resetConsent } = useCookieConsent();

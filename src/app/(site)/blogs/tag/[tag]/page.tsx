@@ -3,7 +3,7 @@ import { Container, Typography, Box, CircularProgress } from '@mui/material';
 import { connectToDatabase } from '../../../../../lib/mongodb';
 import { notFound } from 'next/navigation';
 import TagBlogList from './TagBlogList';
-import { adRegistry } from '@/app/components/adds/google/AdRegistry';
+import AdSlot from '@/app/components/adds/google/AdSlot';
 
 // Transform database document to BlogPost interface
 const transformBlogDocument = (doc: any) => ({
@@ -76,7 +76,7 @@ export default async function TagPage({ params }: TagPageProps) {
       <Container maxWidth="lg" sx={{ py: 4 }}>
         {/* Tag Page Header Ad */}
         <Box sx={{ mb: 4, display: 'flex', justifyContent: 'center' }}>
-          {adRegistry[20]}
+          <AdSlot slot={20} />
         </Box>
         
         <Box sx={{ mb: 6 }}>
