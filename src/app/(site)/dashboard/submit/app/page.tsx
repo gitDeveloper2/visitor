@@ -90,6 +90,18 @@ function SubmitAppPageContent() {
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [subcategories, setSubcategories] = useState<string[]>([]);
 
+  // Prefill author fields from session for new submissions only (do not override edits)
+  React.useEffect(() => {
+    if (!user) return;
+    if (isEditing) return; // editing existing app
+    setForm(prev => ({
+      ...prev,
+      authorName: prev.authorName || (user as any)?.name || "",
+      authorEmail: prev.authorEmail || (user as any)?.email || "",
+      authorBio: prev.authorBio || (user as any)?.bio || "",
+    }));
+  }, [user, isEditing]);
+
   const handleChange = (field: string, value: any) => {
     setForm(prev => ({ ...prev, [field]: value }));
     setFieldErrors(prev => {
@@ -741,13 +753,26 @@ function SubmitAppPageContent() {
                   </Grid>
                 </Grid>
                 
-                {selectedPremiumPlan === 'premium' && (
-                  <Box sx={{ mt: 3, p: 2, backgroundColor: `${theme.palette.primary.main}08`, borderRadius: 2, border: `1px solid ${theme.palette.primary.main}20` }}>
-                    <Typography variant="body2" color="primary" fontWeight={500}>
-                      ⭐ Premium selected! You'll be redirected to payment after submission.
-                    </Typography>
-                  </Box>
-                )}
+                                 {selectedPremiumPlan === 'premium' && (
+                   <Box sx={{ mt: 3, p: 2, backgroundColor: `${theme.palette.primary.main}08`, borderRadius: 2, border: `1px solid ${theme.palette.primary.main}20` }}>
+                     <Typography variant="body2" color="primary" fontWeight={500}>
+                       ⭐ Premium selected! You'll be redirected to payment after submission.
+                     </Typography>
+                   </Box>
+                 )}
+                 
+                 <Box sx={{ mt: 3, p: 2, backgroundColor: `${theme.palette.info.main}08`, borderRadius: 2, border: `1px solid ${theme.palette.info.main}20` }}>
+                   <Typography variant="body2" color="info.main" fontWeight={500} gutterBottom>
+                     💡 Having payment issues?
+                   </Typography>
+                   <Typography variant="body2" color="info.main">
+                     If you've already paid but your premium features aren't working, you can{' '}
+                     <Link href="/dashboard/payment-verification" style={{ color: theme.palette.info.main, textDecoration: 'underline' }}>
+                       verify your payment status here
+                     </Link>
+                     .
+                   </Typography>
+                 </Box>
               </Grid>
 
               {/* Submit Button */}

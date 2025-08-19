@@ -14,6 +14,10 @@ import {
   Container,
   Paper,
   Alert,
+  Card,
+  CardContent,
+  Divider,
+  Grid,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { getShadow, getGlassStyles } from "../../../../../utils/themeUtils";
@@ -22,15 +26,16 @@ import StepEditor from "./StepEditor";
 import StepReview from "./StepReview";
 import { useState, useEffect, useCallback } from "react";
 import PremiumBlogSubscription from "../../../../../components/premium/PremiumBlogSubscription";
-import { Clock, AlertTriangle } from "lucide-react";
+import { Clock, AlertTriangle, Check, Star, DollarSign } from "lucide-react";
 import { computeBlogQuality, finalizeBlogQualityScore, type BlogQualityBreakdown } from '@/features/ranking/quality';
 import { BLOG_QUALITY_CONFIG } from '@/features/ranking/config';
 
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useAuthState } from '@/hooks/useAuth';
 import { adRegistry } from '@/app/components/adds/google/AdRegistry';
 
-const steps = ["Blog Info", "Write Blog", "Review & Submit"];
+const steps = ["Blog Info", "Write Blog", "Choose Plan", "Review & Submit"];
 
 function BlogSubmitPageContent() {
   const theme = useTheme();
@@ -65,6 +70,7 @@ function BlogSubmitPageContent() {
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [qualityBreakdown, setQualityBreakdown] = useState<BlogQualityBreakdown | null>(null);
   const [qualityHints, setQualityHints] = useState<string[]>([]);
+  const [selectedPremiumPlan, setSelectedPremiumPlan] = useState<string | null>(null);
 
   // Content limits (adjust as needed)
   const BLOG_LIMITS = {
@@ -331,6 +337,10 @@ function BlogSubmitPageContent() {
         return;
       }
     }
+    if (activeStep === 2 && !selectedPremiumPlan) {
+      setError("Please select a plan before continuing.");
+      return;
+    }
     setError(null);
     setActiveStep((prev) => prev + 1);
   };
@@ -421,6 +431,11 @@ function BlogSubmitPageContent() {
       setError("Please complete the blog content.");
       return;
     }
+    if (!selectedPremiumPlan) {
+      setActiveStep(2);
+      setError("Please select a plan before submitting.");
+      return;
+    }
     // Block submission if below threshold as a final guard
     if (!qualityBreakdown || qualityBreakdown.total < BLOG_QUALITY_CONFIG.minProceedThreshold) {
       setError(`Quality score must be ≥ ${BLOG_QUALITY_CONFIG.minProceedThreshold.toFixed(2)} before submitting.`);
@@ -484,6 +499,41 @@ function BlogSubmitPageContent() {
         const j = await res.json().catch(() => ({}));
         throw new Error(j.message || "Could not save blog");
       }
+      
+      const result = await res.json();
+      
+      // If premium was selected, redirect to checkout
+      if (selectedPremiumPlan === 'premium' && result.blog?._id) {
+        try {
+          const checkoutRes = await fetch("/api/lemonsqueezy/checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              variantId: process.env.NEXT_PUBLIC_LEMON_SQUEEZY_PREMIUM_BLOG_VARIANT_ID,
+              custom: {
+                subscription_type: "premium_blog",
+                blog_id: result.blog._id,
+                blog_title: formData.title,
+                return_url: `${window.location.origin}/dashboard/submit/blog?payment_success=true&blog_id=${result.blog._id}`,
+              },
+            }),
+          });
+
+          if (checkoutRes.ok) {
+            const { checkoutUrl } = await checkoutRes.json();
+            window.location.href = checkoutUrl;
+            return;
+          } else {
+            const errorData = await checkoutRes.json().catch(() => ({}));
+            throw new Error(`Failed to create checkout: ${errorData.error || 'Unknown error'}`);
+          }
+        } catch (checkoutError: any) {
+          console.error('Checkout error:', checkoutError);
+          setError(`Payment setup failed: ${checkoutError.message}. Your blog was saved but premium features are not active.`);
+          setSuccess(true);
+          return;
+        }
+      }
 
       // If there was a draft, clean it up
       if (draftId) {
@@ -528,6 +578,7 @@ function BlogSubmitPageContent() {
         imageUrl: "",
       });
       setDraftId(null);
+      setSelectedPremiumPlan(null);
     } catch (err: any) {
       setError(err.message || "Unknown error");
     } finally {
@@ -535,43 +586,25 @@ function BlogSubmitPageContent() {
     }
   };
 
-  const handlePremiumSubscribe = async (variantId: string) => {
-    console.log('🚀 Starting premium subscription flow for variant:', variantId);
-    
-    // Save draft before redirecting to payment
-    const savedDraftId = await saveDraft();
-    
-    if (savedDraftId) {
-      console.log('📝 Draft saved successfully with ID:', savedDraftId);
-      
-      // Redirect to payment with draft ID in custom data
-      const res = await fetch("/api/lemonsqueezy/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          variantId,
-          custom: {
-            subscription_type: "premium_blog",
-            draft_id: savedDraftId,
-            return_url: `${window.location.origin}/dashboard/submission/blog?draftId=${savedDraftId}&payment_success=true`,
-          },
-        }),
-      });
-
-      if (res.ok) {
-        const { checkoutUrl } = await res.json();
-        console.log('💳 Redirecting to checkout:', checkoutUrl);
-        window.location.href = checkoutUrl;
-      } else {
-        const errorData = await res.json().catch(() => ({}));
-        console.error('❌ Checkout creation failed:', errorData);
-        setError(`Failed to create checkout: ${errorData.error || 'Unknown error'}`);
-      }
-    } else {
-      console.error('❌ Failed to save draft');
-      setError('Failed to save your draft. Please try again.');
-    }
+  const handlePremiumSelection = (plan: string | null) => {
+    setSelectedPremiumPlan(plan);
   };
+
+  const premiumFeatures = [
+    'Access to all premium blog content',
+    'Exclusive founder stories',
+    'Early access to new content',
+    'Premium community access',
+    'Priority support',
+    'Cancel anytime',
+  ];
+
+  const freeFeatures = [
+    'Standard blog listing',
+    'Community review process',
+    'Basic analytics',
+    'Founder story submissions',
+  ];
   
   // Draft countdown timer component
   const DraftCountdownTimer = () => {
@@ -721,60 +754,178 @@ function BlogSubmitPageContent() {
             />
           )}
           {activeStep === 2 && (
+            <Box>
+              <Typography variant="h5" fontWeight={600} mb={3} display="flex" alignItems="center" gap={1}>
+                <DollarSign size={24} color={theme.palette.primary.main} />
+                Choose Your Plan
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Select how you'd like to submit your blog. Premium plans offer enhanced features and priority processing.
+              </Typography>
+              
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Card 
+                    sx={{ 
+                      height: '100%',
+                      border: selectedPremiumPlan === 'premium' ? `2px solid ${theme.palette.primary.main}` : `1px solid ${theme.palette.divider}`,
+                      backgroundColor: selectedPremiumPlan === 'premium' ? `${theme.palette.primary.main}08` : 'transparent',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': {
+                        borderColor: theme.palette.primary.main,
+                        backgroundColor: `${theme.palette.primary.main}04`,
+                      }
+                    }}
+                    onClick={() => handlePremiumSelection(selectedPremiumPlan === 'premium' ? null : 'premium')}
+                  >
+                    <CardContent sx={{ p: 3, textAlign: 'center' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                        {selectedPremiumPlan === 'premium' && (
+                          <Check 
+                            size={24} 
+                            color={theme.palette.primary.main} 
+                            sx={{ mr: 1 }}
+                          />
+                        )}
+                        <Star size={32} color={theme.palette.primary.main} />
+                      </Box>
+                      <Typography variant="h6" fontWeight={600} gutterBottom>
+                        Premium Blog Access
+                      </Typography>
+                      <Typography variant="h4" fontWeight={800} color="primary" gutterBottom>
+                        $9.99
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Monthly subscription • Cancel anytime
+                      </Typography>
+                      
+                      <Divider sx={{ my: 2 }} />
+                      
+                      <Box sx={{ textAlign: 'left' }}>
+                        {premiumFeatures.slice(0, 4).map((feature, index) => (
+                          <Box key={index} display="flex" alignItems="center" mb={1}>
+                            <Check 
+                              size={16} 
+                              color={theme.palette.success.main} 
+                              sx={{ mr: 1 }}
+                            />
+                            <Typography variant="body2" fontSize="0.875rem">
+                              {feature}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                
+                <Grid item xs={12} md={6}>
+                  <Card 
+                    sx={{ 
+                      height: '100%',
+                      border: selectedPremiumPlan === 'free' ? `2px solid ${theme.palette.success.main}` : `1px solid ${theme.palette.divider}`,
+                      backgroundColor: selectedPremiumPlan === 'free' ? `${theme.palette.success.main}08` : 'transparent',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': {
+                        borderColor: theme.palette.success.main,
+                        backgroundColor: `${theme.palette.success.main}04`,
+                      }
+                    }}
+                    onClick={() => handlePremiumSelection(selectedPremiumPlan === 'free' ? null : 'free')}
+                  >
+                    <CardContent sx={{ p: 3, textAlign: 'center' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                        {selectedPremiumPlan === 'free' && (
+                          <Check 
+                            size={24} 
+                            color={theme.palette.success.main} 
+                            sx={{ mr: 1 }}
+                          />
+                        )}
+                        <Typography variant="h4" color="success.main">🎉</Typography>
+                      </Box>
+                      <Typography variant="h6" fontWeight={600} gutterBottom>
+                        Free Submission
+                      </Typography>
+                      <Typography variant="h4" fontWeight={800} color="success.main" gutterBottom>
+                        $0
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        For founder stories only • No additional cost
+                      </Typography>
+                      
+                      <Divider sx={{ my: 2 }} />
+                      
+                      <Box sx={{ textAlign: 'left' }}>
+                        {freeFeatures.map((feature, index) => (
+                          <Box key={index} display="flex" alignItems="center" mb={1}>
+                            <Check 
+                              size={16} 
+                              color={theme.palette.success.main} 
+                              sx={{ mr: 1 }}
+                            />
+                            <Typography variant="body2" fontSize="0.875rem">
+                              {feature}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
+              
+              {selectedPremiumPlan === 'premium' && (
+                <Box sx={{ mt: 3, p: 2, backgroundColor: `${theme.palette.primary.main}08`, borderRadius: 2, border: `1px solid ${theme.palette.primary.main}20` }}>
+                  <Typography variant="body2" color="primary" fontWeight={500}>
+                    ⭐ Premium selected! You'll be redirected to payment after submission.
+                  </Typography>
+                </Box>
+              )}
+              
+              {selectedPremiumPlan === 'free' && !formData.isFounderStory && (
+                <Box sx={{ mt: 3, p: 2, backgroundColor: `${theme.palette.warning.main}08`, borderRadius: 2, border: `1px solid ${theme.palette.warning.main}20` }}>
+                  <Typography variant="body2" color="warning.main" fontWeight={500}>
+                    ⚠️ Free submissions are only available for founder stories. Please go back to step 1 and check "This submission is a Founder Story".
+                  </Typography>
+                </Box>
+              )}
+              
+              <Box sx={{ mt: 3, p: 2, backgroundColor: `${theme.palette.info.main}08`, borderRadius: 2, border: `1px solid ${theme.palette.info.main}20` }}>
+                <Typography variant="body2" color="info.main" fontWeight={500} gutterBottom>
+                  💡 Having payment issues?
+                </Typography>
+                <Typography variant="body2" color="info.main">
+                  If you've already paid but your premium access isn't working, you can{' '}
+                  <Link href="/dashboard/payment-verification" style={{ color: theme.palette.info.main, textDecoration: 'underline' }}>
+                    verify your payment status here
+                  </Link>
+                  .
+                </Typography>
+              </Box>
+            </Box>
+          )}
+          {activeStep === 3 && (
             <>
               {/* Show countdown timer if editing a draft */}
               {draftExpiryDate && <DraftCountdownTimer />}
               
               <StepReview metadata={formData} content={formData.content} qualityBreakdown={qualityBreakdown || undefined} />
-              {!formData.isFounderStory && !isPremiumUser && (
-                <Box mt={4}>
-                  <Alert severity="warning" sx={{ mb: 3 }}>
-                    <Typography variant="h6" gutterBottom>
-                      ⚠️ Premium Blog Access Required
-                    </Typography>
-                    <Typography variant="body2" gutterBottom>
-                      Publishing non-Founder Story submissions requires an active Premium Blog subscription.
-                    </Typography>
-                    <Typography variant="body2" fontWeight="bold">
-                      To submit this blog, either:
-                    </Typography>
-                    <Box component="ul" sx={{ mt: 1, pl: 2 }}>
-                      <li>Check "This submission is a Founder Story" in step 1, OR</li>
-                      <li>Subscribe to Premium Blog Access below</li>
-                    </Box>
-                  </Alert>
-                  
-                  <Box sx={{ mb: 3, textAlign: 'center' }}>
-                    <Button 
-                      variant="outlined" 
-                      onClick={() => setActiveStep(0)}
-                      sx={{ mr: 2 }}
-                    >
-                      ← Go Back to Step 1 (Change Founder Story Setting)
-                    </Button>
-                  </Box>
-                  
-                  <PremiumBlogSubscription onSubscribe={handlePremiumSubscribe} />
-                </Box>
-              )}
-              {formData.isFounderStory && (
-                <Box mt={4}>
-                  <Alert severity="success">
-                    <Typography variant="body2">
-                      ✅ Founder Story detected! This submission will be free and doesn't require premium access.
-                    </Typography>
-                  </Alert>
-                </Box>
-              )}
-              {!formData.isFounderStory && isPremiumUser && (
-                <Box mt={4}>
-                  <Alert severity="success">
-                    <Typography variant="body2">
-                      ✅ Premium access confirmed! You can submit this blog.
-                    </Typography>
-                  </Alert>
-                </Box>
-              )}
+              
+              <Box mt={4}>
+                <Alert severity="info">
+                  <Typography variant="body2">
+                    {selectedPremiumPlan === 'premium' 
+                      ? "✅ Premium plan selected! You'll be redirected to payment after submission."
+                      : selectedPremiumPlan === 'free' && formData.isFounderStory
+                      ? "✅ Free submission selected for founder story."
+                      : "Please review your blog before submitting."
+                    }
+                  </Typography>
+                </Alert>
+              </Box>
             </>
           )}
         </Paper>
@@ -792,14 +943,14 @@ function BlogSubmitPageContent() {
           <Button
             variant="contained"
             onClick={activeStep === steps.length - 1 ? handleSubmit : handleNext}
-            disabled={loading || (activeStep === steps.length - 1 && !formData.isFounderStory && !isPremiumUser)}
+            disabled={loading || (activeStep === steps.length - 1 && !selectedPremiumPlan)}
             sx={{
-              backgroundColor: activeStep === steps.length - 1 && !formData.isFounderStory && !isPremiumUser ? 'grey.400' : undefined
+              backgroundColor: activeStep === steps.length - 1 && !selectedPremiumPlan ? 'grey.400' : undefined
             }}
           >
             {loading ? "Submitting..." : 
              activeStep === steps.length - 1 ? 
-               (formData.isFounderStory || isPremiumUser ? "Submit Blog" : "Premium Required") : 
+               (selectedPremiumPlan ? "Submit Blog" : "Select Plan First") : 
                "Next"}
           </Button>
         </Box>
