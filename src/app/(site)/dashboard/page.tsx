@@ -22,17 +22,11 @@ import { getShadow, getGlassStyles } from "@/utils/themeUtils";
 import { User, AppWindow, FileText } from "lucide-react";
 
 export default function DashboardPage() {
-  try {
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    const { user, isLoading } = useAuthState();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { user, isLoading } = useAuthState();
 
-    // Debug logging
-    console.log('Dashboard - User data:', user);
-    console.log('Dashboard - Loading state:', isLoading);
-
-  // Show loading state while auth is initializing
   if (isLoading) {
     return (
       <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
@@ -43,12 +37,11 @@ export default function DashboardPage() {
     );
   }
 
-  // Show message if not authenticated
   if (!user) {
     return (
       <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
         <Box sx={{ display: 'flex', justifyContent: 'center', py: { xs: 4, sm: 8 } }}>
-          <Typography variant={isMobile ? "h5" : "h6"}>Please sign in to access the dashboard.</Typography>
+          <Typography variant="h6">Please sign in to access the dashboard.</Typography>
         </Box>
       </Container>
     );
@@ -94,11 +87,11 @@ export default function DashboardPage() {
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
-      <Typography 
-        variant={isMobile ? "h4" : "h3"} 
-        gutterBottom 
-        align="center" 
-        sx={{ 
+      <Typography
+        variant={isMobile ? "h4" : "h3"}
+        gutterBottom
+        align="center"
+        sx={{
           mb: { xs: 3, sm: 4 },
           fontSize: { xs: '1.75rem', sm: '2.125rem', md: '3rem' },
           fontWeight: 600,
@@ -110,10 +103,10 @@ export default function DashboardPage() {
       <Grid container spacing={{ xs: 2, sm: 3 }}>
         {dashboardItems.map((item, index) => (
           <Grid item xs={12} sm={6} md={4} key={index}>
-            <Card 
-              sx={{ 
-                height: '100%', 
-                display: 'flex', 
+            <Card
+              sx={{
+                height: '100%',
+                display: 'flex',
                 flexDirection: 'column',
                 ...getGlassStyles(theme),
                 boxShadow: getShadow(theme, 'elegant'),
@@ -124,24 +117,24 @@ export default function DashboardPage() {
                 minHeight: isSmallMobile ? 200 : 220,
               }}
             >
-              <CardContent sx={{ 
-                flexGrow: 1, 
+              <CardContent sx={{
+                flexGrow: 1,
                 textAlign: 'center',
                 p: { xs: 2, sm: 3 },
                 '&:last-child': { pb: { xs: 2, sm: 3 } }
               }}>
-                <Box 
-                  sx={{ 
-                    display: 'flex', 
-                    justifyContent: 'center', 
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
                     mb: { xs: 1.5, sm: 2 },
-                    color: item.color 
+                    color: item.color
                   }}
                 >
                   {item.icon}
                 </Box>
-                <Typography 
-                  variant={isMobile ? "h6" : "h6"} 
+                <Typography
+                  variant="h6"
                   gutterBottom
                   sx={{
                     fontSize: { xs: '1.1rem', sm: '1.25rem' },
@@ -151,8 +144,8 @@ export default function DashboardPage() {
                 >
                   {item.title}
                 </Typography>
-                <Typography 
-                  variant="body2" 
+                <Typography
+                  variant="body2"
                   color="text.secondary"
                   sx={{
                     fontSize: { xs: '0.875rem', sm: '1rem' },
@@ -162,17 +155,17 @@ export default function DashboardPage() {
                   {item.description}
                 </Typography>
               </CardContent>
-              <CardActions sx={{ 
-                justifyContent: 'center', 
+              <CardActions sx={{
+                justifyContent: 'center',
                 pb: { xs: 2, sm: 2 },
                 px: { xs: 2, sm: 3 }
               }}>
-                <Button 
+                <Button
                   component={Link}
                   href={item.href}
                   variant="outlined"
                   size={isMobile ? "small" : "medium"}
-                  sx={{ 
+                  sx={{
                     borderColor: item.color,
                     color: item.color,
                     fontSize: { xs: '0.875rem', sm: '1rem' },
@@ -193,14 +186,4 @@ export default function DashboardPage() {
       </Grid>
     </Container>
   );
-  } catch (error) {
-    console.error('Error in DashboardPage:', error);
-    return (
-      <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: { xs: 4, sm: 8 } }}>
-          <Typography variant={isMobile ? "h5" : "h6"}>Something went wrong. Please try again.</Typography>
-        </Box>
-      </Container>
-    );
-  }
 }

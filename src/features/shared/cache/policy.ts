@@ -29,6 +29,7 @@ export const CachePolicy = {
 		launchIndex: 'launch:index:v2',
 		launchCategory: (slug: string) => `launch:category:v2:${slug}`,
 		appDetail: (slugOrId: string) => `app:v2:${slugOrId}`,
+		categories: (type?: string) => `categories:v2:${type || 'both'}`,
 		apiUserBlogsList: (userId: string, q: string) => `api:userblogs:list:v1:${userId}:${q}`,
 		apiUserAppsList: (userId: string, q: string) => `api:userapps:list:v1:${userId}:${q}`,
 		apiUserAppDetail: (userId: string, id: string) => `api:userapps:detail:v1:${userId}:${id}`,

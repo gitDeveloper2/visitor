@@ -2,9 +2,11 @@ import { kvGet, kvSet, kvGetOrSet, kvDel, kvDelByPrefix } from './kv';
 import { CachePolicy } from './policy';
 import { stableStringify, simpleHash, hashObject } from './hash';
 
-const LOG = process.env.NEXT_PUBLIC_CACHE_LOG_LEVEL || process.env.CACHE_LOG_LEVEL || '';
+const defaultLevel = process.env.NODE_ENV === 'production' ? '' : 'basic';
+const LOG = process.env.NEXT_PUBLIC_CACHE_LOG_LEVEL || process.env.CACHE_LOG_LEVEL || defaultLevel;
 const logBasic = LOG === 'basic' || LOG === 'verbose';
 const logVerbose = LOG === 'verbose';
+if (logBasic) console.log(`[Cache] Logging enabled at level: ${LOG || 'none'}`);
 
 async function loggedGet<T>(key: string): Promise<T | null> {
 	const value = await kvGet<T>(key);
