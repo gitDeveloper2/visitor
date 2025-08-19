@@ -23,6 +23,8 @@ import {
   Stack,
   CircularProgress,
   FormHelperText,
+  Card,
+  CardContent,
 } from "@mui/material";
 import { Delete as DeleteIcon, KeyboardArrowUp as UpIcon, KeyboardArrowDown as DownIcon, Check } from "@mui/icons-material";
 import { Star, BadgeCheck, DollarSign, UploadCloud, Github, Globe, User, Code, Plus } from "lucide-react";
@@ -49,6 +51,22 @@ function SubmitAppPageContent() {
   const [editingAppId, setEditingAppId] = useState<string | null>(null);
   const hasLoadedDataRef = useRef(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  // Check for payment success on component mount
+  React.useEffect(() => {
+    const paymentSuccessParam = searchParams.get('payment_success');
+    const appId = searchParams.get('app_id');
+    
+    if (paymentSuccessParam === 'true' && appId) {
+      setPaymentSuccess(true);
+      setSuccess(true);
+      // Clear the URL parameters
+      const url = new URL(window.location.href);
+      url.searchParams.delete('payment_success');
+      url.searchParams.delete('app_id');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [searchParams]);
 
   const [form, setForm] = useState({
     name: "",
@@ -119,6 +137,7 @@ function SubmitAppPageContent() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccess(false);
     
     try {
       // Basic validation
@@ -127,7 +146,90 @@ function SubmitAppPageContent() {
         return;
       }
       
+      const payload = {
+        name: form.name,
+        tagline: form.tagline,
+        description: form.description,
+        fullDescription: form.fullDescription,
+        subcategories: form.subcategories,
+        website: form.website,
+        github: form.github,
+        category: form.category,
+        techStack: form.techStack,
+        pricing: form.pricing,
+        features: form.features,
+        isInternal: form.isInternal,
+        authorName: form.authorName,
+        authorEmail: form.authorEmail,
+        authorBio: form.authorBio,
+        premiumPlan: selectedPremiumPlan, // Include premium plan selection
+      };
+
+      const res = await fetch("/api/user-apps", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.message || "Could not save app");
+      }
+      
+      const result = await res.json();
+      
+      // If premium was selected, redirect to checkout
+      if (selectedPremiumPlan === 'premium' && result.app?._id) {
+        try {
+          const checkoutRes = await fetch("/api/lemonsqueezy/checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              variantId: process.env.NEXT_PUBLIC_LEMON_SQUEEZY_APP_LISTING_VARIANT_ID,
+              custom: {
+                subscription_type: "premium_app_listing",
+                app_id: result.app._id,
+                app_name: form.name,
+                return_url: `${window.location.origin}/dashboard/submit/app?payment_success=true&app_id=${result.app._id}`,
+              },
+            }),
+          });
+
+          if (checkoutRes.ok) {
+            const { checkoutUrl } = await checkoutRes.json();
+            window.location.href = checkoutUrl;
+            return;
+          } else {
+            const errorData = await checkoutRes.json().catch(() => ({}));
+            throw new Error(`Failed to create checkout: ${errorData.error || 'Unknown error'}`);
+          }
+        } catch (checkoutError: any) {
+          console.error('Checkout error:', checkoutError);
+          setError(`Payment setup failed: ${checkoutError.message}. Your app was saved but premium features are not active.`);
+          setSuccess(true);
+          return;
+        }
+      }
+      
       setSuccess(true);
+      setForm({ 
+        name: "", 
+        tagline: "",
+        description: "", 
+        fullDescription: "",
+        subcategories: [],
+        website: "",
+        github: "",
+        category: "",
+        techStack: [],
+        pricing: "Free",
+        features: [],
+        isInternal: false,
+        authorName: "",
+        authorEmail: "",
+        authorBio: "",
+      });
+      setSelectedPremiumPlan(null);
     } catch (err: any) {
       setError(err.message || "Unknown error");
     } finally {
@@ -137,6 +239,20 @@ function SubmitAppPageContent() {
 
   const reviewSteps = ["Initial Review", "Quality Check", "Publication"];
   const pricingOptions = ["Free", "Freemium", "One-time", "Subscription", "Enterprise"];
+
+  const premiumFeatures = [
+    'Verified badge and premium placement',
+    'Priority review process (24-48 hours)',
+    'Enhanced app analytics and insights',
+    'Featured in premium app showcase',
+    'Priority customer support',
+    'Marketing promotion opportunities',
+    'Lifetime premium status (no expiration)',
+  ];
+
+  const handlePremiumSelection = (plan: string | null) => {
+    setSelectedPremiumPlan(plan);
+  };
 
   return (
     <Box component="main" sx={{ bgcolor: "background.default", py: 10 }}>
@@ -151,8 +267,6 @@ function SubmitAppPageContent() {
             : 'Share your innovation with thousands of tech enthusiasts and get the visibility you deserve.'
           }
         </Typography>
-
-
 
         {/* Progress Steps */}
         <Box sx={{ display: 'flex', gap: 2, mb: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -176,7 +290,10 @@ function SubmitAppPageContent() {
 
         {success && (
           <Alert severity="success" sx={{ mb: 3 }}>
-            App submitted successfully! We'll review it and get back to you soon.
+            {paymentSuccess 
+              ? "🎉 Payment successful! Your app has been submitted with premium features activated. We'll review it and get back to you soon."
+              : "App submitted successfully! We'll review it and get back to you soon."
+            }
           </Alert>
         )}
 
@@ -482,6 +599,157 @@ function SubmitAppPageContent() {
                 />
               </Grid>
 
+              {/* Premium Upgrade Option */}
+              <Grid item xs={12}>
+                <Typography variant="h5" fontWeight={600} mb={3} display="flex" alignItems="center" gap={1}>
+                  <DollarSign size={24} color={theme.palette.primary.main} />
+                  Premium Upgrade (Optional)
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  Boost your app's visibility with premium features. This is completely optional.
+                </Typography>
+                
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={6}>
+                    <Card 
+                      sx={{ 
+                        height: '100%',
+                        border: selectedPremiumPlan === 'premium' ? `2px solid ${theme.palette.primary.main}` : `1px solid ${theme.palette.divider}`,
+                        backgroundColor: selectedPremiumPlan === 'premium' ? `${theme.palette.primary.main}08` : 'transparent',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease-in-out',
+                        '&:hover': {
+                          borderColor: theme.palette.primary.main,
+                          backgroundColor: `${theme.palette.primary.main}04`,
+                        }
+                      }}
+                      onClick={() => handlePremiumSelection(selectedPremiumPlan === 'premium' ? null : 'premium')}
+                    >
+                      <CardContent sx={{ p: 3, textAlign: 'center' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                          {selectedPremiumPlan === 'premium' && (
+                            <Check 
+                              size={24} 
+                              color={theme.palette.primary.main} 
+                              sx={{ mr: 1 }}
+                            />
+                          )}
+                          <Star size={32} color={theme.palette.primary.main} />
+                        </Box>
+                        <Typography variant="h6" fontWeight={600} gutterBottom>
+                          Premium Listing
+                        </Typography>
+                        <Typography variant="h4" fontWeight={800} color="primary" gutterBottom>
+                          $19
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          One-time payment • Lifetime benefits
+                        </Typography>
+                        
+                        <Divider sx={{ my: 2 }} />
+                        
+                        <Box sx={{ textAlign: 'left' }}>
+                          {premiumFeatures.slice(0, 4).map((feature, index) => (
+                            <Box key={index} display="flex" alignItems="center" mb={1}>
+                              <Check 
+                                size={16} 
+                                color={theme.palette.success.main} 
+                                sx={{ mr: 1 }}
+                              />
+                              <Typography variant="body2" fontSize="0.875rem">
+                                {feature}
+                              </Typography>
+                            </Box>
+                          ))}
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  
+                  <Grid item xs={12} md={6}>
+                    <Card 
+                      sx={{ 
+                        height: '100%',
+                        border: selectedPremiumPlan === 'free' ? `2px solid ${theme.palette.success.main}` : `1px solid ${theme.palette.divider}`,
+                        backgroundColor: selectedPremiumPlan === 'free' ? `${theme.palette.success.main}08` : 'transparent',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease-in-out',
+                        '&:hover': {
+                          borderColor: theme.palette.success.main,
+                          backgroundColor: `${theme.palette.success.main}04`,
+                        }
+                      }}
+                      onClick={() => handlePremiumSelection(selectedPremiumPlan === 'free' ? null : 'free')}
+                    >
+                      <CardContent sx={{ p: 3, textAlign: 'center' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                          {selectedPremiumPlan === 'free' && (
+                            <Check 
+                              size={24} 
+                              color={theme.palette.success.main} 
+                              sx={{ mr: 1 }}
+                            />
+                          )}
+                          <Typography variant="h4" color="success.main">🎉</Typography>
+                        </Box>
+                        <Typography variant="h6" fontWeight={600} gutterBottom>
+                          Free Listing
+                        </Typography>
+                        <Typography variant="h4" fontWeight={800} color="success.main" gutterBottom>
+                          $0
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          Standard listing • No additional cost
+                        </Typography>
+                        
+                        <Divider sx={{ my: 2 }} />
+                        
+                        <Box sx={{ textAlign: 'left' }}>
+                          <Box display="flex" alignItems="center" mb={1}>
+                            <Check 
+                              size={16} 
+                              color={theme.palette.success.main} 
+                              sx={{ mr: 1 }}
+                            />
+                            <Typography variant="body2" fontSize="0.875rem">
+                              Standard app listing
+                            </Typography>
+                          </Box>
+                          <Box display="flex" alignItems="center" mb={1}>
+                            <Check 
+                              size={16} 
+                              color={theme.palette.success.main} 
+                              sx={{ mr: 1 }}
+                            />
+                            <Typography variant="body2" fontSize="0.875rem">
+                              Community review process
+                            </Typography>
+                          </Box>
+                          <Box display="flex" alignItems="center" mb={1}>
+                            <Check 
+                              size={16} 
+                              color={theme.palette.success.main} 
+                              sx={{ mr: 1 }}
+                            />
+                            <Typography variant="body2" fontSize="0.875rem">
+                              Basic analytics
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                </Grid>
+                
+                {selectedPremiumPlan === 'premium' && (
+                  <Box sx={{ mt: 3, p: 2, backgroundColor: `${theme.palette.primary.main}08`, borderRadius: 2, border: `1px solid ${theme.palette.primary.main}20` }}>
+                    <Typography variant="body2" color="primary" fontWeight={500}>
+                      ⭐ Premium selected! You'll be redirected to payment after submission.
+                    </Typography>
+                  </Box>
+                )}
+              </Grid>
+
               {/* Submit Button */}
               <Grid item xs={12}>
                 <Box mt={4} textAlign="center">
@@ -501,21 +769,6 @@ function SubmitAppPageContent() {
             </Grid>
           </form>
         </Paper>
-        
-
-        
-        <Box sx={{ mt: 3, textAlign: 'center' }}>
-          <Button
-            component={Link}
-            href="/pricing"
-            variant="outlined"
-            size="medium"
-            startIcon={<Star size={20} />}
-            sx={{ borderRadius: 2 }}
-          >
-            View Premium Plans
-          </Button>
-        </Box>
       </Container>
     </Box>
   );
