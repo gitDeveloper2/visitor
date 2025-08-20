@@ -1,0 +1,283 @@
+[33mcommit 48231dfae17d98cca87a4671e62bb0c920d3f5f2[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mgdpr[m[33m)[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Wed Aug 20 21:19:36 2025 +0800
+
+    add launch
+
+[33mcommit dc5872f7923b460e1a68618560223525c9758802[m[33m ([m[1;31morigin/gdpr[m[33m)[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Wed Aug 20 17:06:45 2025 +0800
+
+    before addig votes
+
+[33mcommit 3084617c370dae286d9e4deaabc9daf9819e1d74[m[33m ([m[1;31mfoward-origin/main[m[33m, [m[1;31mfoward-origin/HEAD[m[33m)[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Wed Aug 20 04:54:23 2025 +0800
+
+    data engineering phase 1
+
+[33mcommit 3a72393b6eb1283a4201f2b4f8f350605dbb205b[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Wed Aug 20 04:27:04 2025 +0800
+
+    fix app/blog payments
+
+[33mcommit 1211f79090c6b2fb0972ab7133d6d601aaaa2987[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Wed Aug 20 02:42:23 2025 +0800
+
+    restore app payments options
+
+[33mcommit 65a0ee9a9d3dd157488684dcda8af4fcde832312[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Wed Aug 20 01:54:47 2025 +0800
+
+    cache confirmed
+
+[33mcommit 21cbd0da557d2e708ec4733c4de7848367736d3a[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Tue Aug 19 21:50:55 2025 +0800
+
+    cache
+
+[33mcommit c5c84fec332301c44ea8c17d5293369950d115b6[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Tue Aug 19 18:54:37 2025 +0800
+
+    implement phase 1 of data engineering
+
+[33mcommit a0ba17f38996e8b9920f93ba39d7862fa1838859[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Tue Aug 19 17:51:04 2025 +0800
+
+    working build
+
+[33mcommit f4c6d88c51ed3f9da41f8197486f9c692ce994f6[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Tue Aug 19 06:33:28 2025 +0800
+
+    add adsense gdpr and dashboard ads
+
+[33mcommit eb94f353b1cc46ac667d2a2ab54e798c71fd5e93[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Tue Aug 19 02:54:06 2025 +0800
+
+    unify blog-founder-storeis
+
+[33mcommit f56864db610500ef1416bf547f6dbc3cf56bddaf[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Tue Aug 19 02:44:02 2025 +0800
+
+    unify /apps
+
+[33mcommit b75d05398e858fd9bcad652be6ac67ace019a365[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Tue Aug 19 01:38:01 2025 +0800
+
+    phase 2 unify blogs-apps
+
+[33mcommit 1019d5683739f1f350cf12a842f2b058ad2c3bb7[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Tue Aug 19 01:23:02 2025 +0800
+
+    implement phase 1 app-blog pages sync
+
+[33mcommit 55da663dc69e81e573b6cf2698d47ad32b742cb8[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Tue Aug 19 01:00:42 2025 +0800
+
+    fix /dashboard uniformity
+
+[33mcommit e8b2247c3578cb9e951ed5830227c08dc02301e9[m
+Merge: c0493e9 4dacbdf
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Mon Aug 18 22:13:57 2025 +0800
+
+    Merge branch 'main' of https://github.com/gitDeveloper3/foward into dark-theme
+     the commit.
+
+[33mcommit c0493e93c1e120e2efb2ccd2a117f2b9f88ceb65[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Mon Aug 18 22:12:33 2025 +0800
+
+    base url
+
+[33mcommit 4dacbdfbc416c9ca468fae0bf3a8159c29218f47[m
+Author: gitDeveloper3 <102214365+gitDeveloper3@users.noreply.github.com>
+Date:   Mon Aug 18 21:48:01 2025 +0800
+
+    Update tes
+
+[33mcommit 4f5128862e2795da3ec82bb45a6e7664cff560aa[m
+Merge: 401b137 9f3dcf5
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Mon Aug 18 21:43:10 2025 +0800
+
+    Merge branch 'main' of https://github.com/gitDeveloper3/foward into dark-theme
+    merge commit
+
+[33mcommit 401b137f2eb3ff7c4c6ec3725d94c20ba19d8d59[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Mon Aug 18 21:42:50 2025 +0800
+
+    fix build error
+
+[33mcommit 9f3dcf5c9c6e3a5335c3ddc8f81fe2d0b327ecfc[m
+Author: gitDeveloper3 <102214365+gitDeveloper3@users.noreply.github.com>
+Date:   Mon Aug 18 21:36:49 2025 +0800
+
+    Create tes
+
+[33mcommit 5cbf82c23fdff411b027a82687654ff957c2e2e6[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Mon Aug 18 21:26:02 2025 +0800
+
+    cron change
+
+[33mcommit 2fb5e16cfdc9fbaf46e2c2d9e20b739a9a03dc1d[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Mon Aug 18 21:06:44 2025 +0800
+
+    enhance /blogs seo
+
+[33mcommit 896395d02a28d86b425095065a5b6f16c8850bf8[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Mon Aug 18 20:21:50 2025 +0800
+
+    qty
+
+[33mcommit ca08330d49cb8ce7900a5423eb3a82c3cd289b4e[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Mon Aug 18 18:20:42 2025 +0800
+
+    data restrictions
+
+[33mcommit 875ab9b119a35cd9d24e787317fdfc950869233c[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Mon Aug 18 14:59:34 2025 +0800
+
+    complete /learn
+
+[33mcommit 139cf2742cac7b13d2ce94b0a6c1822313a7dbc8[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Mon Aug 18 14:18:41 2025 +0800
+
+    improved /learn
+
+[33mcommit 0d7f314ccaf4d3b3ede248dfc8068c52738415fa[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Mon Aug 18 02:33:23 2025 +0800
+
+    fix modals background color
+
+[33mcommit dd35b4f84577908cd78b48626ec3aacf13ac132a[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Mon Aug 18 02:02:49 2025 +0800
+
+    fix navbars
+
+[33mcommit 93ac812400f7fd512665ce9f706f42fd4f9e1501[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Mon Aug 18 00:38:53 2025 +0800
+
+    make dashboard mobile responsive
+
+[33mcommit 575dedf53affc7506229e10733892e6a34b7916c[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Sun Aug 17 23:24:17 2025 +0800
+
+    add onboarding
+
+[33mcommit 16f95c59ea0c656e3d850ffeacce4730ec9c2677[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Sun Aug 17 21:35:18 2025 +0800
+
+    add onboarding
+
+[33mcommit d39b752e5a7c3fedc280f5ce1b26bafac9e36ee7[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Sun Aug 17 19:23:55 2025 +0800
+
+    before onboarding
+
+[33mcommit 8c1426ca933de47668d0731ec8760374cbac4d13[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Sun Aug 17 19:12:26 2025 +0800
+
+    fix tag issues
+
+[33mcommit 7b28243783d31b6738e1c434e2f325e7aeef1953[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Sun Aug 17 16:21:03 2025 +0800
+
+    fix admin fetch for all
+
+[33mcommit a45552677a6725c01d111206f7f95e970562f9df[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Sun Aug 17 16:08:06 2025 +0800
+
+    fix build errors
+
+[33mcommit 796131ffaaaf699e31038dc9981ce1af2b7717f0[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Sun Aug 17 07:36:47 2025 +0800
+
+    befor emerging app subkmits
+
+[33mcommit 776535c9446e06d4661cfd44a0ae8eca1156f576[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Sun Aug 17 04:59:36 2025 +0800
+
+    refactor auth
+
+[33mcommit 1ebad239c25755dc11539aa4d4141441a4dfea4b[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Sun Aug 17 04:07:07 2025 +0800
+
+    complete legacy admin migration
+
+[33mcommit 32dd1df41ecd30e7c4864d2a8cd0cf4a7cc8dc53[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Sun Aug 17 03:56:17 2025 +0800
+
+    migrate legacy admin
+
+[33mcommit 8eac58088e5a83c76c0a6cf65fcec707cc67a835[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Sun Aug 17 02:55:13 2025 +0800
+
+    admin migration phase 1
+
+[33mcommit 634fc58cd5d2584b0bd017fc0f7adc51265ec719[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Sun Aug 17 01:53:25 2025 +0800
+
+    add fonts and error handling
+
+[33mcommit a37a5ad58fcd5082594acd5edc9f419627c47f81[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Sun Aug 17 01:01:42 2025 +0800
+
+    add pricing
+
+[33mcommit 77f0d17152601023bf820f650e46195991ab38ea[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Sat Aug 16 22:06:48 2025 +0800
+
+    new convo
+
+[33mcommit 288cd4c1609d51c18f0112773356f8544c8bbd3b[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Sat Aug 16 18:46:56 2025 +0800
+
+    complete apps
+
+[33mcommit 59d3b5ed89acf0d0beae7133713ba9ddae8c45f6[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   Sat Aug 16 17:31:07 2025 +0800
+
+    working
+
+[33mcommit 323ed727728869dd803d3812eaee58870b25f362[m
+Author: gitDeveloper3 <joseph@basicutils.com>
+Date:   

@@ -13,13 +13,12 @@ import ThumbUpAlt from '@mui/icons-material/ThumbUpAlt';
 import { useState, useEffect, useMemo } from 'react';
 import { useVoteMutation } from '@/features/votes/hooks/useVoteMutations';
 import { authClient } from '@/app/auth-client';
+import { isExternalVoteApi } from '@/features/votes/constants';
+import { useVotesContext } from '@/features/providers/VotesContext';
 
 type Props = {
   toolId: string;
   initialVotes: number;
-  // We don't need launchDate, votingDurationHours, votingFlushed for this implementation
-  // as the backend handles voting periods if any. Frontend just shows current state.
-  // votes: Record<string, number> | undefined; // This will come from useVoteCounts or be handled by direct mutation update
 };
 
 export default function VoteButton({
@@ -29,31 +28,93 @@ export default function VoteButton({
   const { data: session, isPending } = authClient.useSession();
   const isAuthenticated = !!session?.user;
   const voteMutation = useVoteMutation();
+  const votes = useVotesContext(); // Get global vote data
 
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [lockout, setLockout] = useState(false);
   const [voted, setVoted] = useState(false);
-  const [currentVotes, setCurrentVotes] = useState(initialVotes);
 
-  // When the mutation succeeds, update local state
+  // Get current vote count from global context or fall back to initial
+  const currentVotes = votes?.[toolId] ?? initialVotes;
+  const hasVoted = currentVotes > initialVotes;
+
+  // Log session and authentication state
   useEffect(() => {
-    if (voteMutation.isSuccess && voteMutation.data) {
-      setCurrentVotes(voteMutation.data.votes ?? currentVotes);
-      setVoted(voteMutation.data.alreadyVoted ?? voted);
-    }
-  }, [voteMutation.isSuccess, voteMutation.data]);
+    console.log('[VoteButton] Session Debug:', {
+      toolId,
+      isAuthenticated,
+      isPending,
+      sessionKeys: session ? Object.keys(session) : [],
+      userKeys: session?.user ? Object.keys(session.user) : [],
+      userId: session?.user?.id,
+      votingToken: (session as any)?.votingToken ? 'present' : 'missing',
+      sessionVotingToken: (session as any)?.session?.votingToken ? 'present' : 'missing',
+      sessionVoteToken: (session as any)?.voteToken ? 'present' : 'missing',
+      isExternalVoteApi,
+      initialVotes,
+      currentVotes,
+      hasVoted,
+      globalVotesAvailable: !!votes,
+    });
+  }, [session, isAuthenticated, isPending, toolId, initialVotes, currentVotes, hasVoted, votes]);
+
+  // Log vote mutation state changes
+  useEffect(() => {
+    console.log('[VoteButton] Vote Mutation State:', {
+      toolId,
+      isPending: voteMutation.isPending,
+      isSuccess: voteMutation.isSuccess,
+      isError: voteMutation.isError,
+      error: voteMutation.error,
+      data: voteMutation.data,
+    });
+  }, [voteMutation.isPending, voteMutation.isSuccess, voteMutation.isError, voteMutation.error, voteMutation.data, toolId]);
+
+  // Update voted state when vote count changes
+  useEffect(() => {
+    setVoted(hasVoted);
+  }, [hasVoted]);
 
   const handleVote = () => {
+    console.log('[VoteButton] Vote Click:', {
+      toolId,
+      isAuthenticated,
+      isPending: voteMutation.isPending,
+      lockout,
+      voted,
+      currentVotes,
+      userId: session?.user?.id,
+      votingToken: (session as any)?.votingToken ? 'present' : 'missing',
+      isExternalVoteApi,
+    });
+
     if (!isAuthenticated) {
+      console.warn('[VoteButton] Blocked: Not authenticated');
       setSnackbarOpen(true);
       return;
     }
 
-    if (voteMutation.isPending || lockout) return;
+    if (voteMutation.isPending) {
+      console.warn('[VoteButton] Blocked: Mutation pending');
+      return;
+    }
+
+    if (lockout) {
+      console.warn('[VoteButton] Blocked: Lockout active');
+      return;
+    }
+
+    console.log('[VoteButton] Starting vote mutation:', { toolId });
     setLockout(true);
 
     voteMutation.mutate(toolId, {
-      onSettled: () => {
+      onSettled: (data, error) => {
+        console.log('[VoteButton] Mutation settled:', {
+          toolId,
+          data,
+          error,
+          success: !error,
+        });
         setTimeout(() => setLockout(false), 3000);
       },
     });
@@ -61,8 +122,18 @@ export default function VoteButton({
 
   return (
     <>
-      <Tooltip title={isAuthenticated ? (voted ? 'Unlike' : 'Like') : 'Please log in to vote'}>
-        <Button
+      <Tooltip
+        title={
+          !isAuthenticated
+            ? 'Please log in to vote'
+            : voteMutation.isPending
+            ? 'Processing...'
+            : lockout
+            ? 'Please wait...'
+            : ''
+        }
+      >
+        <Box
           onClick={handleVote}
           sx={{
             display: 'inline-flex',
@@ -75,9 +146,15 @@ export default function VoteButton({
             px: 1,
             py: 0.5,
             fontSize: '0.8rem',
-            cursor: voteMutation.isPending || lockout ? 'default' : 'pointer',
+            cursor:
+              voteMutation.isPending || lockout || !isAuthenticated
+                ? 'default'
+                : 'pointer',
             boxShadow: 1,
-            pointerEvents: voteMutation.isPending || lockout ? 'none' : 'auto',
+            pointerEvents:
+              voteMutation.isPending || lockout || !isAuthenticated
+                ? 'none'
+                : 'auto',
             transition: 'all 0.2s ease-in-out',
             '&:hover': {
               borderColor: 'primary.main',
@@ -90,14 +167,14 @@ export default function VoteButton({
           ) : (
             <ThumbUpAltOutlined sx={{ fontSize: 18 }} />
           )}
-          {voteMutation.isPending ? (
-            <CircularProgress size={14} />
-          ) : (
+          {currentVotes !== undefined ? (
             <Typography variant="body2" color="inherit">
               {currentVotes}
             </Typography>
+          ) : (
+            <CircularProgress size={14} />
           )}
-        </Button>
+        </Box>
       </Tooltip>
 
       <Snackbar

@@ -11,7 +11,7 @@ import AuthProvider from "@/context/authContexts";
 import { CookieConsentProvider } from "@/context/CookieConsentContext";
 import CookieConsent from "@/components/CookieConsent";
 import AdSenseLoader from "@/components/AdSenseLoader";
-// Removed VotesProvider to avoid global useVotes call
+import { VotesProvider } from '@/features/providers/VotesContext';
 
 export default function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
@@ -26,7 +26,9 @@ export default function Providers({ children }: { children: ReactNode }) {
             <CookieConsent />
             <AdSenseLoader />
             <QueryClientProvider client={queryClient}>
-              {children}
+              <VotesProvider>
+                {children}
+              </VotesProvider>
             </QueryClientProvider>
           </CookieConsentProvider>
         </AuthProvider>

@@ -1,0 +1,45 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "noImplicitAny": false,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve", // ✅ This is what enables JSX
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "baseUrl": "src",
+    "paths": {
+      "@features/*": ["features/*"],
+      "@app/*": ["app/*"],
+      "@components/*": ["features/components/*"], // optional extra alias
+      "@lib/*": ["features/lib/*"]
+    }
+  },
+  "include": [
+    "src",               // ✅ add this so TS knows to index all of src
+    "next-env.d.ts",
+    ".next/types/**/*.ts"
+, "auth-client.ts", "auth.ts"  ],
+  "exclude": [
+    "node_modules",
+     "src/features/Editor/nodes",
+      "src/features/Editor/plugins"
+  ]
+}

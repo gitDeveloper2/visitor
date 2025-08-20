@@ -29,8 +29,8 @@ import UnifiedCTA from "../components/UnifiedCTA";
 import { useEffect, useState } from "react";
 import { fetchCategoriesFromAPI } from "../../../utils/categories";
 import VoteButton from '@/features/tools/components/VoteButton';
-import { useVoteCounts } from '@/features/tools/hooks/useVoteCounts';
 import { computeAppScore } from '@/features/ranking/score';
+import { useVotesContext } from '@/features/providers/VotesContext';
 
 // Categories will be fetched from API
 interface Category {
@@ -187,16 +187,16 @@ export default function AppsMainPage({
 
   // Build ids for vote counts (visible apps on the page)
   const visibleIds = filteredApps.map(a => String(a._id || a._id?.toString())).filter(Boolean);
-  const { data: voteCounts } = useVoteCounts(visibleIds);
+  const votes = useVotesContext(); // Use global vote context instead of individual fetching
 
   // Compute ranking among currently visible apps based on external vote counts (fallback to likes)
   const getId = (a: any) => String(a._id || a._id?.toString());
   const scoreFor = (a: any) => {
-    const votes = Number(voteCounts?.[getId(a)] ?? 0);
+    const voteCount = votes?.[getId(a)] ?? 0;
     const likes = Number(a.likes ?? 0);
     const base = computeAppScore(a) || 0;
     // Likes carry more weight; votes supplement; base score provides tie-breaking/quality
-    return likes * 1.0 + votes * 0.6 + base * 0.3;
+    return likes * 1.0 + voteCount * 0.6 + base * 0.3;
   };
   const sortedFilteredApps = [...filteredApps].sort((a, b) => {
     const vb = scoreFor(b);
@@ -288,7 +288,7 @@ export default function AppsMainPage({
                 <Button component="a" href={app.github} target="_blank" rel="noopener noreferrer" variant="outlined" size="small" sx={{ minWidth: 0, px: 1, py: 0.4, fontSize: '0.7rem' }}>Code</Button>
               )}
               {votingEnabled ? (
-                <VoteButton toolId={appId} initialVotes={voteCounts?.[String(appId)] ?? (app.likes ?? 0)} />
+                <VoteButton toolId={appId} initialVotes={votes?.[String(appId)] ?? (app.likes ?? 0)} />
               ) : (
                 <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, border: '1px solid', borderColor: 'divider', color: 'text.disabled', borderRadius: 2, px: 1, py: 0.5 }}>
                   <ThumbUpAltOutlined sx={{ fontSize: 18, color: 'text.disabled' }} />
@@ -699,7 +699,7 @@ export default function AppsMainPage({
             )}
           </Box>
           {/* Vote button on listing (only on launch day cards) */}
-          <VoteButton toolId={appId} initialVotes={voteCounts?.[String(appId)] ?? (app.likes ?? 0)} />
+          <VoteButton toolId={appId} initialVotes={votes?.[String(appId)] ?? (app.likes ?? 0)} />
         </Box>
 
         {/* Action Buttons */}

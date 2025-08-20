@@ -9,7 +9,9 @@ export function useVoteCounts(toolIds: string[]) {
       if (!toolIds.length) return {} as Record<string, number>;
       const params = new URLSearchParams();
       toolIds.forEach(id => params.append('ids[]', id));
-      const res = await fetch(buildVoteUrl(`/api/vote/batch-count?${params.toString()}`));
+      // Always query our local API for counts. The external microservice
+      // does not implement batch-count, but our app does.
+      const res = await fetch(`/api/vote/batch-count?${params.toString()}`);
       if (!res.ok) throw new Error('Failed to fetch votes');
       const { counts } = await res.json();
       return counts as Record<string, number>;
