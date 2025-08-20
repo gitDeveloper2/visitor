@@ -88,6 +88,8 @@ interface AppItem {
   verificationBadgeVariations?: string[];
   verificationBadgeText?: string;
   verificationBadgeClass?: string;
+  // Launch scheduling
+  launchDate?: string | Date;
 }
 
 interface AppDraft {
@@ -865,6 +867,14 @@ export default function ManageAppsPage() {
                             flexWrap: 'wrap',
                             justifyContent: { xs: 'flex-start', sm: 'flex-end' }
                           }}>
+                            {app.launchDate && (
+                              <Chip
+                                size="small"
+                                variant="outlined"
+                                label={`Launch: ${new Date(app.launchDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`}
+                                sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+                              />
+                            )}
                             {app.isPremium && (
                               <Chip
                                 label="Premium"
@@ -1155,6 +1165,99 @@ export default function ManageAppsPage() {
                               }}
                             >
                               Manage Premium
+                            </Button>
+                          )}
+
+                          {app.launchDate ? (
+                            <>
+                              <Button
+                                variant="outlined"
+                                size={isMobile ? "small" : "medium"}
+                                startIcon={<Refresh />}
+                                onClick={async () => {
+                                  const newDate = prompt('Pick a new date (YYYY-MM-DD)');
+                                  if (!newDate) return;
+                                  try {
+                                    const res = await fetch('/api/launch/slots/reschedule', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ appId: app._id, newDate })
+                                    });
+                                    const j = await res.json().catch(() => ({}));
+                                    if (!res.ok) throw new Error(j.error || 'Failed to reschedule');
+                                    setSnack({ open: true, message: `Rescheduled to ${newDate}`, severity: 'success' });
+                                    fetchApps(false);
+                                  } catch (e: any) {
+                                    setSnack({ open: true, message: e?.message || 'Reschedule failed', severity: 'error' });
+                                  }
+                                }}
+                                fullWidth={isMobile}
+                                sx={{ 
+                                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                  minWidth: { xs: '100%', sm: 'auto' }
+                                }}
+                              >
+                                Reschedule
+                              </Button>
+                              <Button
+                                variant="outlined"
+                                color="error"
+                                size={isMobile ? "small" : "medium"}
+                                startIcon={<DeleteIcon />}
+                                onClick={async () => {
+                                  if (!confirm('Cancel this scheduled launch?')) return;
+                                  try {
+                                    const res = await fetch('/api/launch/slots/cancel', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ appId: app._id })
+                                    });
+                                    const j = await res.json().catch(() => ({}));
+                                    if (!res.ok) throw new Error(j.error || 'Failed to cancel');
+                                    setSnack({ open: true, message: 'Launch cancelled', severity: 'success' });
+                                    fetchApps(false);
+                                  } catch (e: any) {
+                                    setSnack({ open: true, message: e?.message || 'Cancel failed', severity: 'error' });
+                                  }
+                                }}
+                                fullWidth={isMobile}
+                                sx={{ 
+                                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                  minWidth: { xs: '100%', sm: 'auto' }
+                                }}
+                              >
+                                Cancel Launch
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              variant="outlined"
+                              size={isMobile ? "small" : "medium"}
+                              startIcon={<Calendar />}
+                              onClick={async () => {
+                                const date = prompt('Pick a date (YYYY-MM-DD)');
+                                if (!date) return;
+                                try {
+                                  const res = await fetch('/api/launch/slots/book', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ appId: app._id, preferredDate: date, isPremium: !!app.isPremium, votingDurationHours: 24 })
+                                  });
+                                  const j = await res.json().catch(() => ({}));
+                                  if (!res.ok) throw new Error(j.error || 'Failed to book');
+                                  setSnack({ open: true, message: `Launch booked for ${date}`, severity: 'success' });
+                                  fetchApps(false);
+                                } catch (e: any) {
+                                  setSnack({ open: true, message: e?.message || 'Booking failed', severity: 'error' });
+                                }
+                              }}
+                              fullWidth={isMobile}
+                              sx={{ 
+                                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                minWidth: { xs: '100%', sm: 'auto' }
+                              }}
+                            >
+                              Schedule Launch
                             </Button>
                           )}
                         </CardActions>

@@ -1,2 +1,9 @@
-
-test
+I updated /launch to be launch-date aware:
+“Premium Launches Today” and “Today’s Launches” sections are pulled from /api/launch/today (based on launchDate).
+Each card now shows a “Launch: MMM d” chip if it has launchDate.
+Listings use external batch vote counts to display current votes on visible apps.
+I added date selection and booking in the submission form; premium overrides full days.
+Next, I’ll add launch-awareness to dashboard:
+In /dashboard/my-apps: show each app’s scheduled launch date if any; allow rescheduling/cancel.
+In admin: a view to set daily caps, see bookings, and reschedule.
+Say “go” and I’ll wire those in now.

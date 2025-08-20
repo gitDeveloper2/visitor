@@ -43,59 +43,33 @@ export default async function LaunchPage() {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     
-    // Fetch featured apps (premium apps with valid payments within last 7 days)
-    let featuredApps = await Cache.getOrSet(
-      `${Cache.keys.launchIndex}:featured`,
-      CachePolicy.page.launchIndex,
-      async () => {
-        return await db.collection('userapps')
-          .find({ 
-            isPremium: true, 
-            status: 'approved',
-            createdAt: { $gte: sevenDaysAgo }
-          })
-          .sort({ createdAt: -1 })
-          .limit(6)
-          .toArray();
-      }
-    ) as any[];
-    
-    // Verify premium status against actual payment records
-    const verifiedApps = [];
-    for (const app of featuredApps) {
-      const verification = await verifyAppPremiumStatus(db, app._id.toString(), app.authorId);
-      if (verification.isValid) {
-        verifiedApps.push(app);
-      }
-    }
-    
-    featuredApps = verifiedApps;
-    
-    // Fetch all approved apps for the first page (excluding featured apps to avoid duplication)
+    // Fetch only today's approved apps for the main Launch page
+    const today = new Date();
+    const y = today.getUTCFullYear();
+    const m = String(today.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(today.getUTCDate()).padStart(2, '0');
+    const start = new Date(`${y}-${m}-${d}T00:00:00.000Z`);
+    const end = new Date(`${y}-${m}-${d}T23:59:59.999Z`);
+
+    // Premium launching today
+    let featuredApps = await db.collection('userapps')
+      .find({ status: 'approved', isPremium: true, launchDate: { $gte: start, $lte: end } })
+      .sort({ createdAt: -1 })
+      .limit(6)
+      .toArray();
+
+    // All apps launching today (excluding featured duplicates), include premium too to keep grid complete
     const featuredAppIds = featuredApps.map(app => app._id);
-    let allApps = await Cache.getOrSet(
-      Cache.keys.launchIndex,
-      CachePolicy.page.launchIndex,
-      async () => {
-        return await db.collection('userapps')
-          .find({ 
-            status: 'approved',
-            _id: { $nin: featuredAppIds }
-          })
-          .sort({ createdAt: -1 })
-          .limit(12)
-          .toArray();
-      }
-    ) as any[];
+    let allApps = await db.collection('userapps')
+      .find({ status: 'approved', launchDate: { $gte: start, $lte: end } })
+      .sort({ createdAt: -1 })
+      .limit(24)
+      .toArray();
     // Apply ranking score to main list (featured already selected by premium+recency)
     allApps = sortByScore(allApps as any, computeAppScore) as any;
     
-    // Get total count for pagination (excluding featured apps)
-    const totalApps = await Cache.getOrSet(
-      `${Cache.keys.launchIndex}:count`,
-      CachePolicy.page.launchIndex,
-      async () => await db.collection('userapps').countDocuments({ status: 'approved', _id: { $nin: featuredAppIds } })
-    ) as number;
+    // Count only today's non-featured launches for pagination
+    const totalApps = await db.collection('userapps').countDocuments({ status: 'approved', launchDate: { $gte: start, $lte: end } });
 
     // Compute category counts for the "Browse by Category" chips (mirror blogs logic)
     const categoryNames: string[] = await Cache.getOrSet(
@@ -110,17 +84,11 @@ export default async function LaunchPage() {
       }
     ) as any;
 
-    // Use apps from last 7 days for counts (to keep parity with blogs page logic)
-    const recentAppsForCounts = await Cache.getOrSet(
-      `${Cache.keys.launchIndex}:recentCounts`,
-      CachePolicy.page.launchIndex,
-      async () => {
-        return await db.collection('userapps')
-          .find({ status: 'approved', createdAt: { $gte: sevenDaysAgo } })
-          .project({ category: 1 })
-          .toArray();
-      }
-    ) as any[];
+    // Use today's apps for category counts
+    const recentAppsForCounts = await db.collection('userapps')
+      .find({ status: 'approved', launchDate: { $gte: start, $lte: end } })
+      .project({ category: 1 })
+      .toArray();
 
     const categoryCounts = recentAppsForCounts.reduce((acc: any, app: any) => {
       const cat = app.category || 'Uncategorized';
@@ -133,14 +101,32 @@ export default async function LaunchPage() {
       count: categoryCounts[category] || 0,
     }));
 
+    // Non-today apps (for All Apps section)
+    const nonTodayApps = await db.collection('userapps')
+      .find({ 
+        status: 'approved', 
+        $or: [
+          { launchDate: { $lt: start } },
+          { launchDate: { $gt: end } },
+          { launchDate: { $exists: false } }
+        ]
+      })
+      .sort({ createdAt: -1 })
+      .limit(24)
+      .toArray();
+
     // Serialize MongoDB objects before passing to client component
     const serializedApps = serializeMongoObject(allApps);
     const serializedFeaturedApps = serializeMongoObject(featuredApps);
+    const serializedNonToday = serializeMongoObject(nonTodayApps);
 
     // Server-side diagnostics for /launch
     console.log('[LaunchPage] Featured apps (verified) count:', serializedFeaturedApps?.length ?? 0);
     console.log('[LaunchPage] Main apps count:', serializedApps?.length ?? 0, 'TotalApps:', totalApps);
     console.log('[LaunchPage] Category chips:', categoryChips?.length ?? 0);
+
+    // Count of all approved apps not launching today
+    const allAppsCount = await db.collection('userapps').countDocuments({ status: 'approved', $or: [{ launchDate: { $lt: start } }, { launchDate: { $gt: end } }, { launchDate: { $exists: false } }] });
 
     return (
       <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
@@ -159,6 +145,8 @@ export default async function LaunchPage() {
             initialFeaturedApps={serializedFeaturedApps}
             initialTotalApps={totalApps}
             categoryChips={categoryChips}
+            allAppsCount={allAppsCount}
+            initialAllApps={serializedNonToday}
           />
         </Suspense>
       </Container>

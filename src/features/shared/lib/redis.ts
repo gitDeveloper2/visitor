@@ -1,7 +1,23 @@
-// lib/redis.ts
-import { Redis } from '@upstash/redis';
+import Redis from 'ioredis';
 
-export const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+const globalForRedis = globalThis as unknown as {
+  __redis__: Redis | undefined;
+};
+
+// Only create one Redis connection per runtime
+const redis =
+  globalForRedis.__redis__ ?? new Redis(process.env.REDIS_URL!);
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForRedis.__redis__ = redis;
+}
+
+redis.on('connect', () => {
+  console.log('✓ Connected to Redis');
 });
+
+redis.on('error', (err) => {
+  console.error('✗ Redis connection error:', err);
+});
+
+export default redis;

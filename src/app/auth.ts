@@ -9,7 +9,7 @@ import { dbObject } from "../lib/mongodb";
 //   sendVerificationEmail,
 //   sendWelcomeEmail,
 // } from "@features/shared/utils/email";
-// import { encryptVotingToken } from "@features/shared/utils/encryption";
+import { encryptVotingToken } from "@/features/shared/utils/encryption";
 
 export const auth = betterAuth({
   database: mongodbAdapter(dbObject),
@@ -167,9 +167,9 @@ export const auth = betterAuth({
         needsOnboarding?: boolean;
       };
 
-      // const votingToken = encryptVotingToken({
-      //   sub: user.id,
-      // });
+      const votingToken = encryptVotingToken({
+        sub: user.id,
+      });
 
       const decodedSocials = (u.socialAccounts ?? []).map((entry) => {
         const [type, value] = entry.split(":", 2);
@@ -199,7 +199,7 @@ export const auth = betterAuth({
         },
         session: {
           ...session,
-          // votingToken,
+          votingToken,
         },
       };
     }),

@@ -72,6 +72,11 @@ function SubmitAppPageContent() {
   const hasLoadedDataRef = useRef(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [launchDate, setLaunchDate] = useState<string | null>(null);
+  const [launchDateError, setLaunchDateError] = useState<string | null>(null);
+  const [slots, setSlots] = useState<Array<{ date: string; cap: number; booked: number; available: number }>>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [slotsError, setSlotsError] = useState<string | null>(null);
 
   // Check for payment success on component mount
   React.useEffect(() => {
@@ -122,6 +127,43 @@ function SubmitAppPageContent() {
       authorBio: prev.authorBio || (user as any)?.bio || "",
     }));
   }, [user, isEditing]);
+
+  // Fetch launch slots (next 30 days) and refresh when premium selection changes
+  useEffect(() => {
+    const fetchSlots = async () => {
+      setSlotsLoading(true);
+      setSlotsError(null);
+      try {
+        const today = new Date();
+        const y = today.getUTCFullYear();
+        const m = String(today.getUTCMonth() + 1).padStart(2, '0');
+        const d = String(today.getUTCDate()).padStart(2, '0');
+        const from = `${y}-${m}-${d}`;
+        const end = new Date(today);
+        end.setUTCDate(end.getUTCDate() + 30);
+        const ye = end.getUTCFullYear();
+        const me = String(end.getUTCMonth() + 1).padStart(2, '0');
+        const de = String(end.getUTCDate()).padStart(2, '0');
+        const to = `${ye}-${me}-${de}`;
+        const res = await fetch(`/api/launch/slots?from=${from}&to=${to}`);
+        if (!res.ok) throw new Error('Failed to load launch slots');
+        const data = await res.json();
+        setSlots(data.slots || []);
+      } catch (e: any) {
+        setSlotsError(e?.message || 'Could not load availability');
+      } finally {
+        setSlotsLoading(false);
+      }
+    };
+    fetchSlots();
+  }, [selectedPremiumPlan]);
+
+  const isPremiumSelected = selectedPremiumPlan === 'premium';
+  const formatHuman = (dateStr: string) => {
+    const [yy, mm, dd] = dateStr.split('-').map(Number);
+    const dt = new Date(Date.UTC(yy, (mm || 1) - 1, dd || 1));
+    return dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  };
 
   // Validation functions
   const validateAppMetadata = () => {
@@ -334,6 +376,30 @@ function SubmitAppPageContent() {
       }
       
       const result = await res.json();
+
+      // If a launchDate was chosen, attempt booking here
+      if (launchDate && result.app?._id) {
+        try {
+          const bookRes = await fetch('/api/launch/slots/book', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              appId: result.app._id,
+              preferredDate: launchDate,
+              isPremium: selectedPremiumPlan === 'premium',
+              votingDurationHours: 24,
+            }),
+          });
+          if (!bookRes.ok) {
+            const j = await bookRes.json().catch(() => ({}));
+            setLaunchDateError(j.error || 'Could not book the selected date. Please pick another.');
+          } else {
+            setLaunchDateError(null);
+          }
+        } catch (e: any) {
+          setLaunchDateError(e?.message || 'Failed to schedule launch.');
+        }
+      }
       
       // If premium was selected, redirect to checkout
       if (selectedPremiumPlan === 'premium' && result.app?._id) {
@@ -387,6 +453,7 @@ function SubmitAppPageContent() {
         authorBio: "",
       });
       setSelectedPremiumPlan(null);
+      setLaunchDate(null);
       setValidationErrors({});
     } catch (err: any) {
       setError(err.message || "Unknown error");
@@ -1029,6 +1096,52 @@ function SubmitAppPageContent() {
                      .
                    </Typography>
                  </Box>
+              </Grid>
+
+              {/* Launch Scheduling */}
+              <Grid item xs={12}>
+                <Typography variant="h5" fontWeight={600} mb={2}>
+                  Launch Scheduling
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Select your preferred launch date. {isPremiumSelected ? 'Premium can choose any day (priority).' : 'Non‑premium can choose from days with availability.'}
+                </Typography>
+                {slotsLoading && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                    <CircularProgress size={18} />
+                    <Typography variant="body2">Loading availability…</Typography>
+                  </Box>
+                )}
+                {slotsError && (
+                  <Alert severity="warning" sx={{ mb: 2 }}>{slotsError}</Alert>
+                )}
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.0 }}>
+                  {slots.map((s) => {
+                    const disabled = !isPremiumSelected && s.available === 0;
+                    const selected = launchDate === s.date;
+                    return (
+                      <Chip
+                        key={s.date}
+                        label={`${formatHuman(s.date)} · ${Math.max(0, s.available)} left`}
+                        variant={selected ? 'filled' : 'outlined'}
+                        color={selected ? 'primary' : disabled ? 'default' : 'primary'}
+                        onClick={() => {
+                          if (disabled) return;
+                          setLaunchDate(s.date);
+                          setLaunchDateError(null);
+                        }}
+                        disabled={disabled}
+                        sx={{
+                          borderRadius: 2,
+                          opacity: disabled ? 0.6 : 1,
+                        }}
+                      />
+                    );
+                  })}
+                </Box>
+                {launchDateError && (
+                  <FormHelperText error sx={{ mt: 1 }}>{launchDateError}</FormHelperText>
+                )}
               </Grid>
 
               {/* Submit Button */}

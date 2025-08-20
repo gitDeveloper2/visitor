@@ -25,6 +25,7 @@ import VerifiedIcon from "@mui/icons-material/CheckCircleOutline";
 import { Globe } from "lucide-react";
 import { useTheme } from "@mui/material/styles";
 import Image from "next/image";
+// removed: import VoteButton from '@/features/tools/components/VoteButton';
 
 // Optional small Markdown renderer (safe): use a lightweight renderer you sanitize server-side.
 // Here we render plain text with paragraphs to avoid dangerous HTML.
@@ -82,7 +83,7 @@ export default function AppClient({
   github?: string;
 }) {
   const theme = useTheme();
-  const [liked, setLiked] = React.useState(false);
+  // const [liked, setLiked] = React.useState(false); // No longer needed, handled by VoteButton
 
   const surfaceBg =
     (typeof window !== "undefined" && getComputedStyle(document.documentElement).getPropertyValue("--glass-bg")) ||
@@ -152,14 +153,7 @@ export default function AppClient({
                       </Button>
                     )}
 
-                    <Button
-                      variant="outlined"
-                      startIcon={<FavoriteBorderIcon />}
-                      onClick={() => setLiked((s) => !s)}
-                      color={liked ? "primary" : "inherit"}
-                    >
-                      {liked ? `${(stats.likes || 0) + 1}` : stats.likes ?? 0}
-                    </Button>
+                    {/* Removed VoteButton from detail page */}
 
                     <Tooltip title="Share">
                       <IconButton aria-label="Share">
@@ -259,74 +253,91 @@ export default function AppClient({
                     <Typography variant="subtitle2" fontWeight={600} gutterBottom>
                       Tech Stack
                     </Typography>
-                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                      {techStack.map((tech, i) => (
-                        <Chip 
-                          key={i} 
-                          label={tech} 
-                          size="small" 
-                          variant="outlined"
-                          sx={{ fontSize: '0.75rem' }}
-                        />
+                    <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+                      {techStack.map((tech) => (
+                        <Chip key={tech} label={tech} size="small" variant="outlined" />
                       ))}
-                    </Box>
+                    </Stack>
+                  </Box>
+                )}
+                
+                {/* External Links */}
+                {(website || github) && (
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                      Links
+                    </Typography>
+                    <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+                      {website && (
+                        <Button 
+                          variant="outlined" 
+                          size="small" 
+                          startIcon={<Globe size={16} />} 
+                          href={website} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                        >
+                          Website
+                        </Button>
+                      )}
+                      {github && (
+                        <Button 
+                          variant="outlined" 
+                          size="small" 
+                          startIcon={<img src="/github-mark.svg" alt="GitHub" style={{ width: 16, height: 16 }} />} 
+                          href={github} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                        >
+                          GitHub
+                        </Button>
+                      )}
+                    </Stack>
                   </Box>
                 )}
 
                 {/* Features */}
-                {features.length > 0 ? (
+                {features.length > 0 && (
                   <Box>
                     <Typography variant="subtitle2" fontWeight={600} gutterBottom>
                       Key Features
                     </Typography>
-                    <Grid container spacing={2}>
-                      {features.map((feature, i) => (
-                        <Grid item xs={12} sm={6} key={i}>
-                          <Box sx={{ 
-                            p: 2, 
-                            border: `1px solid ${theme.palette.divider}`, 
-                            borderRadius: 1,
-                            backgroundColor: theme.palette.background.paper,
-                            '&:hover': {
-                              backgroundColor: theme.palette.action.hover,
-                            }
-                          }}>
-                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                              ✨ {feature}
-                            </Typography>
-                          </Box>
-                        </Grid>
+                    <Stack spacing={1}>
+                      {features.map((feature, index) => (
+                        <Typography key={index} variant="body2" color="text.secondary">
+                          • {feature}
+                        </Typography>
                       ))}
-                    </Grid>
+                    </Stack>
                   </Box>
-                ) : (
-                  <Typography color="text.secondary">No features listed.</Typography>
                 )}
               </CardContent>
             </Card>
 
             {/* Gallery */}
-            {gallery.length > 0 && (
+            {gallery.length > 1 && (
               <Card sx={{ mb: 3, boxShadow }}>
                 <CardContent sx={{ p: 3 }}>
                   <Typography variant="h6" gutterBottom>
-                    Screenshots
+                    Gallery
                   </Typography>
                   <Grid container spacing={2}>
-                    {gallery.map((src, i) => (
-                      <Grid item xs={6} md={4} key={i}>
+                    {gallery.map((imgSrc, index) => (
+                      <Grid item xs={12} sm={6} md={4} key={index}>
                         <Box
                           sx={{
-                            height: 120,
-                            borderRadius: 1,
+                            width: '100%',
+                            height: 180,
+                            borderRadius: 2,
                             overflow: "hidden",
                             background: theme.palette.background.paper,
+                            boxShadow,
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
                           }}
                         >
-                          <img src={src} alt={`${name} screenshot ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          <img src={imgSrc} alt={`${name} screenshot ${index + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                         </Box>
                       </Grid>
                     ))}
@@ -335,85 +346,21 @@ export default function AppClient({
               </Card>
             )}
 
-            {/* Links & Resources */}
-            {(website || github) && (
-              <Card sx={{ mb: 3, boxShadow }}>
-                <CardContent sx={{ p: 3 }}>
-                  <Typography variant="h6" gutterBottom>
-                    Links & Resources
-                  </Typography>
-                  <Stack spacing={2}>
-                    {website && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Globe size={20} color={theme.palette.primary.main} />
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="subtitle2" fontWeight={600}>
-                            Website
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{ wordBreak: 'break-all' }}>
-                            {website}
-                          </Typography>
-                        </Box>
-                        <Button 
-                          component="a" 
-                          href={website} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          variant="outlined"
-                          size="small"
-                          startIcon={<LaunchIcon />}
-                        >
-                          Visit
-                        </Button>
-                      </Box>
-                    )}
-                    {github && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Box component="span" sx={{ color: theme.palette.text.primary }}>
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                          </svg>
-                        </Box>
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="subtitle2" fontWeight={600}>
-                            Source Code
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{ wordBreak: 'break-all' }}>
-                            {github}
-                          </Typography>
-                        </Box>
-                        <Button 
-                          component="a" 
-                          href={github} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          variant="outlined"
-                          size="small"
-                          startIcon={<LaunchIcon />}
-                        >
-                          View Code
-                        </Button>
-                      </Box>
-                    )}
-                  </Stack>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Related / long-form extras */}
-            <Card sx={{ mb: 3, boxShadow }}>
+            {/* Comments - Integrate your comment system here */}
+            <Card sx={{ boxShadow }}>
               <CardContent sx={{ p: 3 }}>
                 <Typography variant="h6" gutterBottom>
-                  Why this matters
+                  Comments
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Explain the impact, results, or studies. Encourage the maker to add case studies, customer quotes, or links to long-form content so this page is high-value.
+                <Typography color="text.secondary">
+                  Your comment system goes here.
                 </Typography>
+                {/* Example: <CommentSection toolId={id} /> */}
               </CardContent>
             </Card>
           </Grid>
 
-          {/* Right: meta, stats, CTA */}
+          {/* Right: Social, etc. */}
           <Grid item xs={12} md={4}>
             <Card sx={{ mb: 3, p: 2, boxShadow }}>
               <Typography variant="subtitle2" sx={{ mb: 1 }}>

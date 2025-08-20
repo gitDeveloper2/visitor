@@ -17,6 +17,7 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { AppWindow, BadgeCheck, DollarSign, Plus, Search } from "lucide-react";
+import ThumbUpAltOutlined from '@mui/icons-material/ThumbUpAltOutlined';
 import Link from "next/link";
 import {
   getGlassStyles,
@@ -27,6 +28,9 @@ import {
 import UnifiedCTA from "../components/UnifiedCTA";
 import { useEffect, useState } from "react";
 import { fetchCategoriesFromAPI } from "../../../utils/categories";
+import VoteButton from '@/features/tools/components/VoteButton';
+import { useVoteCounts } from '@/features/tools/hooks/useVoteCounts';
+import { computeAppScore } from '@/features/ranking/score';
 
 // Categories will be fetched from API
 interface Category {
@@ -44,13 +48,17 @@ interface AppsMainPageProps {
   initialFeaturedApps: any[];
   initialTotalApps: number;
   categoryChips?: { category: string; count: number }[];
+  allAppsCount?: number; // total approved apps excluding today's
+  initialAllApps?: any[]; // non-today apps for All Apps section
 }
 
 export default function AppsMainPage({ 
   initialApps, 
   initialFeaturedApps, 
   initialTotalApps,
-  categoryChips = []
+  categoryChips = [],
+  allAppsCount,
+  initialAllApps = []
 }: AppsMainPageProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'), { noSsr: true });
@@ -58,6 +66,7 @@ export default function AppsMainPage({
 
   const [apps, setApps] = useState(initialApps);
   const [featuredApps, setFeaturedApps] = useState(initialFeaturedApps);
+  const [allAppsList, setAllAppsList] = useState(initialAllApps);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedFilter, setSelectedFilter] = useState("All");
@@ -67,6 +76,8 @@ export default function AppsMainPage({
   const [searchQuery, setSearchQuery] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [todayPremium, setTodayPremium] = useState<any[]>([]);
+  const [todayNonPremium, setTodayNonPremium] = useState<any[]>([]);
 
   // No need to gate rendering; useMediaQuery uses noSsr to avoid hydration mismatches
 
@@ -86,6 +97,20 @@ export default function AppsMainPage({
     };
 
     fetchCategories();
+  }, []);
+
+  // Fetch today's launches for top sections
+  useEffect(() => {
+    const fetchToday = async () => {
+      try {
+        const res = await fetch('/api/launch/today');
+        if (!res.ok) return;
+        const data = await res.json();
+        setTodayPremium(data.premium || []);
+        setTodayNonPremium(data.nonPremium || []);
+      } catch {}
+    };
+    fetchToday();
   }, []);
 
   // Filter apps based on search query
@@ -160,9 +185,121 @@ export default function AppsMainPage({
     fetchApps();
   }, [selectedFilter, currentPage, initialApps, initialTotalApps]);
 
+  // Build ids for vote counts (visible apps on the page)
+  const visibleIds = filteredApps.map(a => String(a._id || a._id?.toString())).filter(Boolean);
+  const { data: voteCounts } = useVoteCounts(visibleIds);
+
+  // Compute ranking among currently visible apps based on external vote counts (fallback to likes)
+  const getId = (a: any) => String(a._id || a._id?.toString());
+  const scoreFor = (a: any) => {
+    const votes = Number(voteCounts?.[getId(a)] ?? 0);
+    const likes = Number(a.likes ?? 0);
+    const base = computeAppScore(a) || 0;
+    // Likes carry more weight; votes supplement; base score provides tie-breaking/quality
+    return likes * 1.0 + votes * 0.6 + base * 0.3;
+  };
+  const sortedFilteredApps = [...filteredApps].sort((a, b) => {
+    const vb = scoreFor(b);
+    const va = scoreFor(a);
+    if (vb !== va) return vb - va;
+    // Tie-breaker: premium first, then recency
+    if (!!b.isPremium !== !!a.isPremium) return (b.isPremium ? 1 : 0) - (a.isPremium ? 1 : 0);
+    const tb = new Date(b.createdAt || 0).getTime();
+    const ta = new Date(a.createdAt || 0).getTime();
+    return tb - ta;
+  });
+  const rankMap: Record<string, number> = {};
+  sortedFilteredApps.forEach((app, idx) => { rankMap[getId(app)] = idx + 1; });
+
   const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
     setCurrentPage(value);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const renderAppCardHorizontal = (app, votingEnabled: boolean = false) => {
+    const appId = app._id?.toString() || app._id;
+    return (
+      <Paper
+        key={appId}
+        sx={{
+          borderRadius: '1rem',
+          overflow: 'hidden',
+          background: theme.palette.background.paper,
+          boxShadow: getShadow(theme, 'elegant'),
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'stretch',
+          minHeight: { xs: 120, sm: 140 },
+          transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+          '&:hover': { transform: 'translateY(-3px)', boxShadow: getShadow(theme, 'neon') },
+          ...(app.isPremium && { border: `1px solid ${theme.palette.primary.main}` }),
+        }}
+      >
+        {/* Image */}
+        {app.imageUrl && (
+          <Box
+            sx={{
+              width: { xs: 110, sm: 140 },
+              backgroundImage: `url('${app.imageUrl}')`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          />
+        )}
+        {/* Content */}
+        <Box sx={{ p: { xs: 1.5, sm: 2 }, flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.5 }}>
+            {rankMap[appId] !== undefined && (
+              <Chip size="small" label={`#${rankMap[appId]}`} sx={{ fontWeight: 700 }} />
+            )}
+            {app.launchDate && (
+              <Chip
+                size="small"
+                variant="outlined"
+                label={`Launch: ${new Date(app.launchDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`}
+                sx={{ fontSize: { xs: '0.65rem', sm: '0.7rem' } }}
+              />
+            )}
+            {app.isPremium && (
+              <Chip size="small" label="Premium" sx={{ bgcolor: theme.palette.primary.main, color: theme.palette.primary.contrastText }} />
+            )}
+          </Box>
+
+          <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
+            {app.name}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
+            {app.description?.slice(0, 120)}{app.description && app.description.length > 120 ? '…' : ''}
+          </Typography>
+
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1, gap: 1 }}>
+            <Typography variant="caption" color="text.secondary">
+              {app.isPremium ? 'Premium' : (app.pricing || 'Free')}
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {/* Subtle compact buttons aligned to the far right */}
+              {(app.isPremium || app.verificationStatus === 'verified' || app.isTop3Today) && app.slug && (
+                <Button component={Link} href={`/launch/${app.slug}`} variant="outlined" size="small" sx={{ minWidth: 0, px: 1, py: 0.4, fontSize: '0.7rem' }}>Details</Button>
+              )}
+              {app.website && (
+                <Button component="a" href={app.website} target="_blank" rel={app.dofollow ? 'noopener noreferrer' : 'nofollow noopener noreferrer'} variant="outlined" size="small" sx={{ minWidth: 0, px: 1, py: 0.4, fontSize: '0.7rem' }}>Visit</Button>
+              )}
+              {app.github && (
+                <Button component="a" href={app.github} target="_blank" rel="noopener noreferrer" variant="outlined" size="small" sx={{ minWidth: 0, px: 1, py: 0.4, fontSize: '0.7rem' }}>Code</Button>
+              )}
+              {votingEnabled ? (
+                <VoteButton toolId={appId} initialVotes={voteCounts?.[String(appId)] ?? (app.likes ?? 0)} />
+              ) : (
+                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, border: '1px solid', borderColor: 'divider', color: 'text.disabled', borderRadius: 2, px: 1, py: 0.5 }}>
+                  <ThumbUpAltOutlined sx={{ fontSize: 18, color: 'text.disabled' }} />
+                  <Typography variant="body2" color="text.disabled">{(app.likes ?? 0)}</Typography>
+                </Box>
+              )}
+            </Box>
+          </Box>
+        </Box>
+      </Paper>
+    );
   };
 
   const renderBadges = (badges: string[]) => {
@@ -311,6 +448,28 @@ export default function AppsMainPage({
             </Typography>
           </Box>
         </Box>
+
+        {/* Rank + Launch Date */}
+        {(rankMap[appId] !== undefined || app.launchDate) && (
+          <Box sx={{ mb: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            {rankMap[appId] !== undefined && (
+              <Chip
+                size="small"
+                label={`#${rankMap[appId]}`}
+                color="default"
+                sx={{ fontWeight: 600, fontSize: { xs: '0.65rem', sm: '0.7rem' } }}
+              />
+            )}
+            {app.launchDate && (
+              <Chip
+                size="small"
+                variant="outlined"
+                label={`Launch: ${new Date(app.launchDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`}
+                sx={{ fontSize: { xs: '0.65rem', sm: '0.7rem' } }}
+              />
+            )}
+          </Box>
+        )}
 
         {/* App Title */}
         <Typography 
@@ -539,13 +698,8 @@ export default function AppsMainPage({
               </Box>
             )}
           </Box>
-          {app.likes && (
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <Typography variant="caption">
-                {app.likes} likes
-              </Typography>
-            </Box>
-          )}
+          {/* Vote button on listing (only on launch day cards) */}
+          <VoteButton toolId={appId} initialVotes={voteCounts?.[String(appId)] ?? (app.likes ?? 0)} />
         </Box>
 
         {/* Action Buttons */}
@@ -555,18 +709,19 @@ export default function AppsMainPage({
               component="a"
               href={app.website}
               target="_blank"
-              rel="noopener noreferrer"
+              rel={app.dofollow ? 'noopener noreferrer' : 'nofollow noopener noreferrer'}
               variant="outlined"
               size={isMobile ? "small" : "small"}
               sx={{ 
                 flex: 1,
-                fontWeight: 600,
+                fontWeight: 500,
                 borderColor: theme.palette.divider,
-                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                color: theme.palette.text.secondary,
                 "&:hover": {
                   borderColor: theme.palette.primary.main,
-                  backgroundColor: theme.palette.primary.main,
-                  color: theme.palette.primary.contrastText,
+                  backgroundColor: 'transparent',
+                  color: theme.palette.text.primary,
                 }
               }}
             >
@@ -584,13 +739,14 @@ export default function AppsMainPage({
               size={isMobile ? "small" : "small"}
               sx={{ 
                 flex: 1,
-                fontWeight: 600,
+                fontWeight: 500,
                 borderColor: theme.palette.divider,
-                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                color: theme.palette.text.secondary,
                 "&:hover": {
                   borderColor: theme.palette.primary.main,
-                  backgroundColor: theme.palette.primary.main,
-                  color: theme.palette.primary.contrastText,
+                  backgroundColor: 'transparent',
+                  color: theme.palette.text.primary,
                 }
               }}
             >
@@ -598,8 +754,8 @@ export default function AppsMainPage({
             </Button>
           )}
 
-          {/* Only show View Details for featured apps */}
-          {featuredApps.some(featuredApp => featuredApp._id?.toString() === app._id?.toString()) && (
+          {/* View Details for premium, verified, or today's top-3; featured stays eligible */}
+          {(featuredApps.some(f => f._id?.toString() === app._id?.toString()) || app.isPremium || app.verificationStatus === 'verified' || app.isTop3Today) && app.slug && (
             <Button
               component={Link}
               href={`/launch/${app.slug}`}
@@ -607,13 +763,14 @@ export default function AppsMainPage({
               size={isMobile ? "small" : "small"}
               sx={{ 
                 flex: 1, 
-                fontWeight: 600,
+                fontWeight: 500,
                 borderColor: theme.palette.divider,
-                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                color: theme.palette.text.secondary,
                 "&:hover": {
                   borderColor: theme.palette.primary.main,
-                  backgroundColor: theme.palette.primary.main,
-                  color: theme.palette.primary.contrastText,
+                  backgroundColor: 'transparent',
+                  color: theme.palette.text.primary,
                 }
               }}
             >
@@ -861,7 +1018,59 @@ export default function AppsMainPage({
         </Box>
       )}
 
-      {/* All Apps Section */}
+      {/* Premium Launches Today */}
+      {todayPremium.length > 0 && (
+        <Box sx={{ mb: { xs: 4, sm: 6 } }}>
+          <Typography
+            variant={isMobile ? "h6" : "h6"}
+            sx={{ 
+              fontWeight: 700, 
+              mb: { xs: 2, sm: 3 }, 
+              color: "text.primary",
+              fontSize: { xs: '1.1rem', sm: '1.25rem' }
+            }}
+          >
+            <Box component="span" sx={{ color: theme.palette.primary.main }}>
+              Premium Launches Today
+            </Box>
+          </Typography>
+          <Grid container spacing={{ xs: 2, sm: 2 }}>
+            {todayPremium.map((app) => (
+              <Grid item xs={12} key={app._id?.toString() || app._id}>
+                {renderAppCardHorizontal(app, true)}
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      )}
+
+      {/* Today's Launches (Non-premium) */}
+      {todayNonPremium.length > 0 && (
+        <Box sx={{ mb: { xs: 4, sm: 6 } }}>
+          <Typography
+            variant={isMobile ? "h6" : "h6"}
+            sx={{ 
+              fontWeight: 700, 
+              mb: { xs: 2, sm: 3 }, 
+              color: "text.primary",
+              fontSize: { xs: '1.1rem', sm: '1.25rem' }
+            }}
+          >
+            <Box component="span" sx={{ color: theme.palette.text.primary }}>
+              Today's Launches
+            </Box>
+          </Typography>
+          <Grid container spacing={{ xs: 2, sm: 2 }}>
+            {todayNonPremium.map((app) => (
+              <Grid item xs={12} key={app._id?.toString() || app._id}>
+                {renderAppCardHorizontal(app, true)}
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      )}
+
+      {/* All Apps Section (not launching today) */}
       <Box sx={{ mt: { xs: 4, sm: 6 }, mb: { xs: 2, sm: 3 } }}>
         <Typography
           variant={isMobile ? "h6" : "h6"}
@@ -873,6 +1082,11 @@ export default function AppsMainPage({
           }}
         >
           All Apps
+          {typeof allAppsCount === 'number' && (
+            <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+              ({allAppsCount.toLocaleString()})
+            </Typography>
+          )}
         </Typography>
       </Box>
 
@@ -891,12 +1105,12 @@ export default function AppsMainPage({
 
       {!loading && !error && (
         <>
-          {filteredApps.length > 0 ? (
+          {sortedFilteredApps.length > 0 ? (
             <>
-              <Grid container spacing={{ xs: 2, sm: 3, md: 4 }}>
-                {filteredApps.map((app) => (
-                  <Grid item xs={12} sm={6} md={4} key={app._id?.toString() || app._id}>
-                    {renderAppCard(app)}
+              <Grid container spacing={{ xs: 2, sm: 2, md: 2 }}>
+                {allAppsList.map((app) => (
+                  <Grid item xs={12} key={app._id?.toString() || app._id}>
+                    {renderAppCardHorizontal(app, false)}
                   </Grid>
                 ))}
               </Grid>

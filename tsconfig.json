@@ -29,7 +29,8 @@
       "@data/*": ["./src/app/data/*"],
       "@lib/*": ["./src/lib/*"],
       "@/lib/*": ["./src/lib/*"],
-      "@/models/*": ["./src/models/*"]
+      "@/models/*": ["./src/models/*"],
+      "@/types/*": ["./src/types/*"]
     },
     "strictNullChecks": false,
     "noImplicitAny": false,

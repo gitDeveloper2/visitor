@@ -137,6 +137,24 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 My Apps
               </Button>
 
+              <Button
+                component={Link}
+                href="/dashboard/admin/launch"
+                startIcon={<AppsIcon />}
+                variant="text"
+                sx={{
+                  fontWeight: 500,
+                  textTransform: "none",
+                  color: "text.secondary",
+                  "&:hover": {
+                    bgcolor: "action.hover",
+                    color: "text.primary",
+                  },
+                }}
+              >
+                Admin Launch
+              </Button>
+
               {/* Blogs Section */}
               <Button
                 component={Link}

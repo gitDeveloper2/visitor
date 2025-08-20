@@ -46,6 +46,11 @@ interface IApp {
   verificationBadgeVariations?: string[]; // All HTML variations with consistent text
   verificationBadgeTextPool?: string[]; // Available text variations for this app
   verificationBadgeClassPool?: string[]; // Available CSS class variations for this app
+
+  // Voting / launch scheduling
+  launchDate?: Date;
+  votingDurationHours?: number;
+  votingFlushed?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -103,6 +108,11 @@ const appSchema = new Schema<IAppDocument>(
     verificationBadgeVariations: { type: [String], default: [] },
     verificationBadgeTextPool: { type: [String], default: [] },
     verificationBadgeClassPool: { type: [String], default: [] },
+
+    // Voting / launch scheduling
+    launchDate: { type: Date },
+    votingDurationHours: { type: Number, default: 24 },
+    votingFlushed: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
