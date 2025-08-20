@@ -33,10 +33,24 @@ export default function VoteButton({
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [lockout, setLockout] = useState(false);
   const [voted, setVoted] = useState(false);
+  const [allowRender, setAllowRender] = useState(false);
+
+  // Check if we have live votes for this tool
+  const hasLiveVote = votes && toolId in votes;
+
+  // Allow render after a short delay to prevent flash of initial votes
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setAllowRender(true);
+    }, 100);
+    return () => clearTimeout(timeout);
+  }, []);
 
   // Get current vote count from global context or fall back to initial
-  const currentVotes = votes?.[toolId] ?? initialVotes;
-  const hasVoted = currentVotes > initialVotes;
+  const currentVotes = hasLiveVote ? votes![toolId]! : allowRender ? initialVotes : undefined;
+  
+  // Check if user has voted by comparing current votes with initial votes (like reference project)
+  const hasVoted = currentVotes !== undefined && currentVotes > initialVotes;
 
   // Log session and authentication state
   useEffect(() => {
@@ -70,10 +84,18 @@ export default function VoteButton({
     });
   }, [voteMutation.isPending, voteMutation.isSuccess, voteMutation.isError, voteMutation.error, voteMutation.data, toolId]);
 
-  // Update voted state when vote count changes
+  // Update voted state when vote count changes (like reference project)
   useEffect(() => {
+    if (!isAuthenticated || !hasLiveVote) return;
+    console.log('[VoteButton] Vote count changed:', {
+      toolId,
+      hasVoted,
+      currentVotes,
+      initialVotes,
+      hasLiveVote,
+    });
     setVoted(hasVoted);
-  }, [hasVoted]);
+  }, [votes, toolId, initialVotes, isAuthenticated, hasLiveVote, hasVoted, currentVotes]);
 
   const handleVote = () => {
     console.log('[VoteButton] Vote Click:', {

@@ -96,7 +96,14 @@ export const useVoteMutation = () => {
         data,
       });
 
-      return data;
+      // Transform the response to match the expected format
+      return {
+        success: true,
+        voted: data.alreadyVoted ? true : undefined,
+        unvoted: !data.alreadyVoted ? true : undefined,
+        votes: data.votes,
+        alreadyVoted: data.alreadyVoted,
+      };
     },
 
     onMutate: async (toolId) => {
@@ -113,23 +120,33 @@ export const useVoteMutation = () => {
       
       if (!toolId) return;
 
-      // Update the global votes context (matches reference project)
+      // Update the global votes context with the actual vote count from the server
       queryClient.setQueryData<Record<string, number>>(['votes'], (old) => {
-        const current = old?.[toolId] ?? 0;
-        const newCount = data.alreadyVoted ? current + 1 : Math.max(0, current - 1);
-        
         console.log('[useVoteMutations] Updating vote count:', {
           toolId,
-          oldCount: current,
-          newCount,
-          alreadyVoted: data.alreadyVoted,
+          oldCount: old?.[toolId] ?? 0,
+          newCount: data.votes,
+          voted: data.voted,
+          unvoted: data.unvoted,
         });
         
         return {
           ...old,
-          [toolId]: newCount,
+          [toolId]: data.votes,
         } as Record<string, number>;
       });
+
+      // Invalidate related queries to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ['votes'] });
+      queryClient.invalidateQueries({ queryKey: ['voteStatus'] });
+      queryClient.invalidateQueries({ queryKey: ['vote', 'batch-count'] });
+      
+      // Force refetch to ensure immediate UI updates
+      queryClient.refetchQueries({ queryKey: ['votes'] });
+      
+
+      
+
     },
 
     onError: (error, toolId, context) => {
