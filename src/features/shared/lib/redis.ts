@@ -22,24 +22,35 @@ const createStubRedis = (): RedisLike => {
   };
 };
 
-const hasRedisUrl = !!process.env.REDIS_URL;
+const rawRedisUrl = (process.env.REDIS_URL || '').trim();
+const isLikelyValidRedisUrl = /^rediss?:\/\//i.test(rawRedisUrl);
+const hasRedisUrl = Boolean(rawRedisUrl && isLikelyValidRedisUrl);
 
 const globalForRedis = globalThis as unknown as {
   __redis__: RedisLike | undefined;
 };
 
 function createRedisClient(): RedisLike {
+  // If REDIS_URL is missing or malformed, avoid instantiating ioredis
   if (!hasRedisUrl) {
-    // During build or when REDIS_URL is not set, export a no-op client
     return createStubRedis();
   }
-  const client = new Redis(process.env.REDIS_URL as string);
+
+  const client = new Redis(rawRedisUrl, {
+    // Prevent eager connection attempts during build/startup
+    lazyConnect: true,
+    maxRetriesPerRequest: 1,
+    enableOfflineQueue: true,
+  } as any);
+
+  // Best-effort connect on first command; listeners for observability
   client.on('connect', () => {
     console.log('✓ Connected to Redis');
   });
   client.on('error', (err) => {
     console.error('✗ Redis connection error:', err);
   });
+
   return client as unknown as RedisLike;
 }
 

@@ -102,15 +102,19 @@ export default async function LaunchPage() {
     }));
 
     // Non-today apps (for All Apps section)
+    const nonTodayFilter = {
+      status: 'approved',
+      $or: [
+        { launchDate: { $lt: start } },
+        { launchDate: { $gt: end } },
+        { launchDate: null },
+        { launchDate: { $exists: false } },
+        { launchDate: { $type: 'string' } },
+      ]
+    } as const;
+
     const nonTodayApps = await db.collection('userapps')
-      .find({ 
-        status: 'approved', 
-        $or: [
-          { launchDate: { $lt: start } },
-          { launchDate: { $gt: end } },
-          { launchDate: { $exists: false } }
-        ]
-      })
+      .find(nonTodayFilter as any)
       .sort({ createdAt: -1 })
       .limit(24)
       .toArray();
@@ -120,13 +124,10 @@ export default async function LaunchPage() {
     const serializedFeaturedApps = serializeMongoObject(featuredApps);
     const serializedNonToday = serializeMongoObject(nonTodayApps);
 
-    // Server-side diagnostics for /launch
-    console.log('[LaunchPage] Featured apps (verified) count:', serializedFeaturedApps?.length ?? 0);
-    console.log('[LaunchPage] Main apps count:', serializedApps?.length ?? 0, 'TotalApps:', totalApps);
-    console.log('[LaunchPage] Category chips:', categoryChips?.length ?? 0);
+    // Diagnostics removed for cleaner logs
 
     // Count of all approved apps not launching today
-    const allAppsCount = await db.collection('userapps').countDocuments({ status: 'approved', $or: [{ launchDate: { $lt: start } }, { launchDate: { $gt: end } }, { launchDate: { $exists: false } }] });
+    const allAppsCount = await db.collection('userapps').countDocuments(nonTodayFilter as any);
 
     return (
       <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>

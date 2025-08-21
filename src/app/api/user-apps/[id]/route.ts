@@ -50,54 +50,33 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    console.log("🔵 PUT request received for app ID:", params.id);
-    
     const session = await getSession();
-    console.log("🔵 Session data:", JSON.stringify(session, null, 2));
-    
     if (!session?.user) {
-      console.log("❌ Unauthenticated User");
       return NextResponse.json({ message: 'Unauthenticated User' }, { status: 401 });
     }
-    
-    console.log("✅ User authenticated:", session.user.id, session.user.email);
-    
     const { db } = await connectToDatabase();
-    console.log("✅ Database connected");
 
     if (!ObjectId.isValid(params.id)) {
-      console.log("❌ Invalid app ID format:", params.id);
       return NextResponse.json({ message: 'Invalid app ID' }, { status: 400 });
     }
     
-    console.log("✅ App ID is valid ObjectId");
-    
     const updateData = await request.json();
-    console.log("🔵 Update data received:", JSON.stringify(updateData, null, 2));
     
     // Check if this is a status-only update or full app update
     if (updateData.status && Object.keys(updateData).length === 1) {
-      console.log("🔵 Status-only update detected");
-      
       const { status } = updateData;
-      console.log("🔵 New status:", status);
       
       if (!['pending', 'approved', 'rejected'].includes(status)) {
-        console.log("❌ Invalid status:", status);
         return NextResponse.json({ message: 'Invalid status' }, { status: 400 });
       }
 
       // Check if app exists and get current data
       const currentApp = await db.collection('userapps').findOne({ _id: new ObjectId(params.id) });
-      console.log("🔵 Current app data:", JSON.stringify(currentApp, null, 2));
       
       if (!currentApp) {
-        console.log("❌ App not found in database");
         return NextResponse.json({ message: 'App not found' }, { status: 404 });
       }
 
-      console.log("🔵 Attempting to update app status from", currentApp.status, "to", status);
-      
       const result = await db
         .collection('userapps')
         .updateOne(
@@ -105,19 +84,13 @@ export async function PUT(
           { $set: { status, updatedAt: new Date() } }
         );
 
-      console.log("🔵 Update result:", JSON.stringify(result, null, 2));
-
       if (result.matchedCount === 0) {
-        console.log("❌ No app found to update");
         return NextResponse.json({ message: 'App not found' }, { status: 404 });
       }
 
       if (result.modifiedCount === 0) {
-        console.log("⚠️ App found but no changes made");
         return NextResponse.json({ message: 'No changes made to app status' }, { status: 400 });
       }
-
-      console.log("✅ App status updated successfully");
       try {
         if (currentApp) {
           revalidateTag('launch:list');

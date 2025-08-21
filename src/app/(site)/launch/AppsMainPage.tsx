@@ -85,12 +85,10 @@ export default function AppsMainPage({
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        console.log('[AppsMainPage] Fetching categories (client)...');
         const categoriesData = await fetchCategoriesFromAPI('app');
-        console.log('[AppsMainPage] Categories fetched:', categoriesData?.length ?? 0);
         setCategories(categoriesData);
-      } catch (error) {
-        console.error('[AppsMainPage] Error fetching categories:', error);
+      } catch {
+        // ignore
       } finally {
         setCategoriesLoading(false);
       }
@@ -147,7 +145,6 @@ export default function AppsMainPage({
       setLoading(true);
       setError(null);
       try {
-        console.log('[AppsMainPage] Fetching apps with filter/page:', { selectedFilter, currentPage });
         const params = new URLSearchParams();
         params.append("approved", "true");
         params.append("page", currentPage.toString());
@@ -166,16 +163,13 @@ export default function AppsMainPage({
 
         // Use public apps API to support unauthenticated browsing
         const url = `/api/user-apps/public?${params.toString()}`;
-        console.log('[AppsMainPage] Fetch URL:', url);
         const res = await fetch(url);
         if (!res.ok) throw new Error("Failed to fetch apps");
         const data = await res.json();
-        console.log('[AppsMainPage] Apps fetched:', data?.apps?.length ?? 0, 'Total:', data?.total ?? 0);
         setApps(data.apps || []);
         setTotalPages(Math.ceil((data.total || 0) / 12));
         setTotalApps(data.total || 0);
       } catch (err: any) {
-        console.error('[AppsMainPage] Fetch apps error:', err);
         setError(err.message || "Unknown error");
       } finally {
         setLoading(false);
@@ -1117,7 +1111,7 @@ export default function AppsMainPage({
 
       {!loading && !error && (
         <>
-          {sortedFilteredApps.length > 0 ? (
+          {allAppsList.length > 0 ? (
             <>
               <Grid container spacing={{ xs: 2, sm: 2, md: 2 }}>
                 {allAppsList.map((app) => (
