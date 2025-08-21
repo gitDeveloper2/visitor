@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import { IVoteResponse } from '@/types/IVoteResponse'; // Assuming you'll create this type
 import { getVoteSummaryModel } from '../models/VoteSummary';
 import { getVoteModel } from '../models/Vote';
-import { getAppModel } from '@/models/App'; // Assuming this is your App/Tool model path
+import App from '@/models/App'; // Use default-exported Mongoose model
 
 
 export async function getUserUpvotedTools(userId: string) {
@@ -13,7 +13,6 @@ export async function getUserUpvotedTools(userId: string) {
   const toolIds = votes.map((v) => v.toolId);
   if (toolIds.length === 0) return [];
 
-  const App = getAppModel();
   const tools = await App.find({ _id: { $in: toolIds } }).sort({ createdAt: -1 }).lean();
   return tools;
 }

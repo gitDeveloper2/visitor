@@ -1,23 +1,51 @@
 import Redis from 'ioredis';
 
-const globalForRedis = globalThis as unknown as {
-  __redis__: Redis | undefined;
+type RedisLike = {
+  get: (key: string) => Promise<string | null>;
+  set: (...args: any[]) => Promise<any>;
+  incr: (key: string) => Promise<number>;
+  decr: (key: string) => Promise<number>;
+  mget: (...keys: string[]) => Promise<(string | null)[]>;
+  sadd?: (key: string, ...members: string[]) => Promise<number>;
+  srem?: (key: string, ...members: string[]) => Promise<number>;
 };
 
-// Only create one Redis connection per runtime
-const redis =
-  globalForRedis.__redis__ ?? new Redis(process.env.REDIS_URL!);
+const createStubRedis = (): RedisLike => {
+  return {
+    async get() { return null; },
+    async set() { return 'OK'; },
+    async incr() { return 1; },
+    async decr() { return 0; },
+    async mget(...keys: string[]) { return keys.map(() => null); },
+    async sadd() { return 0; },
+    async srem() { return 0; },
+  };
+};
 
+const hasRedisUrl = !!process.env.REDIS_URL;
+
+const globalForRedis = globalThis as unknown as {
+  __redis__: RedisLike | undefined;
+};
+
+function createRedisClient(): RedisLike {
+  if (!hasRedisUrl) {
+    // During build or when REDIS_URL is not set, export a no-op client
+    return createStubRedis();
+  }
+  const client = new Redis(process.env.REDIS_URL as string);
+  client.on('connect', () => {
+    console.log('✓ Connected to Redis');
+  });
+  client.on('error', (err) => {
+    console.error('✗ Redis connection error:', err);
+  });
+  return client as unknown as RedisLike;
+}
+
+const redis: RedisLike = globalForRedis.__redis__ ?? createRedisClient();
 if (process.env.NODE_ENV !== 'production') {
   globalForRedis.__redis__ = redis;
 }
-
-redis.on('connect', () => {
-  console.log('✓ Connected to Redis');
-});
-
-redis.on('error', (err) => {
-  console.error('✗ Redis connection error:', err);
-});
 
 export default redis;

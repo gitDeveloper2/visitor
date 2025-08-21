@@ -19,11 +19,17 @@ import { useVotesContext } from '@/features/providers/VotesContext';
 type Props = {
   toolId: string;
   initialVotes: number;
+  launchDate?: string;
+  votingDurationHours?: number;
+  votingFlushed?: boolean;
 };
 
 export default function VoteButton({
   toolId,
   initialVotes,
+  launchDate,
+  votingDurationHours = 24,
+  votingFlushed = false,
 }: Props) {
   const { data: session, isPending } = authClient.useSession();
   const isAuthenticated = !!session?.user;
@@ -49,6 +55,14 @@ export default function VoteButton({
   // Get current vote count from global context or fall back to initial
   const currentVotes = hasLiveVote ? votes![toolId]! : allowRender ? initialVotes : undefined;
   
+  // Check if voting is over (like reference project)
+  const votingOver = useMemo(() => {
+    if (votingFlushed) return true;
+    if (!launchDate) return false;
+    const endTime = new Date(launchDate).getTime() + votingDurationHours * 3600_000;
+    return Date.now() > endTime;
+  }, [launchDate, votingDurationHours, votingFlushed]);
+
   // Check if user has voted by comparing current votes with initial votes (like reference project)
   const hasVoted = currentVotes !== undefined && currentVotes > initialVotes;
 
@@ -116,13 +130,8 @@ export default function VoteButton({
       return;
     }
 
-    if (voteMutation.isPending) {
-      console.warn('[VoteButton] Blocked: Mutation pending');
-      return;
-    }
-
-    if (lockout) {
-      console.warn('[VoteButton] Blocked: Lockout active');
+    if (voteMutation.isPending || lockout || votingOver) {
+      console.warn('[VoteButton] Blocked: Mutation pending, lockout, or voting over');
       return;
     }
 
@@ -144,17 +153,19 @@ export default function VoteButton({
 
   return (
     <>
-      <Tooltip
-        title={
-          !isAuthenticated
-            ? 'Please log in to vote'
-            : voteMutation.isPending
-            ? 'Processing...'
-            : lockout
-            ? 'Please wait...'
-            : ''
-        }
-      >
+              <Tooltip
+          title={
+            votingOver
+              ? 'Voting has ended'
+              : !isAuthenticated
+              ? 'Please log in to vote'
+              : voteMutation.isPending
+              ? 'Processing...'
+              : lockout
+              ? 'Please wait...'
+              : ''
+          }
+        >
         <Box
           onClick={handleVote}
           sx={{
@@ -169,12 +180,12 @@ export default function VoteButton({
             py: 0.5,
             fontSize: '0.8rem',
             cursor:
-              voteMutation.isPending || lockout || !isAuthenticated
+              voteMutation.isPending || lockout || votingOver || !isAuthenticated
                 ? 'default'
                 : 'pointer',
             boxShadow: 1,
             pointerEvents:
-              voteMutation.isPending || lockout || !isAuthenticated
+              voteMutation.isPending || lockout || votingOver || !isAuthenticated
                 ? 'none'
                 : 'auto',
             transition: 'all 0.2s ease-in-out',

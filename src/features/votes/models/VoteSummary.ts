@@ -18,7 +18,10 @@ export async function getVoteSummaryModel(): Promise<mongoose.Model<IVoteSummary
   const conn = await getVoteConnection();
 
   // Prevent overwrite in dev with HMR
-  return VoteSummaryModel ||=\
-    (conn.models.VoteSummary as mongoose.Model<IVoteSummary>) ||\
-    conn.model<IVoteSummary>('VoteSummary', voteSummarySchema);
+  if (!VoteSummaryModel) {
+    VoteSummaryModel =
+      (conn.models.VoteSummary as mongoose.Model<IVoteSummary>) ||
+      conn.model<IVoteSummary>('VoteSummary', voteSummarySchema);
+  }
+  return VoteSummaryModel;
 }

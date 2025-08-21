@@ -288,7 +288,13 @@ export default function AppsMainPage({
                 <Button component="a" href={app.github} target="_blank" rel="noopener noreferrer" variant="outlined" size="small" sx={{ minWidth: 0, px: 1, py: 0.4, fontSize: '0.7rem' }}>Code</Button>
               )}
               {votingEnabled ? (
-                <VoteButton toolId={appId} initialVotes={app.likes ?? 0} />
+                <VoteButton 
+                  toolId={appId} 
+                  initialVotes={app.stats?.votes ?? app.likes ?? 0}
+                  launchDate={app.launchDate}
+                  votingDurationHours={app.votingDurationHours}
+                  votingFlushed={app.votingFlushed}
+                />
               ) : (
                 <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, border: '1px solid', borderColor: 'divider', color: 'text.disabled', borderRadius: 2, px: 1, py: 0.5 }}>
                   <ThumbUpAltOutlined sx={{ fontSize: 18, color: 'text.disabled' }} />
@@ -699,7 +705,13 @@ export default function AppsMainPage({
             )}
           </Box>
           {/* Vote button on listing (only on launch day cards) */}
-          <VoteButton toolId={appId} initialVotes={app.likes ?? 0} />
+          <VoteButton 
+            toolId={appId} 
+            initialVotes={app.stats?.votes ?? app.likes ?? 0}
+            launchDate={app.launchDate}
+            votingDurationHours={app.votingDurationHours}
+            votingFlushed={app.votingFlushed}
+          />
         </Box>
 
         {/* Action Buttons */}

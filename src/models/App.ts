@@ -26,6 +26,7 @@ interface IApp {
   // Stats
   stats?: {
     likes: number;
+    votes: number;
     views: number;
     installs: number;
   };
@@ -84,6 +85,7 @@ const appSchema = new Schema<IAppDocument>(
     // Stats
     stats: {
       likes: { type: Number, default: 0 },
+      votes: { type: Number, default: 0 },
       views: { type: Number, default: 0 },
       installs: { type: Number, default: 0 },
     },

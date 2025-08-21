@@ -1,5 +1,5 @@
 // app/api/elevation/route.ts
-import { redis } from '@/features/shared/lib/redis';
+import redis from '@/features/shared/lib/redis';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Load constants from environment, fallback to defaults

@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next-sitemap --config next-sitemap-config.js && next build &&next-sitemap --config next-sitemap-config.js",
+    "build": "next build && next-sitemap --config next-sitemap-config.js",
     "sitemap": "next-sitemap --config next-sitemap-config.js",
     "start": "next start",
     "lint": "next lint",
@@ -64,6 +64,7 @@
     "html-react-parser": "^5.1.12",
     "html2canvas": "^1.4.1",
     "idb": "^8.0.3",
+    "ioredis": "^5.7.0",
     "jsdom": "^26.0.0",
     "leaflet": "^1.9.4",
     "leaflet-fullscreen": "^1.0.2",
@@ -100,8 +101,7 @@
     "slick-carousel": "^1.8.1",
     "uuid": "^9.0.1",
     "web-vitals": "^2.1.4",
-    "zod": "^3.22.4",
-    "ioredis": "^5.4.1"
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^5.17.0",

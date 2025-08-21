@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const runtime = 'nodejs';
+
 function normalizeDate(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00.000Z');
   const y = d.getUTCFullYear();
