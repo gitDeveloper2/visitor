@@ -23,6 +23,7 @@ export async function POST(request: Request) {
       description, 
       subcategories, 
       isInternal,
+      launchDate, // optional
       // Additional fields for better app data
       website,
       github,
@@ -81,6 +82,15 @@ export async function POST(request: Request) {
     const requiresVerification = isFreeApp;
     const verificationStatus = requiresVerification ? 'pending' : 'not_required';
 
+    // Parse optional launch date (store as Date in UTC if valid)
+    let parsedLaunchDate: Date | null = null;
+    if (launchDate) {
+      const candidate = new Date(launchDate);
+      if (!isNaN(candidate.getTime())) {
+        parsedLaunchDate = candidate;
+      }
+    }
+
     const newApp = {
       name,
       description,
@@ -109,6 +119,7 @@ export async function POST(request: Request) {
       status: 'pending',
       createdAt: new Date(),
       updatedAt: new Date(),
+      ...(parsedLaunchDate ? { launchDate: parsedLaunchDate } : {}),
       // SECURITY FIX: Premium status is NEVER set during creation
       // Only webhook verification can set isPremium: true
       premiumPlan: premiumPlan || null,
