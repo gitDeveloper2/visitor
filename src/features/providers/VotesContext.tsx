@@ -3,12 +3,12 @@
 import { createContext, useContext, useMemo } from 'react';
 import { useVotes } from '@/features/votes/hooks/useVotes';
 
-const VotesContext = createContext<Record<string, number> | undefined>(undefined);
+const VotesContext = createContext<Record<string, number>>({});
 
 export const VotesProvider = ({ children }: { children: React.ReactNode }) => {
   const { data } = useVotes();
 
-  const memoizedVotes = useMemo(() => data, [data]);
+  const memoizedVotes = useMemo(() => data ?? {}, [data]);
 
   return (
     <VotesContext.Provider value={memoizedVotes}>

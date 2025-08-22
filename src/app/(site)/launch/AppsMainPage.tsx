@@ -30,7 +30,7 @@ import { useEffect, useState } from "react";
 import { fetchCategoriesFromAPI } from "../../../utils/categories";
 import VoteButton from '@/features/tools/components/VoteButton';
 import { computeAppScore } from '@/features/ranking/score';
-import { useVotesContext } from '@/features/providers/VotesContext';
+import { useVoteContext } from '@/features/votes/VoteProvider';
 
 // Categories will be fetched from API
 interface Category {
@@ -179,14 +179,13 @@ export default function AppsMainPage({
     fetchApps();
   }, [selectedFilter, currentPage, initialApps, initialTotalApps]);
 
-  // Build ids for vote counts (visible apps on the page)
-  const visibleIds = filteredApps.map(a => String(a._id || a._id?.toString())).filter(Boolean);
-  const votes = useVotesContext(); // Use global vote context instead of individual fetching
+  // Use centralized VoteProvider for counts
+  const { getCount } = useVoteContext();
 
   // Compute ranking among currently visible apps based on external vote counts (fallback to likes)
   const getId = (a: any) => String(a._id || a._id?.toString());
   const scoreFor = (a: any) => {
-    const voteCount = votes?.[getId(a)] ?? 0;
+    const voteCount = getCount(getId(a)) ?? 0;
     const likes = Number(a.likes ?? 0);
     const base = computeAppScore(a) || 0;
     // Likes carry more weight; votes supplement; base score provides tie-breaking/quality

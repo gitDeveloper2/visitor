@@ -19,6 +19,7 @@ import DonateButton from "@components/DonateButton";
 // Removed: import AdSenseLoader from "@/components/AdSenseLoader";
 // Removed: import { VotesProvider } from '@/features/providers/VotesContext';
 import Providers from "@/features/shared/providers"; // Import the new consolidated Providers
+// VoteProvider is already included inside shared Providers
 
 const APPID=process.env.NEXT_PUBLIC_FACEBOOK_APPID
 const ADMINID=process.env.NEXT_PUBLIC_FACEBOOK_ADMIN_ID

@@ -6,15 +6,12 @@ import {
   CircularProgress,
   Snackbar,
   Tooltip,
-  Button,
 } from '@mui/material';
 import ThumbUpAltOutlined from '@mui/icons-material/ThumbUpAltOutlined';
 import ThumbUpAlt from '@mui/icons-material/ThumbUpAlt';
 import { useState, useEffect, useMemo } from 'react';
-import { useVoteMutation } from '@/features/votes/hooks/useVoteMutations';
 import { authClient } from '@/app/auth-client';
-import { isExternalVoteApi } from '@/features/votes/constants';
-import { useVotesContext } from '@/features/providers/VotesContext';
+import { useVoteContext } from '@/features/votes/VoteProvider';
 
 type Props = {
   toolId: string;
@@ -31,141 +28,65 @@ export default function VoteButton({
   votingDurationHours = 24,
   votingFlushed = false,
 }: Props) {
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session } = authClient.useSession();
   const isAuthenticated = !!session?.user;
-  const voteMutation = useVoteMutation();
-  const votes = useVotesContext(); // Get global vote data
+  const { getCount, hasVoted, vote } = useVoteContext();
 
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [lockout, setLockout] = useState(false);
-  const [voted, setVoted] = useState(false);
   const [allowRender, setAllowRender] = useState(false);
 
-  // Check if we have live votes for this tool
-  const hasLiveVote = votes && toolId in votes;
+  const liveCount = getCount(toolId);
 
-  // Allow render after a short delay to prevent flash of initial votes
+  // Delay render to avoid flash of initialVotes
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      setAllowRender(true);
-    }, 100);
+    const timeout = setTimeout(() => setAllowRender(true), 100);
     return () => clearTimeout(timeout);
   }, []);
 
-  // Get current vote count from global context or fall back to initial
-  const currentVotes = hasLiveVote ? votes![toolId]! : allowRender ? initialVotes : undefined;
-  
-  // Check if voting is over (like reference project)
+  const currentVotes = allowRender ? liveCount ?? initialVotes : undefined;
+
   const votingOver = useMemo(() => {
     if (votingFlushed) return true;
     if (!launchDate) return false;
-    const endTime = new Date(launchDate).getTime() + votingDurationHours * 3600_000;
+    const endTime =
+      new Date(launchDate).getTime() + votingDurationHours * 3600_000;
     return Date.now() > endTime;
   }, [launchDate, votingDurationHours, votingFlushed]);
 
-  // Check if user has voted by comparing current votes with initial votes (like reference project)
-  const hasVoted = currentVotes !== undefined && currentVotes > initialVotes;
+  const voted = useMemo(
+    () => isAuthenticated && hasVoted(toolId),
+    [isAuthenticated, hasVoted, toolId]
+  );
 
-  // Log session and authentication state
-  useEffect(() => {
-    console.log('[VoteButton] Session Debug:', {
-      toolId,
-      isAuthenticated,
-      isPending,
-      sessionKeys: session ? Object.keys(session) : [],
-      userKeys: session?.user ? Object.keys(session.user) : [],
-      userId: session?.user?.id,
-      votingToken: (session as any)?.votingToken ? 'present' : 'missing',
-      sessionVotingToken: (session as any)?.session?.votingToken ? 'present' : 'missing',
-      sessionVoteToken: (session as any)?.voteToken ? 'present' : 'missing',
-      isExternalVoteApi,
-      initialVotes,
-      currentVotes,
-      hasVoted,
-      globalVotesAvailable: !!votes,
-    });
-  }, [session, isAuthenticated, isPending, toolId, initialVotes, currentVotes, hasVoted, votes]);
-
-  // Log vote mutation state changes
-  useEffect(() => {
-    console.log('[VoteButton] Vote Mutation State:', {
-      toolId,
-      isPending: voteMutation.isPending,
-      isSuccess: voteMutation.isSuccess,
-      isError: voteMutation.isError,
-      error: voteMutation.error,
-      data: voteMutation.data,
-    });
-  }, [voteMutation.isPending, voteMutation.isSuccess, voteMutation.isError, voteMutation.error, voteMutation.data, toolId]);
-
-  // Update voted state when vote count changes (like reference project)
-  useEffect(() => {
-    if (!isAuthenticated || !hasLiveVote) return;
-    console.log('[VoteButton] Vote count changed:', {
-      toolId,
-      hasVoted,
-      currentVotes,
-      initialVotes,
-      hasLiveVote,
-    });
-    setVoted(hasVoted);
-  }, [votes, toolId, initialVotes, isAuthenticated, hasLiveVote, hasVoted, currentVotes]);
-
-  const handleVote = () => {
-    console.log('[VoteButton] Vote Click:', {
-      toolId,
-      isAuthenticated,
-      isPending: voteMutation.isPending,
-      lockout,
-      voted,
-      currentVotes,
-      userId: session?.user?.id,
-      votingToken: (session as any)?.votingToken ? 'present' : 'missing',
-      isExternalVoteApi,
-    });
-
+  const handleVote = async () => {
     if (!isAuthenticated) {
-      console.warn('[VoteButton] Blocked: Not authenticated');
       setSnackbarOpen(true);
       return;
     }
+    if (lockout || votingOver) return;
 
-    if (voteMutation.isPending || lockout || votingOver) {
-      console.warn('[VoteButton] Blocked: Mutation pending, lockout, or voting over');
-      return;
-    }
-
-    console.log('[VoteButton] Starting vote mutation:', { toolId });
     setLockout(true);
-
-    voteMutation.mutate(toolId, {
-      onSettled: (data, error) => {
-        console.log('[VoteButton] Mutation settled:', {
-          toolId,
-          data,
-          error,
-          success: !error,
-        });
-        setTimeout(() => setLockout(false), 3000);
-      },
-    });
+    try {
+      await vote(toolId);
+    } finally {
+      setTimeout(() => setLockout(false), 500);
+    }
   };
 
   return (
     <>
-              <Tooltip
-          title={
-            votingOver
-              ? 'Voting has ended'
-              : !isAuthenticated
-              ? 'Please log in to vote'
-              : voteMutation.isPending
-              ? 'Processing...'
-              : lockout
-              ? 'Please wait...'
-              : ''
-          }
-        >
+      <Tooltip
+        title={
+          votingOver
+            ? 'Voting has ended'
+            : !isAuthenticated
+            ? 'Please log in to vote'
+            : voted
+            ? 'Click to remove vote'
+            : ''
+        }
+      >
         <Box
           onClick={handleVote}
           sx={{
@@ -179,18 +100,12 @@ export default function VoteButton({
             px: 1,
             py: 0.5,
             fontSize: '0.8rem',
-            cursor:
-              voteMutation.isPending || lockout || votingOver || !isAuthenticated
-                ? 'default'
-                : 'pointer',
+            cursor: lockout || votingOver ? 'default' : 'pointer',
             boxShadow: 1,
-            pointerEvents:
-              voteMutation.isPending || lockout || votingOver || !isAuthenticated
-                ? 'none'
-                : 'auto',
+            pointerEvents: lockout ? 'none' : 'auto',
             transition: 'all 0.2s ease-in-out',
             '&:hover': {
-              borderColor: 'primary.main',
+              borderColor: voted ? 'primary.main' : 'primary.light',
               backgroundColor: 'action.hover',
             },
           }}

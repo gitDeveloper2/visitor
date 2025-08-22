@@ -107,46 +107,65 @@ export const useVoteMutation = () => {
     },
 
     onMutate: async (toolId) => {
-      console.log('[useVoteMutations] onMutate:', { toolId });
-      return { toolId };
+      console.log('[useVoteMutations] onMutate - optimistic update:', { toolId });
+      
+      // Get current vote count
+      const currentVotes = queryClient.getQueryData<Record<string, number>>(['votes']);
+      const currentCount = currentVotes?.[toolId] ?? 0;
+      
+      // Get current vote status to determine if voting or unvoting
+      const voteStatusQueries = queryClient.getQueryCache().findAll({ queryKey: ['voteStatus'] });
+      let hasVoted = false;
+      for (const query of voteStatusQueries) {
+        const statusData = query.state.data as Set<string>;
+        if (statusData?.has(toolId)) {
+          hasVoted = true;
+          break;
+        }
+      }
+      
+      // Calculate new count optimistically
+      const newCount = hasVoted ? Math.max(0, currentCount - 1) : currentCount + 1;
+      
+      console.log('[useVoteMutations] Optimistic update:', {
+        toolId,
+        currentCount,
+        hasVoted,
+        newCount,
+        operation: hasVoted ? 'unvote' : 'vote'
+      });
+      
+      // Optimistically update the votes cache
+      queryClient.setQueryData<Record<string, number>>(['votes'], (old) => ({
+        ...old,
+        [toolId]: newCount,
+      }));
+      
+      // Optimistically update vote status
+      voteStatusQueries.forEach(query => {
+        const key = query.queryKey;
+        queryClient.setQueryData(key, (old: Set<string>) => {
+          const newSet = new Set(old);
+          if (hasVoted) {
+            newSet.delete(toolId);
+          } else {
+            newSet.add(toolId);
+          }
+          return newSet;
+        });
+      });
+      
+      return { toolId, previousCount: currentCount, wasVoted: hasVoted };
     },
 
-    onSuccess: (data, _toolId, context) => {
-      const toolId = context?.toolId;
-      console.log('[useVoteMutations] onSuccess:', {
+    onSuccess: (data, toolId, context) => {
+      console.log('[useVoteMutations] Vote API success - keeping optimistic update:', {
         toolId,
         data,
+        context
       });
-      
-      if (!toolId) return;
-
-      // Update the global votes context with the actual vote count from the server
-      queryClient.setQueryData<Record<string, number>>(['votes'], (old) => {
-        console.log('[useVoteMutations] Updating vote count:', {
-          toolId,
-          oldCount: old?.[toolId] ?? 0,
-          newCount: data.votes,
-          voted: data.voted,
-          unvoted: data.unvoted,
-        });
-        
-        return {
-          ...old,
-          [toolId]: data.votes,
-        } as Record<string, number>;
-      });
-
-      // Invalidate related queries to ensure fresh data
-      queryClient.invalidateQueries({ queryKey: ['votes'] });
-      queryClient.invalidateQueries({ queryKey: ['voteStatus'] });
-      queryClient.invalidateQueries({ queryKey: ['vote', 'batch-count'] });
-      
-      // Force refetch to ensure immediate UI updates
-      queryClient.refetchQueries({ queryKey: ['votes'] });
-      
-
-      
-
+      // Do nothing - keep the optimistic update as the permanent state
+      // Never overwrite with server response
     },
 
     onError: (error, toolId, context) => {
