@@ -12,6 +12,7 @@ import ThumbUpAlt from '@mui/icons-material/ThumbUpAlt';
 import { useState, useEffect, useMemo } from 'react';
 import { authClient } from '@/app/auth-client';
 import { useVoteContext } from '@/features/votes/VoteProvider';
+import { DeploymentFlagService } from '@/utils/deploymentFlags';
 
 type Props = {
   toolId: string;

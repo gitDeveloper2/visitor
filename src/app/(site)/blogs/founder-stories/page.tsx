@@ -220,7 +220,7 @@ export default function FounderStoriesPage() {
           </Typography>
           <Button
             component={Link}
-            href="/dashboard/submission/blog"
+            href="/dashboard/submit/blog"
             variant="contained"
             color="primary"
             startIcon={<Plus size={18} />}
@@ -270,7 +270,7 @@ export default function FounderStoriesPage() {
             {!search && (
               <Button
                 component={Link}
-                href="/dashboard/submission/blog"
+                href="/dashboard/submit/blog"
                 variant="contained"
                 color="primary"
                 startIcon={<Plus size={18} />}

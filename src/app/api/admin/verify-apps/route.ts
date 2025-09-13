@@ -24,9 +24,11 @@ function normalizeHost(host: string): string {
   return host.toLowerCase().replace(/^www\./, '');
 }
 
-function validateVerificationUrl(verificationUrl: string, appUrl: string): { isValid: boolean; error?: string } {
+function validateVerificationUrl(verificationUrl: string, appUrl: string): { isValid: boolean; error?: string; expectedDomain?: string; normalizedUrl?: string } {
   try {
-    const verificationUrlObj = new URL(verificationUrl);
+    // Auto-prefix protocol if missing
+    const normalizedInput = /^(https?:)?\/\//i.test(verificationUrl) ? verificationUrl : `https://${verificationUrl}`;
+    const verificationUrlObj = new URL(normalizedInput);
     const appUrlObj = new URL(appUrl);
     
     // Check 1: Hostname must match or be a subdomain
@@ -42,7 +44,9 @@ function validateVerificationUrl(verificationUrl: string, appUrl: string): { isV
     ) {
       return {
         isValid: false,
-        error: 'Verification URL must be on the same domain or subdomain as your app'
+        error: `Verification URL must be on the same domain or subdomain. Expected: ${appHost}. Got: ${verificationHost}. Example: https://${appHost}/your-page-with-badge`,
+        expectedDomain: appHost,
+        normalizedUrl: normalizedInput
       };
     }
     
@@ -50,7 +54,9 @@ function validateVerificationUrl(verificationUrl: string, appUrl: string): { isV
     if (verificationUrlObj.protocol !== 'https:' && !isPrivateHost(verificationHost)) {
       return {
         isValid: false,
-        error: 'Verification URL must use HTTPS for security'
+        error: 'Verification URL must use HTTPS for security. Example: https://' + verificationHost,
+        expectedDomain: appHost,
+        normalizedUrl: normalizedInput
       };
     }
     
@@ -72,7 +78,9 @@ function validateVerificationUrl(verificationUrl: string, appUrl: string): { isV
     if (fileExtensions.some(ext => verificationUrlObj.pathname.toLowerCase().endsWith(ext))) {
       return {
         isValid: false,
-        error: 'Verification URL must point to a webpage, not a file'
+        error: 'Verification URL must point to a webpage, not a file (e.g., use a HTML page that contains the badge).',
+        expectedDomain: appHost,
+        normalizedUrl: normalizedInput
       };
     }
     
@@ -80,16 +88,20 @@ function validateVerificationUrl(verificationUrl: string, appUrl: string): { isV
     if (verificationUrlObj.pathname.includes('/api/') || verificationUrlObj.pathname.includes('/admin/')) {
       return {
         isValid: false,
-        error: 'Verification URL cannot be an API endpoint or admin page'
+        error: 'Verification URL cannot be an API endpoint or admin page. Please use a public page URL that contains the badge.',
+        expectedDomain: appHost,
+        normalizedUrl: normalizedInput
       };
     }
     
-    return { isValid: true };
+    return { isValid: true, normalizedUrl: normalizedInput };
     
   } catch (error) {
     return {
       isValid: false,
-      error: 'Invalid URL format'
+      error: 'Invalid URL format. Use a full URL like https://example.com/path',
+      expectedDomain: undefined,
+      normalizedUrl: undefined
     };
   }
 }
@@ -122,6 +134,20 @@ interface VerificationAttempt {
   score: VerificationScore;
   timestamp: Date;
   details: string;
+}
+
+interface AppItem {
+  _id: string;
+  name: string;
+  verificationUrl: string;
+  verificationSubmittedAt: string;
+  verificationAttempts: any;
+  pricing: string;
+  authorName: string;
+  slug: string;
+  verificationScore?: number;
+  lastVerificationMethod?: string;
+  lastVerificationAttempt?: number;
 }
 
 export async function POST(request: Request) {
@@ -229,7 +255,9 @@ export async function POST(request: Request) {
       
       if (!urlValidationResult.isValid) {
         return NextResponse.json({ 
-          message: urlValidationResult.error || 'Invalid verification URL' 
+          message: urlValidationResult.error || 'Invalid verification URL',
+          expectedDomain: urlValidationResult.expectedDomain,
+          normalizedUrl: urlValidationResult.normalizedUrl
         }, { status: 400 });
       }
 
@@ -253,7 +281,7 @@ export async function POST(request: Request) {
         }
       );
 
-      // Now verify with the new URL
+      // Now verify with the normalized URL (ensures protocol added)
       const result = await verifyAppBadge(appId);
       console.log('✅ Manual verification result:', result);
 
@@ -411,7 +439,7 @@ export async function GET(request: Request) {
     console.log('✅ Stats aggregation result:', stats);
 
     console.log('📌 Step 5: Fetching apps by verification status...');
-    const [pendingApps, needsReviewApps, failedApps] = await Promise.all([
+    const [pendingApps, needsReviewApps, failedApps, verifiedApps] = await Promise.all([
       // Pending verification
       db.collection('userapps').find({
         verificationStatus: 'pending',
@@ -465,18 +493,37 @@ export async function GET(request: Request) {
           lastVerificationMethod: 1,
           lastVerificationAttempt: 1
         }
-      }).sort({ verificationAttempts: -1 }).limit(50).toArray()
+      }).sort({ verificationAttempts: -1 }).limit(50).toArray(),
+
+      // Verified apps
+      db.collection('userapps').find({
+        verificationStatus: 'verified',
+        requiresVerification: true
+      }, {
+        projection: {
+          name: 1,
+          verificationUrl: 1,
+          verificationSubmittedAt: 1,
+          verificationAttempts: 1,
+          pricing: 1,
+          authorName: 1,
+          slug: 1,
+          verificationScore: 1,
+          lastVerificationMethod: 1,
+          lastVerificationAttempt: 1
+        }
+      }).sort({ verificationScore: -1 }).limit(50).toArray()
     ]);
 
-    console.log(`✅ Found ${pendingApps.length} pending, ${needsReviewApps.length} needs review, ${failedApps.length} failed apps`);
+    console.log(`✅ Found ${pendingApps.length} pending, ${needsReviewApps.length} needs review, ${failedApps.length} failed apps, ${verifiedApps.length} verified apps`);
 
     // Calculate detailed statistics
     const detailedStats = {
-      total: pendingApps.length + needsReviewApps.length + failedApps.length,
+      total: pendingApps.length + needsReviewApps.length + failedApps.length + verifiedApps.length,
       pending: pendingApps.length,
       needs_review: needsReviewApps.length,
       failed: failedApps.length,
-      verified: stats.find(s => s._id === 'verified')?.count || 0,
+      verified: verifiedApps.length,
       not_required: stats.find(s => s._id === 'not_required')?.count || 0,
       averageScores: {
         pending: pendingApps.length > 0 ? pendingApps.reduce((sum, app) => sum + (app.verificationScore || 0), 0) / pendingApps.length : 0,
@@ -490,7 +537,8 @@ export async function GET(request: Request) {
       apps: {
         pending: pendingApps,
         needsReview: needsReviewApps,
-        failed: failedApps
+        failed: failedApps,
+        verified: verifiedApps
       }
     });
 

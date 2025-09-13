@@ -233,7 +233,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                >
                 <MenuItem
                   component={Link}
-                  href="/launch/submit"
+                  href="/dashboard/submit/app"
                   onClick={handleSubmitMenuClose}
                 >
                   <Stack direction="row" spacing={1} alignItems="center">
@@ -243,7 +243,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 </MenuItem>
                 <MenuItem
                   component={Link}
-                  href="/blog/submit"
+                  href="/dashboard/submit/blog"
                   onClick={handleSubmitMenuClose}
                 >
                   <Stack direction="row" spacing={1} alignItems="center">

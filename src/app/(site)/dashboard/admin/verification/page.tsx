@@ -146,7 +146,8 @@ export default function AdminVerificationPage() {
     pending: AppItem[];
     needsReview: AppItem[];
     failed: AppItem[];
-  }>({ pending: [], needsReview: [], failed: [] });
+    verified: AppItem[];
+  }>({ pending: [], needsReview: [], failed: [], verified: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' }>({ open: false, message: '', severity: 'info' });
@@ -166,6 +167,7 @@ export default function AdminVerificationPage() {
   // Manual verification state
   const [manualModal, setManualModal] = useState<{ open: boolean; app: AppItem | null }>({ open: false, app: null });
   const [verificationUrl, setVerificationUrl] = useState('');
+  const [urlError, setUrlError] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
 
   // Admin override state
@@ -291,6 +293,10 @@ export default function AdminVerificationPage() {
     
     setVerifying(true);
     try {
+      // Optimistically normalize URL by adding https:// if missing
+      const inputUrl = verificationUrl.trim();
+      const normalizedInputUrl = /^(https?:)?\/\//i.test(inputUrl) ? inputUrl : `https://${inputUrl}`;
+
       const response = await fetch(`/api/admin/verify-apps`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -298,12 +304,17 @@ export default function AdminVerificationPage() {
         body: JSON.stringify({ 
           action: 'manual-verify', 
           appId: manualModal.app._id,
-          verificationUrl: verificationUrl 
+          verificationUrl: normalizedInputUrl 
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to verify app');
+        const errData = await response.json().catch(() => null);
+        const message = errData?.message || 'Failed to verify app';
+        const expectedDomain = errData?.expectedDomain;
+        const normalizedUrl = errData?.normalizedUrl;
+        setUrlError(message + (expectedDomain ? ` (Expected domain: ${expectedDomain})` : ''));
+        throw new Error(message);
       }
 
       const result = await response.json();
@@ -315,6 +326,7 @@ export default function AdminVerificationPage() {
       
       setManualModal({ open: false, app: null });
       setVerificationUrl('');
+      setUrlError(null);
       fetchVerificationData(); // Refresh data
       
       // Show additional notification about user dashboard update
@@ -579,7 +591,7 @@ export default function AdminVerificationPage() {
           </Button>
           
           <Typography variant="body2" color="text.secondary" sx={{ ml: 'auto' }}>
-            {apps.pending.length + apps.needsReview.length + apps.failed.length} apps need attention
+            {apps.pending.length + apps.needsReview.length + apps.failed.length} apps need attention • {apps.verified.length} verified
           </Typography>
         </Stack>
       </Paper>
@@ -609,6 +621,14 @@ export default function AdminVerificationPage() {
                 <Stack direction="row" spacing={1} alignItems="center">
                   <ErrorIcon />
                   <span>Failed ({apps.failed.length})</span>
+                </Stack>
+              } 
+            />
+            <Tab 
+              label={
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <CheckCircle />
+                  <span>Verified ({apps.verified.length})</span>
                 </Stack>
               } 
             />
@@ -921,6 +941,102 @@ export default function AdminVerificationPage() {
             </TableContainer>
           )}
         </TabPanel>
+
+        {/* Verified Apps Tab */}
+        <TabPanel value={tabValue} index={3}>
+          <Typography variant="h6" gutterBottom>
+            Verified Apps
+          </Typography>
+          
+          {apps.verified.length === 0 ? (
+            <Alert severity="info">
+              No apps have been verified yet.
+            </Alert>
+          ) : (
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>App Name</TableCell>
+                    <TableCell>Author</TableCell>
+                    <TableCell>Score</TableCell>
+                    <TableCell>Last Method</TableCell>
+                    <TableCell>Attempts</TableCell>
+                    <TableCell>Verification URL</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {apps.verified.map((app) => (
+                    <TableRow key={app._id}>
+                      <TableCell>
+                        <Typography fontWeight={600}>{app.name}</Typography>
+                      </TableCell>
+                      <TableCell>{app.authorName}</TableCell>
+                      <TableCell>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Chip 
+                            label={`${app.verificationScore || 0}/100`}
+                            color={getScoreColor(app.verificationScore || 0)}
+                            size="small"
+                          />
+                          <Typography variant="caption">
+                            {getScoreLabel(app.verificationScore || 0)}
+                          </Typography>
+                        </Stack>
+                      </TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={app.lastVerificationMethod || 'Unknown'} 
+                          size="small"
+                          variant="outlined"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Tooltip title={getAttemptsDetails(app.verificationAttempts)}>
+                          <Chip 
+                            label={getAttemptsCount(app.verificationAttempts)} 
+                            size="small"
+                            color="success"
+                          />
+                        </Tooltip>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {app.verificationUrl || 'Not provided'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Stack direction="row" spacing={1}>
+                          <Tooltip title="View App">
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              component="a"
+                              href={`/launch/${app.slug}`}
+                              target="_blank"
+                            >
+                              <Visibility />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Admin Override">
+                            <IconButton
+                              size="small"
+                              color="secondary"
+                              onClick={() => openOverrideModal(app)}
+                            >
+                              <Security />
+                            </IconButton>
+                          </Tooltip>
+                        </Stack>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </TabPanel>
       </Paper>
 
       {/* Batch Verification Modal */}
@@ -938,6 +1054,9 @@ export default function AdminVerificationPage() {
           <Box sx={{ mt: 2 }}>
             <Typography variant="body2" color="text.secondary">
               Apps to process: {apps.pending.length + apps.needsReview.length + apps.failed.length}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              Total verified apps: {apps.verified.length}
             </Typography>
           </Box>
         </DialogContent>
@@ -971,6 +1090,8 @@ export default function AdminVerificationPage() {
             onChange={(e) => setVerificationUrl(e.target.value)}
             placeholder="https://example.com/page-with-badge"
             sx={{ mb: 2 }}
+            error={!!urlError}
+            helperText={urlError || 'Enter a public page URL on the app\'s domain that contains the badge.'}
           />
           
           {manualModal.app && (
@@ -1072,8 +1193,7 @@ export default function AdminVerificationPage() {
               type="number"
               value={overrideScore}
               onChange={(e) => setOverrideScore(Number(e.target.value))}
-              min="0"
-              max="100"
+              inputProps={{ min: 0, max: 100 }}
               sx={{ mb: 2 }}
             />
           )}

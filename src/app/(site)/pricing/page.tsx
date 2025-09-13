@@ -80,7 +80,7 @@ export default function PricingPage() {
       color: theme.palette.success.main,
       buttonText: 'Verify Your App',
       buttonVariant: 'outlined',
-      href: '/launch/submit'
+      href: '/dashboard/submit/app'
     },
     {
       name: 'Premium',
@@ -618,7 +618,7 @@ export default function PricingPage() {
         <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
           <Button
             component={Link}
-            href="/launch/submit"
+            href="/dashboard/submit/app"
             variant="contained"
             size="large"
             sx={{
@@ -633,7 +633,7 @@ export default function PricingPage() {
           </Button>
           <Button
             component={Link}
-            href="/dashboard/submission/blog"
+            href="/dashboard/submit/blog"
             variant="outlined"
             size="large"
             sx={{

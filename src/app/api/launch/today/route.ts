@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
+import { withDeploymentFlags } from '@/utils/deploymentFlags';
 
 function todayUtcString(): string {
   const now = new Date();
@@ -9,7 +10,7 @@ function todayUtcString(): string {
   return `${y}-${m}-${d}`;
 }
 
-export async function GET() {
+async function handleGetToday() {
   try {
     const { db } = await connectToDatabase();
     const col = db.collection('userapps');
@@ -32,3 +33,5 @@ export async function GET() {
     return NextResponse.json({ error: e?.message || 'Internal error' }, { status: 500 });
   }
 }
+
+export const GET = withDeploymentFlags(handleGetToday, ['appLaunchEnabled']);

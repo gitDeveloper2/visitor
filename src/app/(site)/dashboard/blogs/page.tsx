@@ -153,7 +153,7 @@ export default function ManageBlogsPage() {
           
           <Button
             component={Link}
-            href="/dashboard/submission/blog"
+            href="/dashboard/submit/blog"
             variant="contained"
             color="primary"
             startIcon={<Plus size={18} />}
@@ -305,7 +305,7 @@ export default function ManageBlogsPage() {
                   </Typography>
                   <Button
                     component={Link}
-                    href="/dashboard/submission/blog"
+                    href="/dashboard/submit/blog"
                     variant="contained"
                     color="primary"
                     startIcon={<Plus size={18} />}
@@ -430,7 +430,7 @@ export default function ManageBlogsPage() {
                   </Typography>
                   <Button
                     component={Link}
-                    href="/dashboard/submission/blog"
+                    href="/dashboard/submit/blog"
                     variant="contained"
                     color="primary"
                     startIcon={<Plus size={18} />}

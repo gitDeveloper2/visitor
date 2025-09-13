@@ -85,6 +85,16 @@ const Auth: React.FC<AuthProps> = ({ isMobile }) => {
     );
   }
 
+  if (isMobile) {
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <Button variant="contained" fullWidth onClick={handleLogout} sx={{ py: 1 }}>
+          Logout
+        </Button>
+      </Box>
+    );
+  }
+
   return (
     <Stack direction="row" spacing={1.5} alignItems="center">
       <IconButton onClick={handleMenuOpen} sx={{ p: 0 }}>

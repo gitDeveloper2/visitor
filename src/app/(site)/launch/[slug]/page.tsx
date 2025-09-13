@@ -63,7 +63,10 @@ export default async function Page({ params }: { params: { slug: string } }) {
           avatarUrl: app.authorAvatar ?? null,
           bio: app.authorBio ?? "",
         }}
-        // isVerified={Boolean(app.isVerified)}
+        isVerified={Boolean(app.isVerified)}
+        verificationStatus={(app as any).verificationStatus}
+        verificationScore={(app as any).verificationScore}
+        lastVerificationMethod={(app as any).lastVerificationMethod}
         externalUrl={app.externalUrl ?? null}
         // publicUrl={publicUrl}
         stats={{

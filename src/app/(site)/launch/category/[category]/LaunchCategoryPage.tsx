@@ -201,18 +201,32 @@ export default function LaunchCategoryPage({
               backgroundPosition: "center",
             }}
           />
-          {app.isPremium && (
-            <Box sx={{ position: "absolute", top: 12, left: 12 }}>
-              <Chip
-                label="Premium"
-                size="small"
-                sx={{ 
-                  fontWeight: 600,
-                  backgroundColor: theme.palette.primary.main,
-                  color: theme.palette.primary.contrastText,
-                  boxShadow: getShadow(theme, "elegant"),
-                }}
-              />
+          {(app.isPremium || app.verificationStatus === 'verified' || app.isVerified) && (
+            <Box sx={{ position: "absolute", top: 12, left: 12, display: 'flex', gap: 1 }}>
+              {app.isPremium && (
+                <Chip
+                  label="Featured"
+                  size="small"
+                  sx={{ 
+                    fontWeight: 700,
+                    backgroundColor: theme.palette.primary.main,
+                    color: theme.palette.primary.contrastText,
+                    boxShadow: getShadow(theme, "elegant"),
+                  }}
+                />
+              )}
+              {(app.verificationStatus === 'verified' || app.isVerified) && (
+                <Chip
+                  label="Verified"
+                  size="small"
+                  sx={{ 
+                    fontWeight: 700,
+                    backgroundColor: theme.palette.success.main,
+                    color: theme.palette.success.contrastText,
+                    boxShadow: getShadow(theme, "elegant"),
+                  }}
+                />
+              )}
             </Box>
           )}
         </Box>
@@ -220,18 +234,33 @@ export default function LaunchCategoryPage({
 
       <Box sx={{ p: 3, flex: 1, display: "flex", flexDirection: "column" }}>
         {/* Premium Badge for cards without images */}
-        {!app.imageUrl && app.isPremium && (
+        {!app.imageUrl && (app.isPremium || app.verificationStatus === 'verified' || app.isVerified) && (
           <Box sx={{ mb: 2 }}>
-            <Chip
-              label="Premium"
-              size="small"
-              sx={{ 
-                fontWeight: 600,
-                backgroundColor: theme.palette.primary.main,
-                color: theme.palette.primary.contrastText,
-                boxShadow: getShadow(theme, "elegant"),
-              }}
-            />
+            {app.isPremium && (
+              <Chip
+                label="Featured"
+                size="small"
+                sx={{ 
+                  fontWeight: 700,
+                  backgroundColor: theme.palette.primary.main,
+                  color: theme.palette.primary.contrastText,
+                  boxShadow: getShadow(theme, "elegant"),
+                }}
+              />
+            )}
+            {(app.verificationStatus === 'verified' || app.isVerified) && (
+              <Chip
+                label="Verified"
+                size="small"
+                sx={{ 
+                  fontWeight: 700,
+                  backgroundColor: theme.palette.success.main,
+                  color: theme.palette.success.contrastText,
+                  boxShadow: getShadow(theme, "elegant"),
+                  ml: 1
+                }}
+              />
+            )}
           </Box>
         )}
 

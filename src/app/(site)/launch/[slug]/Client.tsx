@@ -62,6 +62,10 @@ export default function AppClient({
   pricing = "",
   website = "",
   github = "",
+  isVerified = false,
+  verificationStatus,
+  verificationScore,
+  lastVerificationMethod,
 }: {
   id: string;
   slug: string;
@@ -81,6 +85,10 @@ export default function AppClient({
   pricing?: string;
   website?: string;
   github?: string;
+  isVerified?: boolean;
+  verificationStatus?: string;
+  verificationScore?: number;
+  lastVerificationMethod?: string;
 }) {
   const theme = useTheme();
   // const [liked, setLiked] = React.useState(false); // No longer needed, handled by VoteButton
@@ -94,6 +102,22 @@ export default function AppClient({
     `1px solid ${theme.palette.divider}`;
 
   const boxShadow = theme?.shadows?.[8] ?? "0 8px 30px rgba(2,6,23,0.08)";
+
+  // Debug mode: show verification state when ?debug=1
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('debug') === '1') {
+        // eslint-disable-next-line no-console
+        console.log('[Launch Debug]', {
+          isVerified,
+          verificationStatus,
+          verificationScore,
+          lastVerificationMethod,
+        });
+      }
+    }
+  }, [isVerified, verificationStatus, verificationScore, lastVerificationMethod]);
 
   return (
     <Box component="main" sx={{ py: { xs: 6, md: 10 }, bgcolor: "background.default" }}>
@@ -124,8 +148,9 @@ export default function AppClient({
                   )}
                   {/** Verified badge in hero */}
                   <Box sx={{ ml: 1 }}>
-                    {/* If verified, show chip; you can pass a boolean prop isVerified */}
-                    {/* <Chip icon={<VerifiedIcon />} label="Verified" color="success" size="small" /> */}
+                    {isVerified && (
+                      <Chip icon={<VerifiedIcon />} label="Verified" color="success" size="small" />
+                    )}
                   </Box>
                 </Stack>
 
@@ -204,6 +229,20 @@ export default function AppClient({
 
         {/* MAIN: two-column layout */}
         <Grid container spacing={3}>
+          {/* Debug panel */}
+          {typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1' && (
+            <Grid item xs={12}>
+              <Paper sx={{ p: 2, border: '1px dashed', borderColor: 'divider' }}>
+                <Typography variant="subtitle2" gutterBottom>Verification Debug</Typography>
+                <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+                  <Chip label={`isVerified: ${String(isVerified)}`} color={isVerified ? 'success' : 'default'} size="small" />
+                  <Chip label={`status: ${verificationStatus ?? 'unknown'}`} size="small" />
+                  <Chip label={`score: ${verificationScore ?? 0}`} size="small" />
+                  {lastVerificationMethod && <Chip label={`method: ${lastVerificationMethod}`} size="small" />}
+                </Stack>
+              </Paper>
+            </Grid>
+          )}
           {/* Left: long-form content */}
           <Grid item xs={12} md={8}>
             <Card sx={{ mb: 3, boxShadow }}>

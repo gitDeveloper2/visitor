@@ -753,7 +753,7 @@ export default function BlogMainPage({
       <UnifiedCTA 
         title="Share your story with the community ✍️"
         subtitle="Publish tutorials, founder stories, and insights for developers."
-        href="/dashboard/submission/blog"
+        href="/dashboard/submit/blog"
         buttonText="Submit Your Blog"
       />
 
@@ -915,7 +915,7 @@ export default function BlogMainPage({
             <UnifiedCTA 
               title="Share your first blog post ✍️"
               subtitle="Inspire others by writing your first article."
-              href="/dashboard/submission/blog"
+              href="/dashboard/submit/blog"
               buttonText="Submit Your Blog"
             />
           )}

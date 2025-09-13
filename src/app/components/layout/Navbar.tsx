@@ -59,6 +59,7 @@ const NavBar: React.FC = () => {
   const mobileNavItems = [
     { name: "Home", href: "/" },
     { name: "Tools", href: "/launch" },
+    { name: "Dashboard", href: "/dashboard" },
     { name: "Blog", href: "/blogs" },
     { name: "Pricing", href: "/pricing" },
   ];
@@ -152,13 +153,7 @@ const NavBar: React.FC = () => {
               </Box>
             )}
 
-            {/* Quick Actions */}
-            {!isPending && session?.user && (
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button component={Link} href="/dashboard" variant="outlined" size="small" fullWidth onClick={handleDrawerClose} sx={{ fontSize: '0.875rem', py: 1 }}>Dashboard</Button>
-                <Button component={Link} href="/dashboard/profile" variant="text" size="small" fullWidth onClick={handleDrawerClose} sx={{ fontSize: '0.875rem', py: 1 }}>Profile</Button>
-              </Box>
-            )}
+            {/* Quick Actions removed on mobile to avoid duplication */}
           </Box>
 
           {/* Navigation Items */}
@@ -194,12 +189,10 @@ const NavBar: React.FC = () => {
             ))}
           </List>
 
-          {/* Footer Auth only when logged out */}
-          {(!session?.user && !isPending) && (
-            <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-              <Auth isMobile={true} />
-            </Box>
-          )}
+          {/* Footer Auth: show auth actions */}
+          <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+            <Auth isMobile={true} />
+          </Box>
         </Box>
       </Drawer>
     </>

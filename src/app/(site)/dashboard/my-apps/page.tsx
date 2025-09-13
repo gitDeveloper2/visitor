@@ -455,7 +455,7 @@ export default function ManageAppsPage() {
           </Typography>
           <Button
             component={Link}
-            href="/dashboard/submission/app"
+            href="/dashboard/submit/app"
             variant="contained"
             color="primary"
             startIcon={<Plus fontSize="small" />}
@@ -808,7 +808,7 @@ export default function ManageAppsPage() {
                 </Typography>
                 <Button
                   component={Link}
-                  href="/dashboard/submission/app"
+                  href="/dashboard/submit/app"
                   variant="contained"
                   color="primary"
                   startIcon={<Plus fontSize="small" />}

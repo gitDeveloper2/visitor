@@ -619,7 +619,8 @@ async function updateVerificationStatus(db: any, appId: string, result: Verifica
   const existingApp = await db.collection('userapps').findOne({ _id: new ObjectId(appId) });
   let updateOperation: any;
   
-  if (existingApp?.verificationAttempts && typeof existingApp.verificationAttempts === 'number') {
+  // If the legacy field exists as a number (including 0), convert it to an array first
+  if (typeof existingApp?.verificationAttempts === 'number') {
     // Legacy format: replace the number with an array containing the new attempt
     updateOperation = {
       $set: {

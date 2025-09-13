@@ -11,6 +11,17 @@
             "path": "/api/cron/finalize-votes",
             "schedule": "5 0 * * *"
         }
-    ]
+    ],
+    "env": {
+        "BLOG_DEPLOYMENT_COMPLETE": "@blog_deployment_complete",
+        "BLOG_CONTENT_ENABLED": "@blog_content_enabled",
+        "APP_LAUNCH_ENABLED": "@app_launch_enabled",
+        "VOTING_SYSTEM_ENABLED": "@voting_system_enabled",
+        "LAUNCH_PAGE_ENABLED": "@launch_page_enabled",
+        "PREMIUM_FEATURES_ENABLED": "@premium_features_enabled",
+        "ADMIN_PANEL_ENABLED": "@admin_panel_enabled",
+        "MAINTENANCE_MODE": "@maintenance_mode",
+        "MAINTENANCE_BANNER": "@maintenance_banner"
+    }
 }
   

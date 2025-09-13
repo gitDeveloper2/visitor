@@ -234,7 +234,7 @@ export default function HowItWorksPage() {
               </Typography>
               <CardList items={reqApp} />
               <Box textAlign="center" mt={3}>
-                <Button variant="contained" size="large" sx={commonStyles.gradientButton(theme)} href="/launch/submit">
+                <Button variant="contained" size="large" sx={commonStyles.gradientButton(theme)} href="/dashboard/submit/app">
                   Submit Your App
                 </Button>
               </Box>
@@ -250,7 +250,7 @@ export default function HowItWorksPage() {
                 <Button variant="outlined" size="large"  sx={{
     ...commonStyles.glassButton(theme),
     color: theme.palette.common.white, // ✅ ensure white text (if not already set)
-  }} href="/launch/blog-submit">
+  }} href="/dashboard/submit/blog">
                   Submit an Article
                 </Button>
               </Box>
@@ -264,13 +264,13 @@ export default function HowItWorksPage() {
             subtitle="Join thousands of developers and innovators who have successfully showcased their work."
           />
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
-            <Button variant="contained" size="large" sx={commonStyles.gradientButton(theme)} href="/launch/submit">
+            <Button variant="contained" size="large" sx={commonStyles.gradientButton(theme)} href="/dashboard/submit/app">
               Submit Your App
             </Button>
             <Button variant="outlined" size="large"  sx={{
     ...commonStyles.glassButton(theme),
     color: theme.palette.common.white, // ✅ ensure white text (if not already set)
-  }} href="/launch/blog-submit">
+  }} href="/dashboard/submit/blog">
               Submit a Blog Post
             </Button>
           </Box>

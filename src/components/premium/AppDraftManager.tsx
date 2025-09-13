@@ -220,7 +220,7 @@ export default function AppDraftManager({
         </Typography>
         <Button
           component={Link}
-          href="/dashboard/submission/app"
+          href="/dashboard/submit/app"
           variant="contained"
           color="primary"
           startIcon={<Plus fontSize="small" />}

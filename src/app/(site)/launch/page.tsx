@@ -7,6 +7,8 @@ import { Cache, CachePolicy } from '@/features/shared/cache';
 import { verifyAppPremiumStatus } from '../../../utils/premiumVerification';
 import { sortByScore, computeAppScore } from '@/features/ranking/score';
 import AdSlot from '@/app/components/adds/google/AdSlot';
+import { DeploymentFlagService } from '@/utils/deploymentFlags';
+import DeploymentStatusBanner from '@/components/DeploymentStatusBanner';
 
 // Main page should revalidate after 24 hours per requirement
 export const revalidate = 86400;
@@ -36,6 +38,23 @@ function serializeMongoObject(obj: any): any {
 
 // This is now a true server component that fetches data directly from database
 export default async function LaunchPage() {
+  // Check deployment flags first
+  if (!DeploymentFlagService.isLaunchPageEnabled()) {
+    return (
+      <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
+        <DeploymentStatusBanner showOnlyIfRelevant={false} />
+        <Box sx={{ textAlign: 'center', py: 8 }}>
+          <Typography variant="h4" gutterBottom>
+            Launch Page Temporarily Unavailable
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            {DeploymentFlagService.getStatusMessage()}
+          </Typography>
+        </Box>
+      </Container>
+    );
+  }
+
   try {
     const { db } = await connectToDatabase();
     
@@ -51,11 +70,12 @@ export default async function LaunchPage() {
     const start = new Date(`${y}-${m}-${d}T00:00:00.000Z`);
     const end = new Date(`${y}-${m}-${d}T23:59:59.999Z`);
 
-    // Premium launching today
+    // Featured: Premium apps from the last 7 days, limited by env
+    const featuredLimit = parseInt(process.env.NEXT_PUBLIC_FEATURED_LIMIT || process.env.FEATURED_LIMIT || '6');
     let featuredApps = await db.collection('userapps')
-      .find({ status: 'approved', isPremium: true, launchDate: { $gte: start, $lte: end } })
+      .find({ status: 'approved', isPremium: true, createdAt: { $gte: sevenDaysAgo } })
       .sort({ createdAt: -1 })
-      .limit(6)
+      .limit(featuredLimit)
       .toArray();
 
     // All apps launching today (excluding featured duplicates), include premium too to keep grid complete
@@ -65,7 +85,7 @@ export default async function LaunchPage() {
       .sort({ createdAt: -1 })
       .limit(24)
       .toArray();
-    // Apply ranking score to main list (featured already selected by premium+recency)
+    // Apply ranking score to today's list. We'll keep server-side base ordering; client further adjusts with votes
     allApps = sortByScore(allApps as any, computeAppScore) as any;
     
     // Count only today's non-featured launches for pagination
@@ -118,7 +138,7 @@ export default async function LaunchPage() {
       .sort({ createdAt: -1 })
       .limit(24)
       .toArray();
-
+      console.log(nonTodayApps);
     // Serialize MongoDB objects before passing to client component
     const serializedApps = serializeMongoObject(allApps);
     const serializedFeaturedApps = serializeMongoObject(featuredApps);
@@ -131,6 +151,9 @@ export default async function LaunchPage() {
 
     return (
       <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
+        {/* Deployment Status Banner */}
+        <DeploymentStatusBanner />
+        
         {/* Launch Header Ad */}
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
           <AdSlot slot={30} />

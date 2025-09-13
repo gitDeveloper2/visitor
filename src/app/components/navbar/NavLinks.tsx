@@ -3,8 +3,11 @@
 import React from "react";
 import { Box, Button } from "@mui/material";
 import Link from "next/link";
+import { DeploymentFlagService } from "@/utils/deploymentFlags";
 
 export default function NavLinks() {
+  const isLaunchEnabled = DeploymentFlagService.isLaunchPageEnabled();
+  
   return (
     <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
       <Button
@@ -15,12 +18,22 @@ export default function NavLinks() {
         Home
       </Button>
       
+      {isLaunchEnabled && (
+        <Button
+          component={Link}
+          href="/launch"
+          sx={{ color: "inherit", textDecoration: "none" }}
+        >
+          Tools
+        </Button>
+      )}
+      
       <Button
         component={Link}
-        href="/launch"
+        href="/dashboard"
         sx={{ color: "inherit", textDecoration: "none" }}
       >
-        Tools
+        Dashboard
       </Button>
       
       <Button
