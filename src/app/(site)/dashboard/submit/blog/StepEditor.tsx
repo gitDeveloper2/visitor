@@ -172,8 +172,8 @@ const ContextualMenuBar = ({ editor }: { editor: any }) => {
             severity="info" 
             sx={{ 
               mb: 2, 
-              backgroundColor: `${theme.palette.primary.main}08`,
-              border: `1px solid ${theme.palette.primary.main}20`
+              backgroundColor: theme.palette.mode === 'dark' ? `${theme.palette.primary.main}25` : `${theme.palette.primary.main}08`,
+              border: `1px solid ${theme.palette.primary.main}${theme.palette.mode === 'dark' ? '60' : '20'}`
             }}
           >
             <Typography variant="body2">
@@ -197,7 +197,11 @@ const ContextualMenuBar = ({ editor }: { editor: any }) => {
             onClick={() => editor.chain().focus().toggleBold().run()}
             startIcon={<FormatBold />}
             sx={{ 
-              backgroundColor: cursorContext.suggestedActions.includes('bold') ? `${theme.palette.secondary.main}15` : 'transparent'
+              backgroundColor: cursorContext.suggestedActions.includes('bold') ? 
+                (theme.palette.mode === 'dark' ? `${theme.palette.secondary.main}40` : `${theme.palette.secondary.main}15`) : 'transparent',
+              '&.MuiButton-outlined': {
+                borderColor: theme.palette.mode === 'dark' ? theme.palette.secondary.main : undefined
+              }
             }}
           >
             Bold
@@ -208,7 +212,11 @@ const ContextualMenuBar = ({ editor }: { editor: any }) => {
             onClick={() => editor.chain().focus().toggleItalic().run()}
             startIcon={<FormatItalic />}
             sx={{ 
-              backgroundColor: cursorContext.suggestedActions.includes('italic') ? `${theme.palette.secondary.main}15` : 'transparent'
+              backgroundColor: cursorContext.suggestedActions.includes('italic') ? 
+                (theme.palette.mode === 'dark' ? `${theme.palette.secondary.main}40` : `${theme.palette.secondary.main}15`) : 'transparent',
+              '&.MuiButton-outlined': {
+                borderColor: theme.palette.mode === 'dark' ? theme.palette.secondary.main : undefined
+              }
             }}
           >
             Italic
@@ -219,7 +227,11 @@ const ContextualMenuBar = ({ editor }: { editor: any }) => {
             onClick={() => editor.chain().focus().toggleUnderline().run()}
             startIcon={<FormatUnderlined />}
             sx={{ 
-              backgroundColor: cursorContext.suggestedActions.includes('underline') ? `${theme.palette.secondary.main}15` : 'transparent'
+              backgroundColor: cursorContext.suggestedActions.includes('underline') ? 
+                (theme.palette.mode === 'dark' ? `${theme.palette.secondary.main}40` : `${theme.palette.secondary.main}15`) : 'transparent',
+              '&.MuiButton-outlined': {
+                borderColor: theme.palette.mode === 'dark' ? theme.palette.secondary.main : undefined
+              }
             }}
           >
             Underline
@@ -238,7 +250,11 @@ const ContextualMenuBar = ({ editor }: { editor: any }) => {
               onClick={() => editor.chain().focus().setHeading({ level }).run()}
               startIcon={<Title />}
               sx={{ 
-                backgroundColor: cursorContext.suggestedActions.includes('heading') ? `${theme.palette.secondary.main}15` : 'transparent'
+                backgroundColor: cursorContext.suggestedActions.includes('heading') ? 
+                  (theme.palette.mode === 'dark' ? `${theme.palette.secondary.main}40` : `${theme.palette.secondary.main}15`) : 'transparent',
+                '&.MuiButton-outlined': {
+                  borderColor: theme.palette.mode === 'dark' ? theme.palette.secondary.main : undefined
+                }
               }}
             >
               H{level}
@@ -263,7 +279,11 @@ const ContextualMenuBar = ({ editor }: { editor: any }) => {
             onClick={() => editor.chain().focus().toggleBulletList().run()}
             startIcon={<FormatListBulleted />}
             sx={{ 
-              backgroundColor: cursorContext.suggestedActions.includes('list') ? `${theme.palette.secondary.main}15` : 'transparent'
+              backgroundColor: cursorContext.suggestedActions.includes('list') ? 
+                (theme.palette.mode === 'dark' ? `${theme.palette.secondary.main}40` : `${theme.palette.secondary.main}15`) : 'transparent',
+              '&.MuiButton-outlined': {
+                borderColor: theme.palette.mode === 'dark' ? theme.palette.secondary.main : undefined
+              }
             }}
           >
             Bullets
@@ -276,7 +296,11 @@ const ContextualMenuBar = ({ editor }: { editor: any }) => {
             onClick={() => editor.chain().focus().toggleOrderedList().run()}
             startIcon={<FormatListNumbered />}
             sx={{ 
-              backgroundColor: cursorContext.suggestedActions.includes('list') ? `${theme.palette.secondary.main}15` : 'transparent'
+              backgroundColor: cursorContext.suggestedActions.includes('list') ? 
+                (theme.palette.mode === 'dark' ? `${theme.palette.secondary.main}40` : `${theme.palette.secondary.main}15`) : 'transparent',
+              '&.MuiButton-outlined': {
+                borderColor: theme.palette.mode === 'dark' ? theme.palette.secondary.main : undefined
+              }
             }}
           >
             Numbers
@@ -293,7 +317,11 @@ const ContextualMenuBar = ({ editor }: { editor: any }) => {
             onClick={() => editor.chain().focus().toggleCodeBlock().run()}
             startIcon={<Code />}
             sx={{ 
-              backgroundColor: cursorContext.suggestedActions.includes('code') ? `${theme.palette.secondary.main}15` : 'transparent'
+              backgroundColor: cursorContext.suggestedActions.includes('code') ? 
+                (theme.palette.mode === 'dark' ? `${theme.palette.secondary.main}40` : `${theme.palette.secondary.main}15`) : 'transparent',
+              '&.MuiButton-outlined': {
+                borderColor: theme.palette.mode === 'dark' ? theme.palette.secondary.main : undefined
+              }
             }}
           >
             Code
