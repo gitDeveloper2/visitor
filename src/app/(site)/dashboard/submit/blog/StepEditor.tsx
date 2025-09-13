@@ -159,16 +159,20 @@ const ContextualMenuBar = ({ editor }: { editor: any }) => {
   const checkMarkAcrossSelection = (markType: string) => {
     if (!editor) return false;
     const { from, to } = editor.state.selection;
+  
+    if (from === to) return false; // cursor only, no selection
+  
     let allHaveMark = true;
-
+  
     editor.state.doc.nodesBetween(from, to, (node) => {
       if (!node.isText) return;
       const marks = node.marks.map(m => m.type.name);
       if (!marks.includes(markType)) allHaveMark = false;
     });
-
+  
     return allHaveMark;
   };
+  
 
   // Utility to check if selection is entirely a list
   const checkListAcrossSelection = (listType: 'bulletList' | 'orderedList') => {
@@ -278,12 +282,13 @@ const ContextualMenuBar = ({ editor }: { editor: any }) => {
     if (isSuggested) return 'outlined';
     return 'text';
   };
-
+  
   const getButtonColor = (isActive: boolean, isSuggested: boolean) => {
     if (isActive) return 'primary';
-    if (isSuggested) return 'secondary';
+    if (isSuggested) return 'info'; // switch to info for visual differentiation
     return 'inherit';
   };
+  
 
   return (
     <Box sx={{ mb: 2 }}>
