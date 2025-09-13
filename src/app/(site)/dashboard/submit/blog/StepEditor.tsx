@@ -23,6 +23,39 @@ import {
   Title,
   TextFields
 } from '@mui/icons-material';
+import type { Theme } from "@mui/material/styles"; // add near your other imports if needed
+
+const getButtonStyles = (
+  theme: Theme,
+  isActive: boolean,
+  isSuggested: boolean,
+  palette: 'primary' | 'secondary' = 'primary'
+) => {
+  return {
+    ...(isSuggested && {
+      backgroundColor:
+        theme.palette.mode === 'dark'
+          ? theme.palette[palette].main
+          : `${theme.palette[palette].main}15`,
+      color:
+        theme.palette.mode === 'dark'
+          ? theme.palette[palette].contrastText
+          : theme.palette[palette].main,
+    }),
+    '&.MuiButton-contained': {
+      backgroundColor: theme.palette[palette].main,
+      color: theme.palette[palette].contrastText,
+    },
+    '&.MuiButton-outlined': {
+      borderColor: isSuggested ? theme.palette[palette].main : undefined,
+      color: isSuggested
+        ? theme.palette.mode === 'dark'
+          ? theme.palette[palette].contrastText
+          : theme.palette[palette].main
+        : undefined,
+    },
+  };
+};
 
 interface StepEditorProps {
   formData: {
@@ -153,7 +186,7 @@ const ContextualMenuBar = ({ editor }: { editor: any }) => {
 
   const getButtonVariant = (action: string, isActive: boolean) => {
     if (isActive) return 'contained';
-    if (cursorContext.suggestedActions.includes(action)) return 'outlined';
+    if (cursorContext.suggestedActions.includes(action)) return 'contained';
     return 'text';
   };
 
@@ -191,152 +224,176 @@ const ContextualMenuBar = ({ editor }: { editor: any }) => {
       <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
         {/* Text formatting */}
         <ButtonGroup variant="outlined" size="small">
+        <Button
+  variant={getButtonVariant('bold', cursorContext.isBold)}
+  color={getButtonColor('bold', cursorContext.isBold) as any}
+  onClick={() => editor.chain().focus().toggleBold().run()}
+  startIcon={<FormatBold />}
+  sx={getButtonStyles(
+    theme,
+    cursorContext.isBold,
+    cursorContext.suggestedActions.includes('bold'),
+    'secondary'
+  )}
+>
+  Bold
+</Button>
+
+<Button
+  variant={getButtonVariant('italic', cursorContext.isItalic)}
+  color={getButtonColor('italic', cursorContext.isItalic) as any}
+  onClick={() => editor.chain().focus().toggleItalic().run()}
+  startIcon={<FormatItalic />}
+  sx={getButtonStyles(
+    theme,
+    cursorContext.isItalic,
+    cursorContext.suggestedActions.includes('italic'),
+    'secondary'
+  )}
+>
+  Italic
+</Button>
+
           <Button
-            variant={getButtonVariant('bold', cursorContext.isBold)}
-            color={getButtonColor('bold', cursorContext.isBold) as any}
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            startIcon={<FormatBold />}
-            sx={{ 
-              backgroundColor: cursorContext.suggestedActions.includes('bold') ? 
-                (theme.palette.mode === 'dark' ? `${theme.palette.secondary.main}40` : `${theme.palette.secondary.main}15`) : 'transparent',
-              '&.MuiButton-outlined': {
-                borderColor: theme.palette.mode === 'dark' ? theme.palette.secondary.main : undefined
-              }
-            }}
-          >
-            Bold
-          </Button>
-          <Button
-            variant={getButtonVariant('italic', cursorContext.isItalic)}
-            color={getButtonColor('italic', cursorContext.isItalic) as any}
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-            startIcon={<FormatItalic />}
-            sx={{ 
-              backgroundColor: cursorContext.suggestedActions.includes('italic') ? 
-                (theme.palette.mode === 'dark' ? `${theme.palette.secondary.main}40` : `${theme.palette.secondary.main}15`) : 'transparent',
-              '&.MuiButton-outlined': {
-                borderColor: theme.palette.mode === 'dark' ? theme.palette.secondary.main : undefined
-              }
-            }}
-          >
-            Italic
-          </Button>
-          <Button
-            variant={getButtonVariant('underline', cursorContext.isUnderline)}
-            color={getButtonColor('underline', cursorContext.isUnderline) as any}
-            onClick={() => editor.chain().focus().toggleUnderline().run()}
-            startIcon={<FormatUnderlined />}
-            sx={{ 
-              backgroundColor: cursorContext.suggestedActions.includes('underline') ? 
-                (theme.palette.mode === 'dark' ? `${theme.palette.secondary.main}40` : `${theme.palette.secondary.main}15`) : 'transparent',
-              '&.MuiButton-outlined': {
-                borderColor: theme.palette.mode === 'dark' ? theme.palette.secondary.main : undefined
-              }
-            }}
-          >
-            Underline
-          </Button>
+  variant={getButtonVariant('underline', cursorContext.isUnderline)}
+  color={getButtonColor('underline', cursorContext.isUnderline) as any}
+  onClick={() => editor.chain().focus().toggleUnderline().run()}
+  startIcon={<FormatUnderlined />}
+  sx={getButtonStyles(
+    theme,
+    cursorContext.isUnderline,
+    cursorContext.suggestedActions.includes('underline'),
+    'secondary'
+  )}
+>
+  Underline
+</Button>
+
         </ButtonGroup>
 
         {/* Headings */}
         <ButtonGroup variant="outlined" size="small">
-          {[1, 2, 3, 4].map((level) => (
-            <Button
-              key={level}
-              variant={cursorContext.isHeading && cursorContext.headingLevel === level ? 'contained' : 
-                      cursorContext.suggestedActions.includes('heading') ? 'outlined' : 'text'}
-              color={cursorContext.isHeading && cursorContext.headingLevel === level ? 'primary' : 
-                     cursorContext.suggestedActions.includes('heading') ? 'secondary' : 'inherit'}
-              onClick={() => editor.chain().focus().setHeading({ level }).run()}
-              startIcon={<Title />}
-              sx={{ 
-                backgroundColor: cursorContext.suggestedActions.includes('heading') ? 
-                  (theme.palette.mode === 'dark' ? `${theme.palette.secondary.main}40` : `${theme.palette.secondary.main}15`) : 'transparent',
-                '&.MuiButton-outlined': {
-                  borderColor: theme.palette.mode === 'dark' ? theme.palette.secondary.main : undefined
-                }
-              }}
-            >
-              H{level}
-            </Button>
-          ))}
-          <Button
-            variant={!cursorContext.isHeading && !cursorContext.isList ? 'contained' : 'text'}
-            onClick={() => editor.chain().focus().setParagraph().run()}
-            startIcon={<TextFields />}
-          >
-            P
-          </Button>
-        </ButtonGroup>
+  {[1, 2, 3, 4].map((level) => {
+    const isActive = cursorContext.isHeading && cursorContext.headingLevel === level;
+    const isSuggested = cursorContext.suggestedActions.includes('heading');
+
+    return (
+      <Button
+        key={level}
+        variant={isActive ? 'contained' : isSuggested ? 'outlined' : 'text'}
+        color={isActive ? 'primary' : isSuggested ? 'secondary' : 'inherit'}
+        onClick={() => editor.chain().focus().setHeading({ level }).run()}
+        startIcon={<Title />}
+        sx={{
+          ...(isSuggested && {
+            backgroundColor:
+              theme.palette.mode === 'dark'
+                ? theme.palette.secondary.main
+                : `${theme.palette.secondary.main}15`,
+            color:
+              theme.palette.mode === 'dark'
+                ? theme.palette.secondary.contrastText
+                : theme.palette.secondary.main,
+          }),
+          '&.MuiButton-contained': {
+            backgroundColor: theme.palette.primary.main,
+            color: theme.palette.primary.contrastText, // force readable text
+          },
+          '&.MuiButton-outlined': {
+            borderColor: isSuggested ? theme.palette.secondary.main : undefined,
+            color: isSuggested
+              ? theme.palette.mode === 'dark'
+                ? theme.palette.secondary.contrastText
+                : theme.palette.secondary.main
+              : undefined,
+          },
+        }}
+      >
+        H{level}
+      </Button>
+    );
+  })}
+
+  <Button
+    variant={!cursorContext.isHeading && !cursorContext.isList ? 'contained' : 'text'}
+    color={!cursorContext.isHeading && !cursorContext.isList ? 'primary' : 'inherit'}
+    onClick={() => editor.chain().focus().setParagraph().run()}
+    startIcon={<TextFields />}
+    sx={{
+      '&.MuiButton-contained': {
+        backgroundColor: theme.palette.primary.main,
+        color: theme.palette.primary.contrastText,
+      },
+    }}
+  >
+    P
+  </Button>
+</ButtonGroup>
+
 
         {/* Lists */}
         <ButtonGroup variant="outlined" size="small">
-          <Button
-            variant={editor.isActive('bulletList') ? 'contained' : 
-                    cursorContext.suggestedActions.includes('list') ? 'outlined' : 'text'}
-            color={editor.isActive('bulletList') ? 'primary' : 
-                   cursorContext.suggestedActions.includes('list') ? 'secondary' : 'inherit'}
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-            startIcon={<FormatListBulleted />}
-            sx={{ 
-              backgroundColor: cursorContext.suggestedActions.includes('list') ? 
-                (theme.palette.mode === 'dark' ? `${theme.palette.secondary.main}40` : `${theme.palette.secondary.main}15`) : 'transparent',
-              '&.MuiButton-outlined': {
-                borderColor: theme.palette.mode === 'dark' ? theme.palette.secondary.main : undefined
-              }
-            }}
-          >
-            Bullets
-          </Button>
-          <Button
-            variant={editor.isActive('orderedList') ? 'contained' : 
-                    cursorContext.suggestedActions.includes('list') ? 'outlined' : 'text'}
-            color={editor.isActive('orderedList') ? 'primary' : 
-                   cursorContext.suggestedActions.includes('list') ? 'secondary' : 'inherit'}
-            onClick={() => editor.chain().focus().toggleOrderedList().run()}
-            startIcon={<FormatListNumbered />}
-            sx={{ 
-              backgroundColor: cursorContext.suggestedActions.includes('list') ? 
-                (theme.palette.mode === 'dark' ? `${theme.palette.secondary.main}40` : `${theme.palette.secondary.main}15`) : 'transparent',
-              '&.MuiButton-outlined': {
-                borderColor: theme.palette.mode === 'dark' ? theme.palette.secondary.main : undefined
-              }
-            }}
-          >
-            Numbers
-          </Button>
-        </ButtonGroup>
+  <Button
+    variant={editor.isActive('bulletList') ? 'contained' : cursorContext.suggestedActions.includes('list') ? 'outlined' : 'text'}
+    color={editor.isActive('bulletList') ? 'primary' : cursorContext.suggestedActions.includes('list') ? 'secondary' : 'inherit'}
+    onClick={() => editor.chain().focus().toggleBulletList().run()}
+    startIcon={<FormatListBulleted />}
+    sx={getButtonStyles(
+      theme,
+      editor.isActive('bulletList'),
+      cursorContext.suggestedActions.includes('list'),
+      'secondary'
+    )}
+  >
+    Bullets
+  </Button>
+
+  <Button
+    variant={editor.isActive('orderedList') ? 'contained' : cursorContext.suggestedActions.includes('list') ? 'outlined' : 'text'}
+    color={editor.isActive('orderedList') ? 'primary' : cursorContext.suggestedActions.includes('list') ? 'secondary' : 'inherit'}
+    onClick={() => editor.chain().focus().toggleOrderedList().run()}
+    startIcon={<FormatListNumbered />}
+    sx={getButtonStyles(
+      theme,
+      editor.isActive('orderedList'),
+      cursorContext.suggestedActions.includes('list'),
+      'secondary'
+    )}
+  >
+    Numbers
+  </Button>
+</ButtonGroup>
+
 
         {/* Code and Image */}
         <ButtonGroup variant="outlined" size="small">
-          <Button
-            variant={cursorContext.isCodeBlock ? 'contained' : 
-                    cursorContext.suggestedActions.includes('code') ? 'outlined' : 'text'}
-            color={cursorContext.isCodeBlock ? 'primary' : 
-                   cursorContext.suggestedActions.includes('code') ? 'secondary' : 'inherit'}
-            onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-            startIcon={<Code />}
-            sx={{ 
-              backgroundColor: cursorContext.suggestedActions.includes('code') ? 
-                (theme.palette.mode === 'dark' ? `${theme.palette.secondary.main}40` : `${theme.palette.secondary.main}15`) : 'transparent',
-              '&.MuiButton-outlined': {
-                borderColor: theme.palette.mode === 'dark' ? theme.palette.secondary.main : undefined
-              }
-            }}
-          >
-            Code
-          </Button>
-          <Button
-            variant="text"
-            onClick={() => {
-              const url = window.prompt("Image URL");
-              if (url) editor.chain().focus().setImage({ src: url }).run();
-            }}
-            startIcon={<ImageIcon />}
-          >
-            Image
-          </Button>
-        </ButtonGroup>
+  <Button
+    variant={cursorContext.isCodeBlock ? 'contained' : cursorContext.suggestedActions.includes('code') ? 'outlined' : 'text'}
+    color={cursorContext.isCodeBlock ? 'primary' : cursorContext.suggestedActions.includes('code') ? 'secondary' : 'inherit'}
+    onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+    startIcon={<Code />}
+    sx={getButtonStyles(
+      theme,
+      cursorContext.isCodeBlock,
+      cursorContext.suggestedActions.includes('code'),
+      'secondary'
+    )}
+  >
+    Code
+  </Button>
+
+  <Button
+    variant="text"
+    onClick={() => {
+      const url = window.prompt("Image URL");
+      if (url) editor.chain().focus().setImage({ src: url }).run();
+    }}
+    startIcon={<ImageIcon />}
+  >
+    Image
+  </Button>
+</ButtonGroup>
+
       </Box>
     </Box>
   );
