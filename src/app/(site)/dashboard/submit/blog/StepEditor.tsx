@@ -24,7 +24,7 @@ import {
 import type { Theme } from "@mui/material/styles"; // add near your other imports if needed
 
 // Custom extension to handle paste events and normalize content
-const PasteHandler = Extension.create({
+const createPasteHandler = (theme: Theme) => Extension.create({
   name: 'pasteHandler',
   
   addProseMirrorPlugins() {
@@ -47,7 +47,8 @@ const PasteHandler = Extension.create({
             
             // Clear all formatting marks from pasted content to ensure consistency
             if (dispatch) {
-              const textColor = getComputedStyle(document.documentElement).getPropertyValue('--mui-palette-text-primary') || '#000000';
+              // Use the current theme's text color
+              const textColor = theme.palette.text.primary;
               
               // Remove all existing marks first
               state.schema.marks && Object.keys(state.schema.marks).forEach(markName => {
@@ -437,7 +438,7 @@ export default function StepEditor({ formData, setFormData, errorText, quality }
       TextStyle, 
       Color,
       Image,
-      PasteHandler,
+      createPasteHandler(theme),
       Placeholder.configure({
         placeholder: "Start writing your blog post here...",
       }),
@@ -480,7 +481,12 @@ export default function StepEditor({ formData, setFormData, errorText, quality }
       </Typography>
       {errorText && (
         <Alert severity="error" sx={{ mb: 2 }}>
-          {errorText}
+          <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+            Content Issue:
+          </Typography>
+          <Typography variant="body2">
+            {errorText}
+          </Typography>
         </Alert>
       )}
 

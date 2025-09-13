@@ -198,6 +198,24 @@ export default function StepMetadata({ formData, setFormData, errors = {} }: Ste
       <Typography variant="h6" gutterBottom>
         Blog Information
       </Typography>
+      
+      {/* Validation Summary */}
+      {Object.keys(errors).length > 0 && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+            Please fix the following issues:
+          </Typography>
+          <Box component="ul" sx={{ m: 0, pl: 2 }}>
+            {Object.entries(errors).map(([field, message]) => (
+              <Box component="li" key={field} sx={{ mb: 0.5 }}>
+                <Typography variant="body2">
+                  <strong>{field.charAt(0).toUpperCase() + field.slice(1)}:</strong> {message}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </Alert>
+      )}
       <Grid container spacing={3}>
         {/* Existing fields (title, author, role, tags, authorBio) unchanged */}
         <Grid item xs={12}>

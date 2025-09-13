@@ -18,6 +18,9 @@ import {
   CardContent,
   Divider,
   Grid,
+  Fab,
+  Zoom,
+  Snackbar,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { getShadow, getGlassStyles } from "../../../../../utils/themeUtils";
@@ -26,7 +29,7 @@ import StepEditor from "./StepEditor";
 import StepReview from "./StepReview";
 import { useState, useEffect, useCallback } from "react";
 import PremiumBlogSubscription from "../../../../../components/premium/PremiumBlogSubscription";
-import { Clock, AlertTriangle, Check, Star, DollarSign } from "lucide-react";
+import { Clock, AlertTriangle, Check, Star, DollarSign, ArrowRight, ArrowLeft } from "lucide-react";
 import { computeBlogQuality, finalizeBlogQualityScore, type BlogQualityBreakdown } from '@/features/ranking/quality';
 import { BLOG_QUALITY_CONFIG } from '@/features/ranking/config';
 
@@ -71,6 +74,7 @@ function BlogSubmitPageContent() {
   const [qualityBreakdown, setQualityBreakdown] = useState<BlogQualityBreakdown | null>(null);
   const [qualityHints, setQualityHints] = useState<string[]>([]);
   const [selectedPremiumPlan, setSelectedPremiumPlan] = useState<string | null>(null);
+  const [validationSnackbar, setValidationSnackbar] = useState<string | null>(null);
 
   // Content limits (adjust as needed)
   const BLOG_LIMITS = {
@@ -321,27 +325,40 @@ function BlogSubmitPageContent() {
     return !errors.content;
   };
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleNext = () => {
     if (activeStep === 0 && !validateMetadata()) {
       setError("Please fix the highlighted fields before continuing.");
+      setValidationSnackbar("❌ Please fix validation errors above");
+      scrollToTop();
       return;
     }
     if (activeStep === 1 && !validateContent()) {
       setError("Please add more content before continuing.");
+      setValidationSnackbar("❌ Content validation failed - check above");
+      scrollToTop();
       return;
     }
     if (activeStep === 1) {
       // Enforce minimum quality before proceeding to review
       if (!qualityBreakdown || qualityBreakdown.total < BLOG_QUALITY_CONFIG.minProceedThreshold) {
         setError(`Please improve quality score to at least ${BLOG_QUALITY_CONFIG.minProceedThreshold.toFixed(2)} to proceed.`);
+        setValidationSnackbar("❌ Quality score too low - check requirements above");
+        scrollToTop();
         return;
       }
     }
     if (activeStep === 2 && !selectedPremiumPlan) {
       setError("Please select a plan before continuing.");
+      setValidationSnackbar("❌ Please select a plan above");
+      scrollToTop();
       return;
     }
     setError(null);
+    setValidationSnackbar(null);
     setActiveStep((prev) => prev + 1);
   };
   const handleBack = () => setActiveStep((prev) => prev - 1);
@@ -678,31 +695,23 @@ function BlogSubmitPageContent() {
           <Typography variant="h5" gutterBottom>
             Submit Your Blog
           </Typography>
-          {error && <Typography color="error" align="center">{error}</Typography>}
-          {success && <Typography color="success.main" align="center">Blog submitted successfully!</Typography>}
-          
-          {/* Debug: Test draft restoration */}
-          {draftId && (
-            <Button 
-              variant="outlined" 
-              onClick={() => {
-                console.log('🧪 Testing draft restoration for:', draftId);
-                restoreDraft(draftId);
-              }}
-              size="small"
-            >
-              🧪 Test Restore Draft
-            </Button>
-          )}
-          
-          {/* Debug: Show current form data */}
-          <Box sx={{ fontSize: '12px', color: 'text.secondary', maxWidth: 200 }}>
-            <div>Title: {formData.title || 'empty'}</div>
-            <div>Author: {formData.author || 'empty'}</div>
-            <div>Content length: {formData.content?.length || 0}</div>
-            <div>Draft ID: {draftId || 'none'}</div>
-          </Box>
         </Box>
+        
+        {/* Global Error/Success Messages */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            <Typography variant="body2" fontWeight={500}>
+              {error}
+            </Typography>
+          </Alert>
+        )}
+        {success && (
+          <Alert severity="success" sx={{ mb: 3 }}>
+            <Typography variant="body2" fontWeight={500}>
+              Blog submitted successfully!
+            </Typography>
+          </Alert>
+        )}
         <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 6 }}>
           {steps.map((label) => (
             <Step key={label}>
@@ -740,18 +749,20 @@ function BlogSubmitPageContent() {
             />
           )}
           {activeStep === 1 && (
-            <StepEditor 
-              formData={formData} 
-              setFormData={handleFormDataChange}
-              errorText={validationErrors.content}
-              quality={{
-                breakdown: qualityBreakdown || undefined,
-                hints: qualityHints,
-                config: BLOG_QUALITY_CONFIG,
-                tagsCount: Array.isArray(formData.tags) ? formData.tags.length : 0,
-                linkCap: BLOG_QUALITY_CONFIG.maxLinks,
-              }}
-            />
+            <Box sx={{ pb: { xs: 12, sm: 12, md: 8 } }}> {/* Add bottom padding on mobile for FAB */}
+              <StepEditor 
+                formData={formData} 
+                setFormData={handleFormDataChange}
+                errorText={validationErrors.content}
+                quality={{
+                  breakdown: qualityBreakdown || undefined,
+                  hints: qualityHints,
+                  config: BLOG_QUALITY_CONFIG,
+                  tagsCount: Array.isArray(formData.tags) ? formData.tags.length : 0,
+                  linkCap: BLOG_QUALITY_CONFIG.maxLinks,
+                }}
+              />
+            </Box>
           )}
           {activeStep === 2 && (
             <Box>
@@ -932,28 +943,106 @@ function BlogSubmitPageContent() {
         
 
       </Box>
-        <Box mt={4} display="flex" justifyContent="space-between">
-          <Button
-            disabled={activeStep === 0 || loading}
-            onClick={handleBack}
-            variant="outlined"
+        {/* Regular navigation buttons - hidden during editor step */}
+        {activeStep !== 1 && (
+          <Box mt={4} display="flex" justifyContent="space-between">
+            <Button
+              disabled={activeStep === 0 || loading}
+              onClick={handleBack}
+              variant="outlined"
+            >
+              Back
+            </Button>
+            <Button
+              variant="contained"
+              onClick={activeStep === steps.length - 1 ? handleSubmit : handleNext}
+              disabled={loading || (activeStep === steps.length - 1 && !selectedPremiumPlan)}
+              sx={{
+                backgroundColor: activeStep === steps.length - 1 && !selectedPremiumPlan ? 'grey.400' : undefined
+              }}
+            >
+              {loading ? "Submitting..." : 
+               activeStep === steps.length - 1 ? 
+                 (selectedPremiumPlan ? "Submit Blog" : "Select Plan First") : 
+                 "Next"}
+            </Button>
+          </Box>
+        )}
+        
+        {/* Floating Action Buttons for Editor Step */}
+        {activeStep === 1 && (
+          <>
+            <Zoom in={true}>
+              <Fab
+                variant="extended"
+                color="primary"
+                sx={{
+                  position: 'fixed',
+                  bottom: { xs: 80, sm: 80, md: 100 },
+                  right: { xs: 16, sm: 20, md: 24 },
+                  zIndex: 1000,
+                  boxShadow: getShadow(theme, "elegant"),
+                  minWidth: { xs: 48, sm: 120 },
+                  height: { xs: 48, sm: 48 },
+                  '& .MuiSvgIcon-root': {
+                    marginLeft: { xs: 0, sm: 1 },
+                  },
+                }}
+                onClick={handleNext}
+                disabled={loading}
+              >
+                <ArrowRight size={20} />
+                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' }, ml: 1 }}>
+                  Next Step
+                </Box>
+              </Fab>
+            </Zoom>
+            
+            {activeStep > 0 && (
+              <Zoom in={true}>
+                <Fab
+                  variant="extended"
+                  color="secondary"
+                  sx={{
+                    position: 'fixed',
+                    bottom: { xs: 80, sm: 80, md: 100 },
+                    right: { xs: 72, sm: 160, md: 180 },
+                    zIndex: 1000,
+                    boxShadow: getShadow(theme, "elegant"),
+                    minWidth: { xs: 40, sm: 80 },
+                    height: { xs: 40, sm: 40 },
+                    '& .MuiSvgIcon-root': {
+                      marginLeft: { xs: 0, sm: 1 },
+                    },
+                  }}
+                  onClick={handleBack}
+                  disabled={loading}
+                >
+                  <ArrowLeft size={18} />
+                  <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' }, ml: 1 }}>
+                    Back
+                  </Box>
+                </Fab>
+              </Zoom>
+            )}
+          </>
+        )}
+        
+        {/* Validation Snackbar */}
+        <Snackbar
+          open={Boolean(validationSnackbar)}
+          autoHideDuration={4000}
+          onClose={() => setValidationSnackbar(null)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert 
+            onClose={() => setValidationSnackbar(null)} 
+            severity="error" 
+            sx={{ width: '100%' }}
           >
-            Back
-          </Button>
-          <Button
-            variant="contained"
-            onClick={activeStep === steps.length - 1 ? handleSubmit : handleNext}
-            disabled={loading || (activeStep === steps.length - 1 && !selectedPremiumPlan)}
-            sx={{
-              backgroundColor: activeStep === steps.length - 1 && !selectedPremiumPlan ? 'grey.400' : undefined
-            }}
-          >
-            {loading ? "Submitting..." : 
-             activeStep === steps.length - 1 ? 
-               (selectedPremiumPlan ? "Submit Blog" : "Select Plan First") : 
-               "Next"}
-          </Button>
-        </Box>
+            {validationSnackbar}
+          </Alert>
+        </Snackbar>
       </Container>
     </Box>
   );
