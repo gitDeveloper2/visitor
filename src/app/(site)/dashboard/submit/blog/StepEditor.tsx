@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -9,9 +9,20 @@ import Underline from "@tiptap/extension-underline";
 import Image from "@tiptap/extension-image";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { common } from 'lowlight';
-import { Box, Typography, Alert, Chip, Divider, LinearProgress, Tooltip, Grid, Paper } from "@mui/material";
+import { Box, Typography, Alert, Chip, Divider, LinearProgress, Tooltip, Grid, Paper, ButtonGroup, Button, Fade } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { Color, TextStyle } from '@tiptap/extension-text-style'
+import { Color, TextStyle } from '@tiptap/extension-text-style';
+import { 
+  FormatBold, 
+  FormatItalic, 
+  FormatUnderlined, 
+  FormatListBulleted, 
+  FormatListNumbered, 
+  Code, 
+  Image as ImageIcon,
+  Title,
+  TextFields
+} from '@mui/icons-material';
 
 interface StepEditorProps {
   formData: {
@@ -35,42 +46,270 @@ interface StepEditorProps {
   };
 }
 
-// --- Menu Bar ---
-const MenuBar = ({ editor }: { editor: any }) => {
+// --- Contextual Menu Bar ---
+const ContextualMenuBar = ({ editor }: { editor: any }) => {
+  const theme = useTheme();
+  const [cursorContext, setCursorContext] = useState<{
+    isHeading: boolean;
+    headingLevel?: number;
+    isBold: boolean;
+    isItalic: boolean;
+    isUnderline: boolean;
+    isList: boolean;
+    isCodeBlock: boolean;
+    canAddHeading: boolean;
+    suggestedActions: string[];
+  }>({
+    isHeading: false,
+    isBold: false,
+    isItalic: false,
+    isUnderline: false,
+    isList: false,
+    isCodeBlock: false,
+    canAddHeading: true,
+    suggestedActions: []
+  });
+
+  const updateCursorContext = useCallback(() => {
+    if (!editor) return;
+
+    const { state } = editor;
+    const { from, to } = state.selection;
+    const selectedText = state.doc.textBetween(from, to);
+    const currentNode = state.selection.$from.parent;
+    
+    // Analyze current context
+    const isHeading = editor.isActive('heading');
+    const headingLevel = isHeading ? editor.getAttributes('heading').level : undefined;
+    const isBold = editor.isActive('bold');
+    const isItalic = editor.isActive('italic');
+    const isUnderline = editor.isActive('underline');
+    const isList = editor.isActive('bulletList') || editor.isActive('orderedList');
+    const isCodeBlock = editor.isActive('codeBlock');
+    
+    // Determine suggested actions based on context
+    const suggestedActions: string[] = [];
+    
+    // If at start of line or empty line, suggest headings
+    const isAtLineStart = state.selection.$from.parentOffset === 0;
+    const isEmptyLine = currentNode.textContent.trim() === '';
+    
+    if (isAtLineStart || isEmptyLine) {
+      suggestedActions.push('heading');
+    }
+    
+    // If text is selected, suggest formatting
+    if (selectedText.length > 0) {
+      if (!isBold) suggestedActions.push('bold');
+      if (!isItalic) suggestedActions.push('italic');
+      if (!isUnderline) suggestedActions.push('underline');
+    }
+    
+    // If in paragraph, suggest lists
+    if (!isHeading && !isList && !isCodeBlock) {
+      suggestedActions.push('list');
+    }
+    
+    // If typing code-like content, suggest code block
+    const nearbyText = state.doc.textBetween(Math.max(0, from - 20), Math.min(state.doc.content.size, to + 20));
+    if (/[{}();\[\]<>]/.test(nearbyText) && !isCodeBlock) {
+      suggestedActions.push('code');
+    }
+
+    setCursorContext({
+      isHeading,
+      headingLevel,
+      isBold,
+      isItalic,
+      isUnderline,
+      isList,
+      isCodeBlock,
+      canAddHeading: !isHeading,
+      suggestedActions
+    });
+  }, [editor]);
+
+  useEffect(() => {
+    if (!editor) return;
+
+    // Update context on selection change
+    const handleSelectionUpdate = () => {
+      updateCursorContext();
+    };
+
+    editor.on('selectionUpdate', handleSelectionUpdate);
+    editor.on('transaction', handleSelectionUpdate);
+    
+    // Initial update
+    updateCursorContext();
+
+    return () => {
+      editor.off('selectionUpdate', handleSelectionUpdate);
+      editor.off('transaction', handleSelectionUpdate);
+    };
+  }, [editor, updateCursorContext]);
+
   if (!editor) return null;
 
+  const getButtonVariant = (action: string, isActive: boolean) => {
+    if (isActive) return 'contained';
+    if (cursorContext.suggestedActions.includes(action)) return 'outlined';
+    return 'text';
+  };
+
+  const getButtonColor = (action: string, isActive: boolean) => {
+    if (isActive) return 'primary';
+    if (cursorContext.suggestedActions.includes(action)) return 'secondary';
+    return 'inherit';
+  };
+
   return (
-    <Box sx={{ mb: 2, display: "flex", gap: 1, flexWrap: "wrap" }}>
-      <button onClick={() => editor.chain().focus().toggleBold().run()}>Bold</button>
-      <button onClick={() => editor.chain().focus().toggleItalic().run()}>Italic</button>
-      <button onClick={() => editor.chain().focus().toggleUnderline().run()}>Underline</button>
-      <button onClick={() => editor.chain().focus().toggleBulletList().run()}>Bullet List</button>
-      <button onClick={() => editor.chain().focus().toggleOrderedList().run()}>Numbered List</button>
-      <button onClick={() => editor.chain().focus().toggleCodeBlock().run()}>Code Block</button>
+    <Box sx={{ mb: 2 }}>
+      {/* Contextual suggestions */}
+      {cursorContext.suggestedActions.length > 0 && (
+        <Fade in={true}>
+          <Alert 
+            severity="info" 
+            sx={{ 
+              mb: 2, 
+              backgroundColor: `${theme.palette.primary.main}08`,
+              border: `1px solid ${theme.palette.primary.main}20`
+            }}
+          >
+            <Typography variant="body2">
+              💡 Suggested: {cursorContext.suggestedActions.includes('heading') && 'Add heading'}
+              {cursorContext.suggestedActions.includes('bold') && ' • Bold text'}
+              {cursorContext.suggestedActions.includes('italic') && ' • Italic text'}
+              {cursorContext.suggestedActions.includes('list') && ' • Create list'}
+              {cursorContext.suggestedActions.includes('code') && ' • Code block'}
+            </Typography>
+          </Alert>
+        </Fade>
+      )}
 
-      {[1, 2, 3, 4, 5, 6].map((level) => (
-        <button
-          key={level}
-          onClick={() =>
-            editor.chain().focus().setHeading({ level }).run()
-          }
-        >
-          H{level}
-        </button>
-      ))}
+      {/* Main toolbar */}
+      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+        {/* Text formatting */}
+        <ButtonGroup variant="outlined" size="small">
+          <Button
+            variant={getButtonVariant('bold', cursorContext.isBold)}
+            color={getButtonColor('bold', cursorContext.isBold) as any}
+            onClick={() => editor.chain().focus().toggleBold().run()}
+            startIcon={<FormatBold />}
+            sx={{ 
+              backgroundColor: cursorContext.suggestedActions.includes('bold') ? `${theme.palette.secondary.main}15` : 'transparent'
+            }}
+          >
+            Bold
+          </Button>
+          <Button
+            variant={getButtonVariant('italic', cursorContext.isItalic)}
+            color={getButtonColor('italic', cursorContext.isItalic) as any}
+            onClick={() => editor.chain().focus().toggleItalic().run()}
+            startIcon={<FormatItalic />}
+            sx={{ 
+              backgroundColor: cursorContext.suggestedActions.includes('italic') ? `${theme.palette.secondary.main}15` : 'transparent'
+            }}
+          >
+            Italic
+          </Button>
+          <Button
+            variant={getButtonVariant('underline', cursorContext.isUnderline)}
+            color={getButtonColor('underline', cursorContext.isUnderline) as any}
+            onClick={() => editor.chain().focus().toggleUnderline().run()}
+            startIcon={<FormatUnderlined />}
+            sx={{ 
+              backgroundColor: cursorContext.suggestedActions.includes('underline') ? `${theme.palette.secondary.main}15` : 'transparent'
+            }}
+          >
+            Underline
+          </Button>
+        </ButtonGroup>
 
-      <button onClick={() => editor.chain().focus().setParagraph().run()}>
-        Paragraph
-      </button>
+        {/* Headings */}
+        <ButtonGroup variant="outlined" size="small">
+          {[1, 2, 3, 4].map((level) => (
+            <Button
+              key={level}
+              variant={cursorContext.isHeading && cursorContext.headingLevel === level ? 'contained' : 
+                      cursorContext.suggestedActions.includes('heading') ? 'outlined' : 'text'}
+              color={cursorContext.isHeading && cursorContext.headingLevel === level ? 'primary' : 
+                     cursorContext.suggestedActions.includes('heading') ? 'secondary' : 'inherit'}
+              onClick={() => editor.chain().focus().setHeading({ level }).run()}
+              startIcon={<Title />}
+              sx={{ 
+                backgroundColor: cursorContext.suggestedActions.includes('heading') ? `${theme.palette.secondary.main}15` : 'transparent'
+              }}
+            >
+              H{level}
+            </Button>
+          ))}
+          <Button
+            variant={!cursorContext.isHeading && !cursorContext.isList ? 'contained' : 'text'}
+            onClick={() => editor.chain().focus().setParagraph().run()}
+            startIcon={<TextFields />}
+          >
+            P
+          </Button>
+        </ButtonGroup>
 
-      <button
-        onClick={() => {
-          const url = window.prompt("Image URL");
-          if (url) editor.chain().focus().setImage({ src: url }).run();
-        }}
-      >
-        Add Image
-      </button>
+        {/* Lists */}
+        <ButtonGroup variant="outlined" size="small">
+          <Button
+            variant={editor.isActive('bulletList') ? 'contained' : 
+                    cursorContext.suggestedActions.includes('list') ? 'outlined' : 'text'}
+            color={editor.isActive('bulletList') ? 'primary' : 
+                   cursorContext.suggestedActions.includes('list') ? 'secondary' : 'inherit'}
+            onClick={() => editor.chain().focus().toggleBulletList().run()}
+            startIcon={<FormatListBulleted />}
+            sx={{ 
+              backgroundColor: cursorContext.suggestedActions.includes('list') ? `${theme.palette.secondary.main}15` : 'transparent'
+            }}
+          >
+            Bullets
+          </Button>
+          <Button
+            variant={editor.isActive('orderedList') ? 'contained' : 
+                    cursorContext.suggestedActions.includes('list') ? 'outlined' : 'text'}
+            color={editor.isActive('orderedList') ? 'primary' : 
+                   cursorContext.suggestedActions.includes('list') ? 'secondary' : 'inherit'}
+            onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            startIcon={<FormatListNumbered />}
+            sx={{ 
+              backgroundColor: cursorContext.suggestedActions.includes('list') ? `${theme.palette.secondary.main}15` : 'transparent'
+            }}
+          >
+            Numbers
+          </Button>
+        </ButtonGroup>
+
+        {/* Code and Image */}
+        <ButtonGroup variant="outlined" size="small">
+          <Button
+            variant={cursorContext.isCodeBlock ? 'contained' : 
+                    cursorContext.suggestedActions.includes('code') ? 'outlined' : 'text'}
+            color={cursorContext.isCodeBlock ? 'primary' : 
+                   cursorContext.suggestedActions.includes('code') ? 'secondary' : 'inherit'}
+            onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+            startIcon={<Code />}
+            sx={{ 
+              backgroundColor: cursorContext.suggestedActions.includes('code') ? `${theme.palette.secondary.main}15` : 'transparent'
+            }}
+          >
+            Code
+          </Button>
+          <Button
+            variant="text"
+            onClick={() => {
+              const url = window.prompt("Image URL");
+              if (url) editor.chain().focus().setImage({ src: url }).run();
+            }}
+            startIcon={<ImageIcon />}
+          >
+            Image
+          </Button>
+        </ButtonGroup>
+      </Box>
     </Box>
   );
 };
@@ -132,7 +371,7 @@ export default function StepEditor({ formData, setFormData, errorText, quality }
 
       <Grid container spacing={3} alignItems="flex-start">
         <Grid item xs={12} md={9}>
-          <MenuBar editor={editor} />
+          <ContextualMenuBar editor={editor} />
           <EditorContent editor={editor} />
         </Grid>
         {quality?.breakdown && (
