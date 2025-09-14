@@ -129,9 +129,10 @@ const ToolsSection = () => {
             variant="h2"
             sx={{
               ...typographyVariants.sectionTitle,
-              mb: { xs: 1.5, sm: 2 },
-              fontSize: { xs: '2rem', sm: '2.5rem', md: '3.5rem' },
-              px: { xs: 1, sm: 0 }
+              mb: 2,
+              fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
+              fontWeight: 700,
+              lineHeight: 1.2
             }}
           >
             <Box
@@ -161,8 +162,9 @@ const ToolsSection = () => {
               maxWidth: 600,
               mx: "auto",
               mb: 2,
-              fontSize: { xs: '1rem', sm: '1.125rem' },
-              px: { xs: 2, sm: 0 }
+              fontSize: '1.125rem',
+              fontWeight: 400,
+              lineHeight: 1.6
             }}
           >
             Boost your productivity with our collection of carefully crafted online tools designed for modern developers.
@@ -173,21 +175,18 @@ const ToolsSection = () => {
         <Grid container spacing={{ xs: 3, sm: 4, md: 6 }} justifyContent="center">
           {tools.map((tool) => (
             <Grid xs={12} sm={6} lg={4} key={tool.title}>
-              <Paper
-                elevation={2}
+              <Box
                 sx={{
-                  borderRadius: "1rem",
-                  ...getGlassStyles(theme),
-                  // ensure strong border contrast in light mode
-                  borderColor: theme.palette.mode === 'light' ? theme.palette.divider : 'inherit',
-                  boxShadow: getShadow(theme, 'elegant'),
+                  borderRadius: 3,
+                  background: theme.palette.background.paper,
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
                   height: "100%",
                   display: "flex",
                   flexDirection: "column",
-                  transition: "box-shadow 0.2s, border-color 0.2s",
+                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                   "&:hover": {
-                    borderColor: theme.palette.mode === 'light' ? `${theme.palette.primary.main}60` : `${theme.palette.primary.main}50`,
-                    boxShadow: getShadow(theme, 'elegant'),
+                    transform: "translateY(-4px)",
+                    boxShadow: '0 8px 25px rgba(0,0,0,0.08)',
                   },
                 }}
               >
@@ -202,53 +201,51 @@ const ToolsSection = () => {
                 >
                   <Box
                     sx={{
-                      p: { xs: 1.25, sm: 1.5 },
-                      background: theme.custom.gradients.primary,
-                      borderRadius: "0.75rem",
+                      width: 48,
+                      height: 48,
+                      background: `linear-gradient(135deg, ${theme.palette.primary.main}15, ${theme.palette.primary.main}25)`,
+                      borderRadius: 2,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      transition: "box-shadow 0.2s",
-                      "&:hover": {
-                        boxShadow: `0 0 20px ${theme.palette.primary.main}30`,
-                      },
                     }}
                   >
-                    <tool.icon style={{ width: 24, height: 24, color: "#fff" }} />
+                    <tool.icon style={{ width: 24, height: 24, color: theme.palette.primary.main }} />
                   </Box>
                   {tool.popular && (
                     <Chip
                       label="Popular"
                       size="small"
+                      variant="filled"
                       sx={{
-                        bgcolor: `${theme.palette.primary.main}20`,
-                        color: theme.palette.primary.main,
-                        borderColor: `${theme.palette.primary.main}30`,
-                        fontSize: { xs: '0.7rem', sm: '0.75rem' }
+                        bgcolor: theme.palette.primary.main,
+                        color: 'white',
+                        fontSize: '0.75rem',
+                        fontWeight: 600
                       }}
                     />
                   )}
                 </Box>
-                <Box sx={{ px: { xs: 2.5, sm: 3 }, pb: 2 }}>
+                <Box sx={{ px: { xs: 2.5, sm: 3 }, pb: 2, flex: 1 }}>
                   <Typography
                     variant="h6"
                     sx={{
-                      fontWeight: 700,
+                      fontWeight: 600,
                       color: theme.palette.text.primary,
-                      transition: "color 0.2s",
-                      "&:hover": { color: theme.palette.mode === 'light' ? theme.palette.primary.dark : theme.palette.primary.main },
-                      fontSize: { xs: '1.125rem', sm: '1.25rem' },
-                      mb: 1,
+                      fontSize: '1.125rem',
+                      mb: 1.5,
+                      lineHeight: 1.3
                     }}
                   >
                     {tool.title}
                   </Typography>
                   <Typography
+                    variant="body2"
                     sx={{
                       color: theme.palette.text.secondary,
-                      fontSize: { xs: '0.875rem', sm: '1rem' },
-                      mb: 2,
-                      lineHeight: 1.5
+                      fontSize: '0.9rem',
+                      lineHeight: 1.5,
+                      fontWeight: 400
                     }}
                   >
                     {tool.description}
@@ -258,20 +255,24 @@ const ToolsSection = () => {
                   sx={{
                     px: { xs: 2.5, sm: 3 },
                     pb: { xs: 2.5, sm: 3 },
+                    pt: 2,
+                    borderTop: `1px solid ${theme.palette.divider}`,
                     mt: "auto",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
                   }}
                 >
-                  <span style={{ 
-                    fontSize: { xs: "0.8rem", sm: "0.95rem" }, 
-                    color: theme.palette.text.secondary 
-                  }}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: theme.palette.text.secondary,
+                      fontWeight: 500,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }}
+                  >
                     {tool.category}
-                  </span>
+                  </Typography>
                 </Box>
-              </Paper>
+              </Box>
             </Grid>
           ))}
         </Grid>

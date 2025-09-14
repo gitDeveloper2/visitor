@@ -32,7 +32,9 @@ const Footer = () => {
       { name: "Tools", href: "/launch", icon: Code },
       { name: "Blog", href: "/blogs", icon: FileText },
       { name: "Pricing", href: "/pricing", icon: Star },
-      { name: "About", href: "/aboutus", icon: Users },
+    ],
+    company: [
+      { name: "About Us", href: "/aboutus", icon: Users },
       { name: "Contact", href: "/contactus", icon: Mail },
     ],
     social: [
@@ -207,7 +209,7 @@ const Footer = () => {
           </Grid>
 
           {/* Product Links */}
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} sm={6} md={3}>
             <Typography
               variant="subtitle1"
               sx={{
@@ -216,10 +218,45 @@ const Footer = () => {
                 mb: 2,
               }}
             >
-              Product
+              Products
             </Typography>
             <Box component="ul" sx={{ listStyle: "none", p: 0, m: 0 }}>
               {footerLinks.product.map((link) => (
+                <Box component="li" key={link.name} sx={{ mb: 1 }}>
+                  <RenderLink
+                    href={link.href}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      color: theme.palette.text.secondary,
+                      textDecoration: "none",
+                      transition: "color 0.2s",
+                      "&:hover": { color: theme.palette.primary.main },
+                    }}
+                  >
+                    <link.icon size={16} />
+                    {link.name}
+                  </RenderLink>
+                </Box>
+              ))}
+            </Box>
+          </Grid>
+
+          {/* Company Links */}
+          <Grid item xs={12} sm={6} md={3}>
+            <Typography
+              variant="subtitle1"
+              sx={{
+                fontWeight: 600,
+                color: theme.palette.text.primary,
+                mb: 2,
+              }}
+            >
+              Company
+            </Typography>
+            <Box component="ul" sx={{ listStyle: "none", p: 0, m: 0 }}>
+              {footerLinks.company.map((link) => (
                 <Box component="li" key={link.name} sx={{ mb: 1 }}>
                   <RenderLink
                     href={link.href}

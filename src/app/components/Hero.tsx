@@ -114,27 +114,23 @@ const Hero = () => {
         <Typography
           component="h1"
           sx={{
-            fontSize: { xs: '1.75rem', sm: '2.5rem', md: '3.5rem', lg: '4rem' }, // Reduced font size on mobile
-            fontWeight: 800,
-            lineHeight: { xs: 1.2, md: 1.05 },
-            letterSpacing: { xs: '-0.02em', md: '-0.03em' },
+            fontSize: { xs: '2.25rem', sm: '3rem', md: '4rem' },
+            fontWeight: 700,
+            lineHeight: { xs: 1.1, md: 1.05 },
+            letterSpacing: '-0.025em',
             color: theme.palette.text.primary,
-            mb: { xs: 2, sm: 3, md: 4 }, // Reduced margin on mobile
-            fontFamily: '"Outfit", "Poppins", sans-serif',
+            mb: { xs: 3, sm: 4 },
             textAlign: 'center',
             maxWidth: '100%',
-            mx: 'auto',
-            px: { xs: 0.5, sm: 0 } // Minimal padding on mobile
+            mx: 'auto'
           }}
         >
           Discover{" "}
           <Box
             component="span"
             sx={{
-              display: "inline-block",
               ...commonStyles.textGradient(theme),
-              fontWeight: 800,
-              fontFamily: '"Outfit", "Poppins", sans-serif',
+              fontWeight: 700
             }}
           >
             Coding Ideas and Insightful Tools
@@ -145,17 +141,14 @@ const Hero = () => {
         <Typography
           variant="h6"
           sx={{
-            mb: { xs: 4, sm: 6, md: 8 }, // Reduced margin on mobile
-            maxWidth: 700,
+            mb: { xs: 6, sm: 8 },
+            maxWidth: 600,
             mx: "auto",
-            lineHeight: { xs: 1.5, md: 1.7 },
+            lineHeight: 1.6,
             color: theme.palette.text.secondary,
-            fontSize: { xs: '0.875rem', sm: '1rem', md: '1.25rem' }, // Smaller font on mobile
+            fontSize: { xs: '1.125rem', sm: '1.25rem' },
             fontWeight: 400,
-            fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif',
-            letterSpacing: '0.01em',
-            textAlign: 'center',
-            px: { xs: 1, sm: 0 } // Minimal padding on mobile
+            textAlign: 'center'
           }}
         >
           Stay inspired with articles exploring unique programming concepts and actionable knowledge. From understanding Zod enums to tracking npm package trends with NpmStars, and using free tools like Pic2Map and Geotag Photos Online — BasicUtils helps you learn, analyze, and create smarter.
@@ -229,46 +222,51 @@ const Hero = () => {
         </Stack>
 
         {/* Stats */}
-        <Grid container spacing={{ xs: 2, sm: 4, md: 6 }} justifyContent="center" sx={{ maxWidth: 900, mx: "auto" }}>
+        <Grid container spacing={{ xs: 3, sm: 4 }} justifyContent="center" sx={{ width: '100%', maxWidth: 1000, mx: 'auto', px: 2 }}>
           {stats.map((stat, index) => (
             <Grid xs={12} sm={6} md={4} key={stat.label}>
-              <Paper
-                elevation={2}
+              <Box
                 sx={{
-                  p: { xs: 3, sm: 4, md: 6 }, // Reduced padding on mobile
-                  borderRadius: "2rem",
-                  ...getGlassStyles(theme),
+                  p: { xs: 4, sm: 5 },
+                  height: '100%',
+                  borderRadius: 3,
                   textAlign: "center",
-                  animation: theme.custom.animations.glow,
-                  transition: "transform 0.2s",
+                  background: theme.palette.background.paper,
+                  border: `1px solid ${theme.palette.divider}`,
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                   "&:hover": {
-                    transform: "scale(1.05)"
-                  }
+                    transform: "translateY(-4px)",
+                    boxShadow: '0 8px 25px rgba(0,0,0,0.08)',
+                    borderColor: theme.palette.primary.main + '40'
+                  },
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center'
                 }}
               >
                 <Typography 
-                  variant="h4" 
-                  fontWeight="bold" 
+                  variant="h3" 
                   sx={{ 
-                    color: theme.palette.primary.main, 
-                    mb: 2,
-                    fontFamily: '"Outfit", "Poppins", sans-serif',
-                    fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2.5rem' } // Smaller font on mobile
+                    color: theme.palette.text.primary, 
+                    mb: 1,
+                    fontWeight: 600,
+                    fontSize: { xs: '1.75rem', sm: '2rem' }
                   }}
                 >
                   {stat.number}
                 </Typography>
                 <Typography 
+                  variant="body1"
                   sx={{ 
                     color: theme.palette.text.secondary,
-                    fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif',
-                    fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1rem' }, // Smaller font on mobile
+                    fontSize: '0.875rem',
                     fontWeight: 500
                   }}
                 >
                   {stat.label}
                 </Typography>
-              </Paper>
+              </Box>
             </Grid>
           ))}
         </Grid>

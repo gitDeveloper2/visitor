@@ -140,50 +140,113 @@ export default function ManageBlogsPage() {
     <Box sx={{ py: 4 }}>
       <Container maxWidth="lg">
         {/* Header Section */}
-        <Box sx={{ mb: 6 }}>
-          <Typography variant="h4" sx={typographyVariants.sectionTitle} gutterBottom>
-            Manage Your{" "}
-            <Box component="span" sx={commonStyles.textGradient(theme)}>
-              Blog Posts
-            </Box>
-          </Typography>
-          <Typography variant="h6" color="text.secondary" sx={{ mb: 3 }}>
-            Track your blog submissions, manage drafts, and monitor their status
-          </Typography>
-          
-          <Button
-            component={Link}
-            href="/dashboard/submit/blog"
-            variant="contained"
-            color="primary"
-            startIcon={<Plus size={18} />}
-            sx={{ 
-              fontWeight: 600,
-              px: 3,
-              py: 1.5,
-              borderRadius: 2,
-            }}
-          >
-            Write New Blog
-          </Button>
+        <Box sx={{ mb: 8 }}>
+          <Box sx={{ textAlign: 'center', mb: 6 }}>
+            <Typography 
+              variant="h3" 
+              sx={{
+                ...typographyVariants.sectionTitle,
+                fontWeight: 800,
+                mb: 2,
+                letterSpacing: '-0.02em'
+              }} 
+            >
+              Manage Your{" "}
+              <Box component="span" sx={commonStyles.textGradient(theme)}>
+                Blog Posts
+              </Box>
+            </Typography>
+            <Typography 
+              variant="h6" 
+              color="text.secondary" 
+              sx={{ 
+                mb: 4,
+                maxWidth: 600,
+                mx: 'auto',
+                fontWeight: 400,
+                lineHeight: 1.6
+              }}
+            >
+              Create, manage, and track your blog submissions with our intuitive dashboard
+            </Typography>
+            
+            <Button
+              component={Link}
+              href="/dashboard/submit/blog"
+              variant="contained"
+              size="large"
+              startIcon={<Plus size={20} />}
+              sx={{ 
+                fontWeight: 600,
+                px: 6,
+                py: 2,
+                borderRadius: 3,
+                fontSize: '1.1rem',
+                textTransform: 'none',
+                boxShadow: `0 8px 32px ${theme.palette.primary.main}20`,
+                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: `0 12px 40px ${theme.palette.primary.main}30`,
+                }
+              }}
+            >
+              Create New Blog Post
+            </Button>
+          </Box>
         </Box>
 
         {/* Stats Cards */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid container spacing={4} sx={{ mb: 8 }}>
           <Grid item xs={12} sm={6} md={3}>
             <Paper
               sx={{
-                p: 3,
-                borderRadius: 3,
+                p: 4,
+                borderRadius: 4,
                 textAlign: 'center',
-                boxShadow: getShadow(theme, "elegant"),
+                background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
+                border: `1px solid ${theme.palette.divider}`,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                position: 'relative',
+                overflow: 'hidden',
+                '&:hover': {
+                  transform: 'translateY(-8px)',
+                  boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
+                  '&::before': {
+                    opacity: 1
+                  }
+                },
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '4px',
+                  background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
+                  opacity: 0,
+                  transition: 'opacity 0.3s ease'
+                }
               }}
             >
-              <BookOpen size={24} color={theme.palette.primary.main} />
-              <Typography variant="h4" sx={{ fontWeight: 700, mt: 1, color: theme.palette.primary.main }}>
+              <Box sx={{ 
+                width: 56, 
+                height: 56, 
+                borderRadius: 3,
+                background: `linear-gradient(135deg, ${theme.palette.primary.main}15, ${theme.palette.primary.main}25)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mx: 'auto',
+                mb: 3
+              }}>
+                <BookOpen size={28} color={theme.palette.primary.main} />
+              </Box>
+              <Typography variant="h3" sx={{ fontWeight: 800, mb: 1, color: theme.palette.text.primary }}>
                 {blogs.length}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500 }}>
                 Total Blogs
               </Typography>
             </Paper>
@@ -192,17 +255,52 @@ export default function ManageBlogsPage() {
           <Grid item xs={12} sm={6} md={3}>
             <Paper
               sx={{
-                p: 3,
-                borderRadius: 3,
+                p: 4,
+                borderRadius: 4,
                 textAlign: 'center',
-                boxShadow: getShadow(theme, "elegant"),
+                background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
+                border: `1px solid ${theme.palette.divider}`,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                position: 'relative',
+                overflow: 'hidden',
+                '&:hover': {
+                  transform: 'translateY(-8px)',
+                  boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
+                  '&::before': {
+                    opacity: 1
+                  }
+                },
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '4px',
+                  background: `linear-gradient(90deg, ${theme.palette.success.main}, ${theme.palette.success.light})`,
+                  opacity: 0,
+                  transition: 'opacity 0.3s ease'
+                }
               }}
             >
-              <TrendingUp size={24} color={theme.palette.success.main} />
-              <Typography variant="h4" sx={{ fontWeight: 700, mt: 1, color: theme.palette.success.main }}>
+              <Box sx={{ 
+                width: 56, 
+                height: 56, 
+                borderRadius: 3,
+                background: `linear-gradient(135deg, ${theme.palette.success.main}15, ${theme.palette.success.main}25)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mx: 'auto',
+                mb: 3
+              }}>
+                <TrendingUp size={28} color={theme.palette.success.main} />
+              </Box>
+              <Typography variant="h3" sx={{ fontWeight: 800, mb: 1, color: theme.palette.text.primary }}>
                 {blogs.filter(b => b.status === 'approved').length}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500 }}>
                 Published
               </Typography>
             </Paper>
@@ -211,17 +309,52 @@ export default function ManageBlogsPage() {
           <Grid item xs={12} sm={6} md={3}>
             <Paper
               sx={{
-                p: 3,
-                borderRadius: 3,
+                p: 4,
+                borderRadius: 4,
                 textAlign: 'center',
-                boxShadow: getShadow(theme, "elegant"),
+                background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
+                border: `1px solid ${theme.palette.divider}`,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                position: 'relative',
+                overflow: 'hidden',
+                '&:hover': {
+                  transform: 'translateY(-8px)',
+                  boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
+                  '&::before': {
+                    opacity: 1
+                  }
+                },
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '4px',
+                  background: `linear-gradient(90deg, ${theme.palette.warning.main}, ${theme.palette.warning.light})`,
+                  opacity: 0,
+                  transition: 'opacity 0.3s ease'
+                }
               }}
             >
-              <Clock size={24} color={theme.palette.warning.main} />
-              <Typography variant="h4" sx={{ fontWeight: 700, mt: 1, color: theme.palette.warning.main }}>
+              <Box sx={{ 
+                width: 56, 
+                height: 56, 
+                borderRadius: 3,
+                background: `linear-gradient(135deg, ${theme.palette.warning.main}15, ${theme.palette.warning.main}25)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mx: 'auto',
+                mb: 3
+              }}>
+                <Clock size={28} color={theme.palette.warning.main} />
+              </Box>
+              <Typography variant="h3" sx={{ fontWeight: 800, mb: 1, color: theme.palette.text.primary }}>
                 {blogs.filter(b => b.status === 'pending').length}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500 }}>
                 Pending Review
               </Typography>
             </Paper>
@@ -230,17 +363,52 @@ export default function ManageBlogsPage() {
           <Grid item xs={12} sm={6} md={3}>
             <Paper
               sx={{
-                p: 3,
-                borderRadius: 3,
+                p: 4,
+                borderRadius: 4,
                 textAlign: 'center',
-                boxShadow: getShadow(theme, "elegant"),
+                background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
+                border: `1px solid ${theme.palette.divider}`,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                position: 'relative',
+                overflow: 'hidden',
+                '&:hover': {
+                  transform: 'translateY(-8px)',
+                  boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
+                  '&::before': {
+                    opacity: 1
+                  }
+                },
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '4px',
+                  background: `linear-gradient(90deg, ${theme.palette.info.main}, ${theme.palette.info.light})`,
+                  opacity: 0,
+                  transition: 'opacity 0.3s ease'
+                }
               }}
             >
-              <EditIcon sx={{ color: theme.palette.info.main }} />
-              <Typography variant="h4" sx={{ fontWeight: 700, mt: 1, color: theme.palette.info.main }}>
+              <Box sx={{ 
+                width: 56, 
+                height: 56, 
+                borderRadius: 3,
+                background: `linear-gradient(135deg, ${theme.palette.info.main}15, ${theme.palette.info.main}25)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mx: 'auto',
+                mb: 3
+              }}>
+                <EditIcon sx={{ fontSize: 28, color: theme.palette.info.main }} />
+              </Box>
+              <Typography variant="h3" sx={{ fontWeight: 800, mb: 1, color: theme.palette.text.primary }}>
                 {drafts.length}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500 }}>
                 Drafts
               </Typography>
             </Paper>
@@ -250,9 +418,11 @@ export default function ManageBlogsPage() {
         {/* Tabs */}
         <Paper
           sx={{
-            borderRadius: 3,
+            borderRadius: 4,
             overflow: 'hidden',
-            boxShadow: getShadow(theme, "elegant"),
+            background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
+            border: `1px solid ${theme.palette.divider}`,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
           }}
         >
           <Tabs 
@@ -261,7 +431,22 @@ export default function ManageBlogsPage() {
             sx={{ 
               borderBottom: 1, 
               borderColor: 'divider',
-              backgroundColor: theme.palette.background.paper,
+              backgroundColor: 'transparent',
+              '& .MuiTab-root': {
+                textTransform: 'none',
+                fontWeight: 600,
+                fontSize: '1rem',
+                minHeight: 64,
+                px: 4,
+                '&.Mui-selected': {
+                  color: theme.palette.primary.main,
+                }
+              },
+              '& .MuiTabs-indicator': {
+                height: 3,
+                borderRadius: '3px 3px 0 0',
+                background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`
+              }
             }}
           >
             <Tab 
@@ -291,31 +476,56 @@ export default function ManageBlogsPage() {
           </Tabs>
 
           {/* Tab Content */}
-          <Box sx={{ p: 3 }}>
+          <Box sx={{ p: 6 }}>
             {activeTab === 0 && (
               // Published Blogs Tab
               blogs.length === 0 ? (
-                <Box sx={{ textAlign: 'center', py: 6 }}>
-                  <BookOpen size={48} color={theme.palette.text.secondary} />
-                  <Typography variant="h6" color="text.secondary" gutterBottom sx={{ mt: 2 }}>
+                <Box sx={{ textAlign: 'center', py: 12 }}>
+                  <Box sx={{
+                    width: 120,
+                    height: 120,
+                    borderRadius: 4,
+                    background: `linear-gradient(135deg, ${theme.palette.primary.main}10, ${theme.palette.primary.main}20)`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mx: 'auto',
+                    mb: 4
+                  }}>
+                    <BookOpen size={60} color={theme.palette.primary.main} />
+                  </Box>
+                  <Typography variant="h4" sx={{ fontWeight: 700, mb: 2 }}>
                     No blogs yet
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  <Typography variant="h6" color="text.secondary" sx={{ mb: 4, maxWidth: 400, mx: 'auto', lineHeight: 1.6 }}>
                     Start writing your first blog post to share your knowledge with the community.
                   </Typography>
                   <Button
                     component={Link}
                     href="/dashboard/submit/blog"
                     variant="contained"
-                    color="primary"
-                    startIcon={<Plus size={18} />}
-                    sx={{ fontWeight: 600 }}
+                    size="large"
+                    startIcon={<Plus size={20} />}
+                    sx={{ 
+                      fontWeight: 600,
+                      px: 6,
+                      py: 2,
+                      borderRadius: 3,
+                      fontSize: '1.1rem',
+                      textTransform: 'none',
+                      boxShadow: `0 8px 32px ${theme.palette.primary.main}20`,
+                      background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                      '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: `0 12px 40px ${theme.palette.primary.main}30`,
+                      }
+                    }}
                   >
                     Write Your First Blog
                   </Button>
                 </Box>
               ) : (
-                <Grid container spacing={3}>
+                <Grid container spacing={4}>
                   {blogs.map((blog) => (
                     <Grid item xs={12} md={6} key={blog._id}>
                       <Card
@@ -323,18 +533,22 @@ export default function ManageBlogsPage() {
                           height: '100%',
                           display: 'flex',
                           flexDirection: 'column',
-                          borderRadius: 3,
-                          boxShadow: getShadow(theme, "elegant"),
-                          transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
+                          borderRadius: 4,
+                          background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
+                          border: `1px solid ${theme.palette.divider}`,
+                          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                          position: 'relative',
+                          overflow: 'hidden',
                           "&:hover": {
-                            transform: "translateY(-2px)",
-                            boxShadow: getShadow(theme, "neon"),
+                            transform: "translateY(-8px)",
+                            boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
                           },
                         }}
                       >
-                        <CardContent sx={{ flex: 1, p: 3 }}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                            <Typography variant="h6" sx={{ flex: 1, mr: 2, lineHeight: 1.3 }}>
+                        <CardContent sx={{ flex: 1, p: 4 }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+                            <Typography variant="h5" sx={{ flex: 1, mr: 2, lineHeight: 1.3, fontWeight: 700 }}>
                               {blog.title}
                             </Typography>
                             <Box sx={{ display: 'flex', gap: 1 }}>
@@ -351,20 +565,20 @@ export default function ManageBlogsPage() {
                           </Box>
 
                           <Typography
-                            variant="body2"
+                            variant="body1"
                             color="text.secondary"
-                            sx={{ mb: 2, flex: 1 }}
+                            sx={{ mb: 3, flex: 1, lineHeight: 1.6 }}
                           >
                             {blog.content?.replace(/<[^>]*>/g, '').slice(0, 150)}...
                           </Typography>
 
-                          <Stack direction="row" spacing={1} mb={2} flexWrap="wrap">
+                          <Stack direction="row" spacing={1} mb={3} flexWrap="wrap">
                             {(blog.tags || []).map((tag: string, i: number) => (
                               <Chip key={i} size="small" label={tag} variant="filled" />
                             ))}
                           </Stack>
 
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, color: 'text.secondary', fontSize: '0.75rem' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, color: 'text.secondary', fontSize: '0.875rem' }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                               <Calendar size={14} />
                               {new Date(blog.createdAt).toLocaleDateString()}
@@ -378,9 +592,9 @@ export default function ManageBlogsPage() {
 
                         <Divider />
 
-                        <CardActions sx={{ p: 2, pt: 1 }}>
+                        <CardActions sx={{ p: 4, pt: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
                               {blog.author || blog.authorName}
                             </Typography>
                             
