@@ -17,15 +17,14 @@
         }
     ],
     "env": {
-        "BLOG_DEPLOYMENT_COMPLETE": "@blog_deployment_complete",
-        "BLOG_CONTENT_ENABLED": "@blog_content_enabled",
-        "APP_LAUNCH_ENABLED": "@app_launch_enabled",
-        "VOTING_SYSTEM_ENABLED": "@voting_system_enabled",
-        "LAUNCH_PAGE_ENABLED": "@launch_page_enabled",
-        "PREMIUM_FEATURES_ENABLED": "@premium_features_enabled",
-        "ADMIN_PANEL_ENABLED": "@admin_panel_enabled",
-        "MAINTENANCE_MODE": "@maintenance_mode",
-        "MAINTENANCE_BANNER": "@maintenance_banner"
+        "BLOG_DEPLOYMENT_COMPLETE": "true",
+        "BLOG_CONTENT_ENABLED": "true",
+        "APP_LAUNCH_ENABLED": "true",
+        "VOTING_SYSTEM_ENABLED": "true",
+        "LAUNCH_PAGE_ENABLED": "true",
+        "PREMIUM_FEATURES_ENABLED": "true",
+        "ADMIN_PANEL_ENABLED": "true",
+        "MAINTENANCE_MODE": "false",
+        "MAINTENANCE_BANNER": ""
     }
 }
-  
