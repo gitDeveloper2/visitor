@@ -178,6 +178,40 @@ export default function Client({ blog }: { blog: BlogPost }) {
               <Typography variant="caption" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>{0}</Typography>
             </Box>
           </Box>
+          
+          {blog.imageUrl && (
+            <Box 
+              sx={{ 
+                mt: 4,
+                mb: 3,
+                borderRadius: 2,
+                overflow: 'hidden',
+                boxShadow: 3,
+                maxWidth: '100%',
+                mx: 'auto',
+                position: 'relative',
+                '&::after': {
+                  content: '""',
+                  display: 'block',
+                  pt: '56.25%', // 16:9 aspect ratio
+                },
+                '& img': {
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                }
+              }}
+            >
+              <img 
+                src={blog.imageUrl} 
+                alt={blog.title} 
+                loading="lazy"
+              />
+            </Box>
+          )}
         </Box>
 
         <Box sx={{ display: "flex", justifyContent: "center", gap: 1, mb: { xs: 3, sm: 4 }, flexWrap: 'wrap' }}>

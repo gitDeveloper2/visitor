@@ -104,13 +104,13 @@ export default function PricingPage() {
 
 
   return (
-    <Container maxWidth="lg" sx={{ py: 6 }}>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
       {/* Header */}
-      <Box textAlign="center" mb={8}>
-        <Typography variant="h2" fontWeight={800} gutterBottom>
+      <Box textAlign="center" mb={4}>
+        <Typography variant="h3" fontWeight={700} gutterBottom>
           App Directory Pricing
         </Typography>
-        <Typography variant="h5" color="text.secondary" sx={{ maxWidth: 700, mx: 'auto', mb: 4 }}>
+        <Typography variant="subtitle1" color="text.secondary" sx={{ maxWidth: 700, mx: 'auto', mb: 3 }}>
           Choose the plan that fits your app's visibility needs. All plans include core listing features with transparent pricing.
         </Typography>
       </Box>
@@ -137,37 +137,39 @@ export default function PricingPage() {
                 <Box
                   sx={{
                     position: 'absolute',
-                    top: -12,
+                    top: -10,
                     left: '50%',
                     transform: 'translateX(-50%)',
                     bgcolor: tier.color,
                     color: 'white',
                     px: 2,
-                    py: 0.5,
+                    py: 0.75,
                     borderRadius: 2,
                     fontSize: '0.875rem',
                     fontWeight: 600,
+                    zIndex: 1,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                   }}
                 >
                   Most Popular
                 </Box>
               )}
               
-              <CardContent sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <CardContent sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 {/* Header */}
-                <Box textAlign="center" mb={2}>
+                <Box textAlign="center" mb={1}>
                   <Box
                     sx={{
                       display: 'inline-flex',
-                      p: 1.5,
+                      p: 1,
                       borderRadius: '50%',
                       bgcolor: `${tier.color}20`,
-                      mb: 1.5,
+                      mb: 1,
                     }}
                   >
                     <tier.icon size={24} color={tier.color} />
                   </Box>
-                  <Typography variant="h5" fontWeight={700} gutterBottom>
+                  <Typography variant="h6" fontWeight={600} gutterBottom>
                     {tier.name}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
@@ -176,7 +178,7 @@ export default function PricingPage() {
                   
                   {/* Price */}
                   <Box sx={{ mb: 2 }}>
-                    <Typography variant="h4" fontWeight={800} color="primary">
+                    <Typography variant="h5" fontWeight={700} color="primary">
                       ${tier.price}
                     </Typography>
                     {tier.price > 0 && (
@@ -193,11 +195,11 @@ export default function PricingPage() {
                 </Box>
 
                 {/* Features */}
-                <List sx={{ flexGrow: 1, mb: 2 }}>
+                <List dense sx={{ flexGrow: 1, mb: 1 }}>
                   {tier.features.map((feature, featureIndex) => (
-                    <ListItem key={featureIndex} sx={{ px: 0, py: 0.5 }}>
-                      <ListItemIcon sx={{ minWidth: 24 }}>
-                        <Check size={16} color={tier.color} />
+                    <ListItem key={featureIndex} sx={{ px: 0, py: 0.25 }}>
+                      <ListItemIcon sx={{ minWidth: 20 }}>
+                        <Check size={14} color={tier.color} />
                       </ListItemIcon>
                       <ListItemText
                         primary={feature}
@@ -241,11 +243,11 @@ export default function PricingPage() {
       </Grid>
 
       {/* Blog Publishing Pricing Section */}
-      <Box sx={{ mt: 12, textAlign: 'center' }}>
-        <Typography variant="h3" fontWeight={700} gutterBottom>
+      <Box sx={{ mt: 6, textAlign: 'center' }}>
+        <Typography variant="h4" fontWeight={700} gutterBottom>
           Blog Publishing Pricing
         </Typography>
-        <Typography variant="h6" color="text.secondary" sx={{ mb: 6 }}>
+        <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 3 }}>
           Share your story and content with our community
         </Typography>
         
@@ -261,27 +263,27 @@ export default function PricingPage() {
                 boxShadow: theme.shadows[8],
               },
             }}>
-              <CardContent sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <Box textAlign="center" mb={3}>
+              <CardContent sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <Box textAlign="center" mb={2}>
                   <Box
                     sx={{
                       display: 'inline-flex',
-                      p: 2,
+                      p: 1,
                       borderRadius: '50%',
                       bgcolor: `${theme.palette.grey[500]}20`,
-                      mb: 2,
+                      mb: 1,
                     }}
                   >
-                    <FileText size={32} color={theme.palette.grey[500]} />
+                    <FileText size={24} color={theme.palette.grey[500]} />
                   </Box>
-                  <Typography variant="h4" fontWeight={700} gutterBottom>
+                  <Typography variant="h6" fontWeight={600} gutterBottom>
                     Founder Story
                   </Typography>
-                  <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                     Share your entrepreneurial journey
                   </Typography>
                   
-                  <Box sx={{ mb: 3 }}>
+                  <Box sx={{ mb: 2 }}>
                     <Typography variant="h3" fontWeight={800} color="primary">
                       $0
                     </Typography>
@@ -291,10 +293,10 @@ export default function PricingPage() {
                   </Box>
                 </Box>
 
-                <List sx={{ flexGrow: 1, mb: 3 }}>
-                  <ListItem sx={{ px: 0 }}>
-                    <ListItemIcon sx={{ minWidth: 32 }}>
-                      <Check size={20} color={theme.palette.grey[500]} />
+                <List dense sx={{ flexGrow: 1, mb: 1 }}>
+                  <ListItem sx={{ px: 0, py: 0.25 }}>
+                    <ListItemIcon sx={{ minWidth: 28 }}>
+                      <Check size={16} color={theme.palette.grey[500]} />
                     </ListItemIcon>
                     <ListItemText
                       primary="Editorial review & free publication (if it meets criteria)"
@@ -304,9 +306,9 @@ export default function PricingPage() {
                       }}
                     />
                   </ListItem>
-                  <ListItem sx={{ px: 0 }}>
-                    <ListItemIcon sx={{ minWidth: 32 }}>
-                      <Check size={20} color={theme.palette.grey[500]} />
+                  <ListItem sx={{ px: 0, py: 0.25 }}>
+                    <ListItemIcon sx={{ minWidth: 28 }}>
+                      <Check size={16} color={theme.palette.grey[500]} />
                     </ListItemIcon>
                     <ListItemText
                       primary="Story-first format focused on origin, struggles, lessons, and product journey"
@@ -316,9 +318,9 @@ export default function PricingPage() {
                       }}
                     />
                   </ListItem>
-                  <ListItem sx={{ px: 0 }}>
-                    <ListItemIcon sx={{ minWidth: 32 }}>
-                      <Check size={20} color={theme.palette.grey[500]} />
+                  <ListItem sx={{ px: 0, py: 0.25 }}>
+                    <ListItemIcon sx={{ minWidth: 28 }}>
+                      <Check size={16} color={theme.palette.grey[500]} />
                     </ListItemIcon>
                     <ListItemText
                       primary="One author bio (with one official link) displayed"
@@ -328,9 +330,9 @@ export default function PricingPage() {
                       }}
                     />
                   </ListItem>
-                  <ListItem sx={{ px: 0 }}>
-                    <ListItemIcon sx={{ minWidth: 32 }}>
-                      <Check size={20} color={theme.palette.grey[500]} />
+                  <ListItem sx={{ px: 0, py: 0.25 }}>
+                    <ListItemIcon sx={{ minWidth: 28 }}>
+                      <Check size={16} color={theme.palette.grey[500]} />
                     </ListItemIcon>
                     <ListItemText
                       primary="No overt promotional pitching"
@@ -380,37 +382,39 @@ export default function PricingPage() {
                   transform: 'translateX(-50%)',
                   bgcolor: theme.palette.primary.main,
                   color: 'white',
-                  px: 1.5,
-                  py: 0.5,
+                  px: 2,
+                  py: 0.75,
                   borderRadius: 2,
-                  fontSize: '0.75rem',
+                  fontSize: '0.875rem',
                   fontWeight: 600,
+                  zIndex: 1,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
                 }}
               >
                 Most Popular
               </Box>
               
-              <CardContent sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <Box textAlign="center" mb={3}>
+              <CardContent sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <Box textAlign="center" mb={2}>
                   <Box
                     sx={{
                       display: 'inline-flex',
-                      p: 2,
+                      p: 1,
                       borderRadius: '50%',
                       bgcolor: `${theme.palette.primary.main}20`,
-                      mb: 2,
+                      mb: 1,
                     }}
                   >
-                    <Crown size={32} color={theme.palette.primary.main} />
+                    <Crown size={24} color={theme.palette.primary.main} />
                   </Box>
-                  <Typography variant="h4" fontWeight={700} gutterBottom>
+                  <Typography variant="h6" fontWeight={600} gutterBottom>
                     Standard
                   </Typography>
-                  <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                     Comprehensive content marketing solution
                   </Typography>
                   
-                  <Box sx={{ mb: 3 }}>
+                  <Box sx={{ mb: 2 }}>
                     <Typography variant="h3" fontWeight={800} color="primary">
                       $20
                     </Typography>
@@ -420,10 +424,10 @@ export default function PricingPage() {
                   </Box>
                 </Box>
 
-                <List sx={{ flexGrow: 1, mb: 3 }}>
-                  <ListItem sx={{ px: 0 }}>
-                    <ListItemIcon sx={{ minWidth: 32 }}>
-                      <Check size={20} color={theme.palette.primary.main} />
+                <List dense sx={{ flexGrow: 1, mb: 1 }}>
+                  <ListItem sx={{ px: 0, py: 0.25 }}>
+                    <ListItemIcon sx={{ minWidth: 28 }}>
+                      <Check size={16} color={theme.palette.primary.main} />
                     </ListItemIcon>
                     <ListItemText
                       primary="Editorial review & publication"
@@ -433,9 +437,9 @@ export default function PricingPage() {
                       }}
                     />
                   </ListItem>
-                  <ListItem sx={{ px: 0 }}>
-                    <ListItemIcon sx={{ minWidth: 32 }}>
-                      <Check size={20} color={theme.palette.primary.main} />
+                  <ListItem sx={{ px: 0, py: 0.25 }}>
+                    <ListItemIcon sx={{ minWidth: 28 }}>
+                      <Check size={16} color={theme.palette.primary.main} />
                     </ListItemIcon>
                     <ListItemText
                       primary="Full article format (tutorials, case studies, thought leadership, product updates)"
@@ -445,9 +449,9 @@ export default function PricingPage() {
                       }}
                     />
                   </ListItem>
-                  <ListItem sx={{ px: 0 }}>
-                    <ListItemIcon sx={{ minWidth: 32 }}>
-                      <Check size={20} color={theme.palette.primary.main} />
+                  <ListItem sx={{ px: 0, py: 0.25 }}>
+                    <ListItemIcon sx={{ minWidth: 28 }}>
+                      <Check size={16} color={theme.palette.primary.main} />
                     </ListItemIcon>
                     <ListItemText
                       primary="Featured on blog homepage for 7 days"
@@ -457,9 +461,9 @@ export default function PricingPage() {
                       }}
                     />
                   </ListItem>
-                  <ListItem sx={{ px: 0 }}>
-                    <ListItemIcon sx={{ minWidth: 32 }}>
-                      <Check size={20} color={theme.palette.primary.main} />
+                  <ListItem sx={{ px: 0, py: 0.25 }}>
+                    <ListItemIcon sx={{ minWidth: 28 }}>
+                      <Check size={16} color={theme.palette.primary.main} />
                     </ListItemIcon>
                     <ListItemText
                       primary="Priority placement in category listings"
@@ -469,9 +473,9 @@ export default function PricingPage() {
                       }}
                     />
                   </ListItem>
-                  <ListItem sx={{ px: 0 }}>
-                    <ListItemIcon sx={{ minWidth: 32 }}>
-                      <Check size={20} color={theme.palette.primary.main} />
+                  <ListItem sx={{ px: 0, py: 0.25 }}>
+                    <ListItemIcon sx={{ minWidth: 28 }}>
+                      <Check size={16} color={theme.palette.primary.main} />
                     </ListItemIcon>
                     <ListItemText
                       primary="Highlighted excerpt on homepage"
@@ -481,9 +485,9 @@ export default function PricingPage() {
                       }}
                     />
                   </ListItem>
-                  <ListItem sx={{ px: 0 }}>
-                    <ListItemIcon sx={{ minWidth: 32 }}>
-                      <Check size={20} color={theme.palette.primary.main} />
+                  <ListItem sx={{ px: 0, py: 0.25 }}>
+                    <ListItemIcon sx={{ minWidth: 28 }}>
+                      <Check size={16} color={theme.palette.primary.main} />
                     </ListItemIcon>
                     <ListItemText
                       primary="Author bio with official link"
@@ -493,9 +497,9 @@ export default function PricingPage() {
                       }}
                     />
                   </ListItem>
-                  <ListItem sx={{ px: 0 }}>
-                    <ListItemIcon sx={{ minWidth: 32 }}>
-                      <Check size={20} color={theme.palette.primary.main} />
+                  <ListItem sx={{ px: 0, py: 0.25 }}>
+                    <ListItemIcon sx={{ minWidth: 28 }}>
+                      <Check size={16} color={theme.palette.primary.main} />
                     </ListItemIcon>
                     <ListItemText
                       primary="One social share"
@@ -505,9 +509,9 @@ export default function PricingPage() {
                       }}
                     />
                   </ListItem>
-                  <ListItem sx={{ px: 0 }}>
-                    <ListItemIcon sx={{ minWidth: 32 }}>
-                      <Check size={20} color={theme.palette.primary.main} />
+                  <ListItem sx={{ px: 0, py: 0.25 }}>
+                    <ListItemIcon sx={{ minWidth: 28 }}>
+                      <Check size={16} color={theme.palette.primary.main} />
                     </ListItemIcon>
                     <ListItemText
                       primary="Optional add-ons available"
@@ -546,18 +550,18 @@ export default function PricingPage() {
       </Box>
 
       {/* FAQ Section */}
-      <Box sx={{ mt: 12, textAlign: 'center' }}>
-        <Typography variant="h3" fontWeight={700} gutterBottom>
+      <Box sx={{ mt: 6, textAlign: 'center' }}>
+        <Typography variant="h4" fontWeight={700} gutterBottom>
           Frequently Asked Questions
         </Typography>
-        <Typography variant="h6" color="text.secondary" sx={{ mb: 6 }}>
+        <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 3 }}>
           Everything you need to know about our pricing
         </Typography>
         
-        <Grid container spacing={4} justifyContent="center">
+        <Grid container spacing={3} justifyContent="center">
           <Grid item xs={12} md={6}>
-            <Card sx={{ p: 3, height: '100%' }}>
-              <Typography variant="h6" fontWeight={600} gutterBottom>
+            <Card sx={{ p: 2, height: '100%' }}>
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                 How does app verification work?
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -566,8 +570,8 @@ export default function PricingPage() {
             </Card>
           </Grid>
           <Grid item xs={12} md={6}>
-            <Card sx={{ p: 3, height: '100%' }}>
-              <Typography variant="h6" fontWeight={600} gutterBottom>
+            <Card sx={{ p: 2, height: '100%' }}>
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                 What's the difference between Basic and Verified?
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -576,8 +580,8 @@ export default function PricingPage() {
             </Card>
           </Grid>
           <Grid item xs={12} md={6}>
-            <Card sx={{ p: 3, height: '100%' }}>
-              <Typography variant="h6" fontWeight={600} gutterBottom>
+            <Card sx={{ p: 2, height: '100%' }}>
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                 How long does blog review take?
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -586,8 +590,8 @@ export default function PricingPage() {
             </Card>
           </Grid>
           <Grid item xs={12} md={6}>
-            <Card sx={{ p: 3, height: '100%' }}>
-              <Typography variant="h6" fontWeight={600} gutterBottom>
+            <Card sx={{ p: 2, height: '100%' }}>
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                 Can I upgrade my plan later?
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -601,21 +605,21 @@ export default function PricingPage() {
       {/* CTA Section */}
       <Box
         sx={{
-          mt: 12,
+          mt: 6,
           textAlign: 'center',
-          p: 6,
+          p: 4,
           borderRadius: 4,
           background: theme.custom?.gradients?.primary || theme.palette.primary.main,
           color: 'white',
         }}
       >
-        <Typography variant="h3" fontWeight={700} gutterBottom>
+        <Typography variant="h4" fontWeight={700} gutterBottom>
           Ready to get started?
         </Typography>
-        <Typography variant="h6" sx={{ mb: 4, opacity: 0.9 }}>
+        <Typography variant="subtitle1" sx={{ mb: 3, opacity: 0.9 }}>
           List your app or share your story with our community
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'center', flexWrap: 'wrap' }}>
           <Button
             component={Link}
             href="/dashboard/submit/app"

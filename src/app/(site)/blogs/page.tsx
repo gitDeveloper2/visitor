@@ -131,7 +131,7 @@ export default async function BlogsPage() {
         return await db.collection('userblogs')
           .find({ 
             status: 'approved',
-            createdAt: { $gte: sevenDaysAgo }
+            // createdAt: { $gte: sevenDaysAgo }
           })
           .sort({ createdAt: -1 })
           .toArray();
