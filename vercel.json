@@ -10,6 +10,10 @@
         {
             "path": "/api/cron/finalize-votes",
             "schedule": "5 0 * * *"
+        },
+        {
+            "path": "/api/cron/manage-voting",
+            "schedule": "0 10 * * *"
         }
     ],
     "env": {

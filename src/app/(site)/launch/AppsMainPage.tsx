@@ -51,6 +51,8 @@ interface AppsMainPageProps {
   categoryChips?: { category: string; count: number }[];
   allAppsCount?: number; // total approved apps excluding today's
   initialAllApps?: any[]; // non-today apps for All Apps section
+  votingEndTime?: string;
+  isVotingActive?: boolean;
 }
 
 export default function AppsMainPage({ 
@@ -58,24 +60,35 @@ export default function AppsMainPage({
   initialFeaturedApps, 
   initialTotalApps,
   categoryChips = [],
-  allAppsCount,
-  initialAllApps = []
+  allAppsCount = 0,
+  initialAllApps = [],
+  votingEndTime,
+  isVotingActive: globalVotingActive = false
 }: AppsMainPageProps) {
+  const [apps, setApps] = useState(initialApps);
+  const [featuredApps, setFeaturedApps] = useState(initialFeaturedApps);
+  const [allApps, setAllApps] = useState(initialAllApps);
+  const [totalApps, setTotalApps] = useState(initialTotalApps);
+  
+  // Update local state when props change
+  useEffect(() => {
+    setApps(initialApps);
+    setFeaturedApps(initialFeaturedApps);
+    setAllApps(initialAllApps);
+    setTotalApps(initialTotalApps);
+  }, [initialApps, initialFeaturedApps, initialAllApps, initialTotalApps]);
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'), { noSsr: true });
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true });
   const debugMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1';
   const testMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('test') === '1';
 
-  const [apps, setApps] = useState(initialApps);
-  const [featuredApps, setFeaturedApps] = useState(initialFeaturedApps);
-  const [allAppsList, setAllAppsList] = useState(initialAllApps);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(Math.ceil(initialTotalApps / 12));
-  const [totalApps, setTotalApps] = useState(initialTotalApps);
   const [searchQuery, setSearchQuery] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
@@ -224,7 +237,7 @@ export default function AppsMainPage({
   }, [todayPremium, todayNonPremium, getCount, premiumVoteBonus, voteWeight]);
 
   // Determine if a launch is still within its voting window
-  const isVotingActive = (a: any) => {
+  const isVotingActiveForApp = (a: any) => {
     if (!a) return false;
     if (a.votingFlushed) return false;
     if (!a.launchDate) return false;
@@ -332,25 +345,33 @@ export default function AppsMainPage({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-     const renderAppCardHorizontal = (app: any, votingEnabled = false, showSpecialStyling = true) => {
-     const appId = app._id?.toString() || app._id;
-     return (
-       <Paper
-         key={appId}
-         sx={{
-           borderRadius: '1rem',
-           overflow: 'hidden',
-           background: theme.palette.background.paper,
-           boxShadow: getShadow(theme, 'elegant'),
-           display: 'flex',
-           flexDirection: 'row',
-           alignItems: 'stretch',
-           minHeight: { xs: 120, sm: 140 },
-           transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-           '&:hover': { transform: 'translateY(-3px)', boxShadow: getShadow(theme, 'neon') },
-           ...(showSpecialStyling && app.isPremium && { border: `1px solid ${theme.palette.primary.main}` }),
-         }}
-       >
+  // Handle vote updates from VoteButton component
+  const handleVoteUpdate = (toolId: string, voted: boolean) => {
+    // This callback is triggered when a user votes/unvotes
+    // The VoteButton component handles the actual vote count updates
+    // We can optionally trigger a refresh or update local state here
+    console.log(`Vote update for tool ${toolId}: ${voted ? 'voted' : 'unvoted'}`);
+  };
+
+  const renderAppCardHorizontal = (app: any, votingEnabled = false, showSpecialStyling = true) => {
+    const appId = app._id?.toString() || app._id;
+    return (
+      <Paper
+        key={appId}
+        sx={{
+          borderRadius: '1rem',
+          overflow: 'hidden',
+          background: theme.palette.background.paper,
+          boxShadow: getShadow(theme, 'elegant'),
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'stretch',
+          minHeight: { xs: 120, sm: 140 },
+          transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+          '&:hover': { transform: 'translateY(-3px)', boxShadow: getShadow(theme, 'neon') },
+          ...(showSpecialStyling && app.isPremium && { border: `1px solid ${theme.palette.primary.main}` }),
+        }}
+      >
         {/* Image */}
         {app.imageUrl && (
           <Box
@@ -383,40 +404,40 @@ export default function AppsMainPage({
 
           {/* Title and Description inside content */}
           <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.3, mt: 0.5 }}>
-          {app.name}
-        </Typography>
+            {app.name}
+          </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ flex: 1, mb: 1.5 }}>
             {app.description}
           </Typography>
 
           {/* Footer actions */}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 'auto', gap: 1 }}>
-                         <Typography variant="caption" color="text.secondary">
-               {showSpecialStyling && app.isPremium ? 'Featured' : (app.pricing || 'Free')}
-             </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {showSpecialStyling && app.isPremium ? 'Featured' : (app.pricing || 'Free')}
+            </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-               {(app.isPremium || app.verificationStatus === 'verified' || app.isTop3Today) && app.slug && (
-                 <Button 
-                   component={Link} 
-                   href={`/launch/${app.slug}`} 
-                   variant="contained" 
-                   size="small" 
-                   sx={{ 
-                     minWidth: 0, 
-                     px: 1.5, 
-                     py: 0.6, 
-                     fontSize: '0.75rem',
-                     fontWeight: 600,
-                     backgroundColor: theme.palette.secondary.main,
-                     color: theme.palette.secondary.contrastText,
-                     '&:hover': {
-                       backgroundColor: theme.palette.secondary.dark,
-                     }
-                   }}
-                 >
-                   Details
-                 </Button>
-               )}
+              {(app.isPremium || app.verificationStatus === 'verified' || app.isTop3Today) && app.slug && (
+                <Button 
+                  component={Link} 
+                  href={`/launch/${app.slug}`} 
+                  variant="contained" 
+                  size="small" 
+                  sx={{ 
+                    minWidth: 0, 
+                    px: 1.5, 
+                    py: 0.6, 
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    backgroundColor: theme.palette.secondary.main,
+                    color: theme.palette.secondary.contrastText,
+                    '&:hover': {
+                      backgroundColor: theme.palette.secondary.dark,
+                    }
+                  }}
+                >
+                  Details
+                </Button>
+              )}
               {app.website && (
                 <Button 
                   component="a" 
@@ -465,23 +486,16 @@ export default function AppsMainPage({
                   Code
                 </Button>
               )}
-              {votingEnabled ? (
-                <VoteButton 
-                  toolId={appId} 
-                  initialVotes={app.stats?.votes ?? app.likes ?? 0}
-                  launchDate={app.launchDate}
-                  votingDurationHours={app.votingDurationHours}
-                  votingFlushed={app.votingFlushed}
-                />
-              ) : (
-                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, border: '1px solid', borderColor: 'divider', color: 'text.disabled', borderRadius: 2, px: 1, py: 0.5 }}>
-                  <ThumbUpAltOutlined sx={{ fontSize: 18, color: 'text.disabled' }} />
-                  <Typography variant="body2" color="text.disabled">{(app.likes ?? 0)}</Typography>
-                </Box>
-              )}
-            </Box>
+              <VoteButton 
+                toolId={appId} 
+                initialVotes={app.votes || app.stats?.votes || 0}
+                launchDate={app.launchDate}
+                disabled={!globalVotingActive || !app.inVoting}
+                onVoteUpdate={handleVoteUpdate}
+              />
             </Box>
           </Box>
+        </Box>
       </Paper>
     );
   };
@@ -582,181 +596,104 @@ export default function AppsMainPage({
     return <>{chips}</>;
   };
 
-  const renderAppCard = (app) => {
-    // Convert MongoDB ObjectId to string for safe usage
+  const renderAppCard = (app: any) => {
     const appId = app._id?.toString() || app._id;
     
     return (
-    <Paper
-      key={appId}
-      sx={{
-        borderRadius: "1rem",
-        overflow: "hidden",
-        background: theme.palette.background.paper,
-        boxShadow: getShadow(theme, "elegant"),
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
-        "&:hover": {
-          transform: "translateY(-4px)",
-          boxShadow: getShadow(theme, "neon"),
-        },
-        // Subtle premium indicator
-        ...(app.isPremium && {
-          border: `1px solid ${theme.palette.primary.main}`,
-        })
-      }}
-    >
-      {/* App Image Section */}
-      {app.imageUrl && (
-        <Box sx={{ position: "relative" }}>
-          <Box
-            sx={{
-              height: { xs: 140, sm: 160 },
-              backgroundImage: `url('${app.imageUrl}')`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }}
-          />
-          {(app.isPremium || app.verificationStatus === 'verified' || app.isVerified) && (
-            <Box sx={{ position: "absolute", top: 12, left: 12, display: 'flex', gap: 1 }}>
-              {renderStandardBadges(app)}
-            </Box>
-          )}
-        </Box>
-      )}
-
-      <Box sx={{ p: { xs: 2, sm: 3 }, flex: 1, display: "flex", flexDirection: "column" }}>
-                 {/* Featured Badge for cards without images */}
-         {!app.imageUrl && (app.isPremium || app.verificationStatus === 'verified' || app.isVerified) && (
-           <Box sx={{ mb: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-             {renderStandardBadges(app)}
-           </Box>
-         )}
-
-        {/* App Header with Author */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.5, sm: 2 }, mb: 2 }}>
-          <Avatar sx={{ width: { xs: 28, sm: 32 }, height: { xs: 28, sm: 32 }, bgcolor: theme.palette.primary.main }}>
-            <AppWindow size={isMobile ? 14 : 16} />
-          </Avatar>
-          <Box sx={{ flex: 1 }}>
-            <Typography 
-              variant="body2" 
-              fontWeight={600} 
-              color="text.primary"
-              sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
-            >
-              {app.authorName || app.author}
-            </Typography>
-            <Typography 
-              variant="caption" 
-              color="text.secondary"
-              sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
-            >
-              Developer
-            </Typography>
-          </Box>
-        </Box>
-
-        {/* Rank + Launch Date */}
-        {(rankMap[appId] !== undefined || app.launchDate) && (
-          <Box sx={{ mb: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            {rankMap[appId] !== undefined && (
-              <Chip
-                size="small"
-                label={`#${rankMap[appId]}`}
-                color="default"
-                sx={{ fontWeight: 600, fontSize: { xs: '0.65rem', sm: '0.7rem' } }}
-              />
-            )}
-            {app.launchDate && (
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.7rem' } }}>
-                Launch: {new Date(app.launchDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-              </Typography>
+      <Paper
+        key={appId}
+        sx={{
+          borderRadius: "1rem",
+          overflow: "hidden",
+          background: theme.palette.background.paper,
+          boxShadow: getShadow(theme, "elegant"),
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+          transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
+          "&:hover": {
+            transform: "translateY(-4px)",
+            boxShadow: getShadow(theme, "neon"),
+          },
+          ...(app.isPremium && {
+            border: `1px solid ${theme.palette.primary.main}`,
+          })
+        }}
+      >
+        {/* App Image Section */}
+        {app.imageUrl && (
+          <Box sx={{ position: "relative" }}>
+            <Box
+              sx={{
+                height: { xs: 140, sm: 160 },
+                backgroundImage: `url('${app.imageUrl}')`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            />
+            {(app.isPremium || app.verificationStatus === 'verified') && (
+              <Box sx={{ position: "absolute", top: 12, left: 12, display: 'flex', gap: 1 }}>
+                {renderStandardBadges(app)}
+              </Box>
             )}
           </Box>
         )}
 
-        {/* App Title */}
-        <Typography 
-          variant={isMobile ? "h6" : "h6"} 
-          sx={{ 
-            fontWeight: 700, 
-            mb: 1, 
-            lineHeight: 1.3, 
-            color: "text.primary",
-            fontSize: { xs: '1rem', sm: '1.25rem' }
-          }}
-        >
-          {app.name}
-        </Typography>
+        <Box sx={{ p: { xs: 2, sm: 3 }, flex: 1, display: "flex", flexDirection: "column" }}>
+          {!app.imageUrl && (app.isPremium || app.verificationStatus === 'verified') && (
+            <Box sx={{ mb: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              {renderStandardBadges(app)}
+            </Box>
+          )}
 
-                 {/* App Description */}
-                   <Typography
-            variant="body2"
-            sx={{ 
-              color: "text.secondary", 
-              mb: 2, 
-              flex: 1, 
-              lineHeight: 1.3,
-              fontSize: { xs: '0.7rem', sm: '0.75rem' },
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              display: '-webkit-box',
-              WebkitLineClamp: 3,
-              WebkitBoxOrient: 'vertical'
-            }}
-          >
+          <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.5, sm: 2 }, mb: 2 }}>
+            <Avatar sx={{ width: { xs: 28, sm: 32 }, height: { xs: 28, sm: 32 }, bgcolor: theme.palette.primary.main }}>
+              <AppWindow size={isMobile ? 14 : 16} />
+            </Avatar>
+            <Box sx={{ flex: 1 }}>
+              <Typography 
+                variant="body2" 
+                fontWeight={600} 
+                color="text.primary"
+                sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
+              >
+                {app.authorName || app.author}
+              </Typography>
+              <Typography 
+                variant="caption" 
+                color="text.secondary"
+                sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+              >
+                Developer
+              </Typography>
+            </Box>
+          </Box>
+
+          <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, lineHeight: 1.3 }}>
+            {app.name}
+          </Typography>
+          
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, flex: 1 }}>
             {app.description}
           </Typography>
 
-        {/* Meta row: pricing and votes */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-          <Typography variant="caption" color="text.secondary">
-            {app.pricing || 'Free'}
-          </Typography>
-          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, border: '1px solid', borderColor: 'divider', color: 'text.secondary', borderRadius: 2, px: 1, py: 0.3 }}>
-            <ThumbUpAltOutlined sx={{ fontSize: 16 }} />
-            <Typography variant="body2">{(app.stats?.votes ?? app.likes ?? 0)}</Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 'auto' }}>
+            <Typography variant="caption" color="text.secondary">
+              {app.pricing || 'Free'}
+            </Typography>
+            
+            <VoteButton 
+              toolId={appId} 
+              initialVotes={app.votes || app.stats?.votes || 0}
+              launchDate={app.launchDate}
+              disabled={!globalVotingActive || !app.inVoting}
+              onVoteUpdate={handleVoteUpdate}
+            />
           </Box>
         </Box>
-
-                 {/* High Contrast Action Button using theme colors */}
-         <Box sx={{ mt: "auto", mb: 1 }}>
-           {app.website && (
-             <Button
-               component="a"
-               href={app.website}
-               target="_blank"
-               rel={app.dofollow ? 'noopener noreferrer' : 'nofollow noopener noreferrer'}
-               variant="contained"
-               size="small"
-               fullWidth
-               sx={{ 
-                 fontWeight: 700,
-                 fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                 py: 1,
-                 backgroundColor: theme.palette.primary.main,
-                 color: theme.palette.primary.contrastText,
-                 '&:hover': {
-                   backgroundColor: theme.palette.primary.dark,
-                   transform: 'translateY(-1px)',
-                   boxShadow: getShadow(theme, 'neon'),
-                 },
-                 transition: 'all 0.2s ease-in-out'
-               }}
-             >
-               Visit App
-             </Button>
-           )}
-         </Box>
-
-        
-      </Box>
-    </Paper>
-  );
-  }
+      </Paper>
+    );
+  };
 
   // Get unique filters (combine categories and common tags)
   // If server-provided categoryChips are available, include counts in the label
@@ -769,7 +706,7 @@ export default function AppsMainPage({
     "All",
     ...categories.map(cat => ({ name: cat.name, slug: cat.slug })),
     "Free",
-    "Freemium",
+    "Freemium", 
     "Premium"
   ];
 
@@ -1000,7 +937,7 @@ export default function AppsMainPage({
              </Box>
           </Typography>
           <Grid container spacing={{ xs: 2, sm: 2 }}>
-                           {(testMode ? todayPremium : todayPremium.filter(isVotingActive)).map((app) => (
+                           {(testMode ? todayPremium : todayPremium.filter(isVotingActiveForApp)).map((app) => (
                  <Grid item xs={12} key={app._id?.toString() || app._id}>
                    {renderAppCardHorizontal(app, true, true)}
                  </Grid>
@@ -1026,7 +963,7 @@ export default function AppsMainPage({
             </Box>
           </Typography>
           <Grid container spacing={{ xs: 2, sm: 2 }}>
-                           {(testMode ? todayNonPremium : todayNonPremium.filter(isVotingActive)).map((app) => (
+                           {(testMode ? todayNonPremium : todayNonPremium.filter(isVotingActiveForApp)).map((app) => (
                  <Grid item xs={12} key={app._id?.toString() || app._id}>
                    {renderAppCardHorizontal(app, true, true)}
                  </Grid>
@@ -1072,10 +1009,10 @@ export default function AppsMainPage({
 
       {!loading && !error && (
         <>
-          {allAppsList.length > 0 ? (
+          {allApps.length > 0 ? (
             <>
               <Grid container spacing={{ xs: 2, sm: 3, md: 3 }}>
-                                 {allAppsList.map((app) => (
+                                 {allApps.map((app) => (
                   <Grid item xs={12} sm={6} md={4} key={app._id?.toString() || app._id}>
                     {renderAppCard(app)}
                    </Grid>

@@ -6,123 +6,173 @@ import {
   CircularProgress,
   Snackbar,
   Tooltip,
+  IconButton,
+  Button,
 } from '@mui/material';
 import ThumbUpAltOutlined from '@mui/icons-material/ThumbUpAltOutlined';
 import ThumbUpAlt from '@mui/icons-material/ThumbUpAlt';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { authClient } from '@/app/auth-client';
-import { useVoteContext } from '@/features/votes/VoteProvider';
-import { DeploymentFlagService } from '@/utils/deploymentFlags';
 
 type Props = {
   toolId: string;
   initialVotes: number;
   launchDate?: string;
-  votingDurationHours?: number;
-  votingFlushed?: boolean;
+  disabled?: boolean;
+  onVoteUpdate?: (toolId: string, voted: boolean) => void;
 };
 
 export default function VoteButton({
   toolId,
-  initialVotes,
+  initialVotes = 0,
   launchDate,
-  votingDurationHours = 24,
-  votingFlushed = false,
+  disabled = false,
+  onVoteUpdate,
 }: Props) {
   const { data: session } = authClient.useSession();
   const isAuthenticated = !!session?.user;
-  const { getCount, hasVoted, vote } = useVoteContext();
-
+  
+  const [votes, setVotes] = useState(initialVotes);
+  const [hasVoted, setHasVoted] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [lockout, setLockout] = useState(false);
-  const [allowRender, setAllowRender] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
 
-  const liveCount = getCount(toolId);
-
-  // Delay render to avoid flash of initialVotes
+  // Sync with initialVotes prop
   useEffect(() => {
-    const timeout = setTimeout(() => setAllowRender(true), 100);
-    return () => clearTimeout(timeout);
-  }, []);
+    setVotes(initialVotes);
+  }, [initialVotes]);
 
-  const currentVotes = allowRender ? liveCount ?? initialVotes : undefined;
-
-  const votingOver = useMemo(() => {
-    if (votingFlushed) return true;
-    if (!launchDate) return false;
-    const endTime =
-      new Date(launchDate).getTime() + votingDurationHours * 3600_000;
-    return Date.now() > endTime;
-  }, [launchDate, votingDurationHours, votingFlushed]);
-
-  const voted = useMemo(
-    () => isAuthenticated && hasVoted(toolId),
-    [isAuthenticated, hasVoted, toolId]
-  );
-
-  const handleVote = async () => {
+  const handleVote = useCallback(async () => {
     if (!isAuthenticated) {
+      setSnackbarMessage('Please sign in to vote');
       setSnackbarOpen(true);
       return;
     }
-    if (lockout || votingOver) return;
 
-    setLockout(true);
-    try {
-      await vote(toolId);
-    } finally {
-      setTimeout(() => setLockout(false), 500);
+    if (disabled) {
+      setSnackbarMessage('Voting is not currently active');
+      setSnackbarOpen(true);
+      return;
     }
-  };
+
+    setLoading(true);
+    
+    try {
+      const response = await fetch('/api/vote', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ toolId }),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to process vote');
+      }
+
+      // Update local state
+      const newVotedState = !hasVoted;
+      setHasVoted(newVotedState);
+      setVotes(prev => newVotedState ? prev + 1 : Math.max(0, prev - 1));
+      
+      // Notify parent component
+      if (onVoteUpdate) {
+        onVoteUpdate(toolId, newVotedState);
+      }
+
+      setSnackbarMessage(newVotedState ? 'Vote recorded!' : 'Vote removed');
+      setSnackbarOpen(true);
+    } catch (error) {
+      console.error('Vote error:', error);
+      setSnackbarMessage(error instanceof Error ? error.message : 'Failed to process vote');
+      setSnackbarOpen(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated, toolId, hasVoted, onVoteUpdate, disabled]);
+
+  const votingOver = useMemo(() => {
+    // If disabled prop is true, voting is over
+    if (disabled) return true;
+    
+    // If no launch date, voting is not time-bound
+    if (!launchDate) return false;
+    
+    // Otherwise check if voting period has passed
+    const launch = new Date(launchDate);
+    const now = new Date();
+    const votingEnd = new Date(launch.getTime() + (24 * 60 * 60 * 1000)); // 24 hours
+    
+    return now > votingEnd;
+  }, [launchDate, disabled]);
+
+  const voted = useMemo(
+    () => isAuthenticated && hasVoted,
+    [isAuthenticated, hasVoted]
+  );
+
+  if (loading) {
+    return (
+      <Box display="inline-flex" alignItems="center" gap={0.5}>
+        <CircularProgress size={20} />
+        <Typography variant="body2" color="text.secondary">
+          {votes}
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <>
-      <Tooltip
+      <Tooltip 
         title={
-          votingOver
-            ? 'Voting has ended'
-            : !isAuthenticated
-            ? 'Please log in to vote'
-            : voted
-            ? 'Click to remove vote'
-            : ''
+          !isAuthenticated 
+            ? 'Sign in to vote' 
+            : votingOver 
+              ? 'Voting has ended'
+              : hasVoted 
+                ? 'Remove your vote' 
+                : 'Vote for this tool'
         }
       >
-        <Box
-          onClick={handleVote}
+        <Box 
+          component="span"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleVote();
+          }}
           sx={{
             display: 'inline-flex',
             alignItems: 'center',
             gap: 0.5,
             border: '1px solid',
-            borderColor: voted ? 'primary.main' : 'divider',
-            color: voted ? 'primary.main' : 'text.secondary',
+            borderColor: hasVoted ? 'primary.main' : 'divider',
+            color: hasVoted ? 'primary.main' : 'text.secondary',
             borderRadius: 2,
             px: 1,
             py: 0.5,
             fontSize: '0.8rem',
-            cursor: lockout || votingOver ? 'default' : 'pointer',
-            boxShadow: 1,
-            pointerEvents: lockout ? 'none' : 'auto',
+            cursor: isAuthenticated && !votingOver && !disabled ? 'pointer' : 'default',
+            opacity: votingOver || disabled ? 0.7 : 1,
             transition: 'all 0.2s ease-in-out',
             '&:hover': {
-              borderColor: voted ? 'primary.main' : 'primary.light',
+              borderColor: hasVoted ? 'primary.main' : 'primary.light',
               backgroundColor: 'action.hover',
             },
           }}
         >
-          {voted ? (
+          {hasVoted ? (
             <ThumbUpAlt sx={{ fontSize: 18 }} />
           ) : (
             <ThumbUpAltOutlined sx={{ fontSize: 18 }} />
           )}
-          {currentVotes !== undefined ? (
-            <Typography variant="body2" color="inherit">
-              {currentVotes}
-            </Typography>
-          ) : (
-            <CircularProgress size={14} />
-          )}
+          <Typography variant="body2" color="inherit">
+            {votes}
+          </Typography>
         </Box>
       </Tooltip>
 
@@ -130,7 +180,7 @@ export default function VoteButton({
         open={snackbarOpen}
         autoHideDuration={3000}
         onClose={() => setSnackbarOpen(false)}
-        message="Please log in to vote"
+        message={snackbarMessage}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       />
     </>
