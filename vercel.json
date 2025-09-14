@@ -4,10 +4,6 @@
     "scope": "justin-s-projects-f2beb211",
     "crons": [
         {
-            "path": "/api/cron/verify-apps",
-            "schedule": "0 3 * * *"
-        },
-        {
             "path": "/api/cron/finalize-votes",
             "schedule": "5 0 * * *"
         },
