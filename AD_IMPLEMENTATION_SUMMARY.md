@@ -7,6 +7,7 @@
 The ad system now includes a sophisticated development experience that shows visual placeholders in local development while displaying real AdSense ads in production.
 
 #### **Key Features:**
+
 - **🔄 Environment-Aware Rendering**: Automatically detects development vs production
 - **🎨 Visual Placeholders**: Styled placeholders with slot information in development
 - **🛡️ GDPR Compliance**: AdSense scripts only load in production
