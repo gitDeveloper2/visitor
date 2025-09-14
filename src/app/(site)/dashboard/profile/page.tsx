@@ -160,7 +160,8 @@ export default function ProfilePage() {
                 multiline
                 rows={3}
                 placeholder="Tell us about yourself..."
-                helperText="This will appear with your content submissions"
+                helperText={`This will appear with your content submissions (${form.bio?.length || 0}/500 characters)`}
+                inputProps={{ maxLength: 500 }}
               />
             </Grid>
 

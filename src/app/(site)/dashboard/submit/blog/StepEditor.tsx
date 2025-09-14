@@ -450,9 +450,12 @@ export default function StepEditor({ formData, setFormData, errorText, quality }
           outline: none;
           padding: 16px;
           min-height: 400px;
+          max-height: 600px;
+          overflow-y: auto;
           background-color: ${theme.palette.background.paper};
           border-radius: 8px;
           box-shadow: inset 0 0 0 1px ${theme.palette.divider};
+          scroll-behavior: smooth;
         `,
       },
     },
@@ -493,12 +496,24 @@ export default function StepEditor({ formData, setFormData, errorText, quality }
       <Grid container spacing={3} alignItems="flex-start">
         <Grid item xs={12} md={9}>
           <ContextualMenuBar editor={editor} />
-          <EditorContent editor={editor} />
+          <Box sx={{ 
+            '& .ProseMirror': {
+              minHeight: '400px',
+              maxHeight: '600px',
+              overflowY: 'auto',
+              '&:focus': {
+                outline: 'none',
+                boxShadow: `inset 0 0 0 2px ${theme.palette.primary.main}`,
+              }
+            }
+          }}>
+            <EditorContent editor={editor} />
+          </Box>
         </Grid>
         {quality?.breakdown && (
           <Grid item xs={12} md={3}>
-            <Box sx={{ position: { md: 'sticky' }, top: { md: 80 }, alignSelf: 'flex-start', zIndex: 1 }}>
-            <Paper sx={{ p: 2 }}>
+            <Box sx={{ position: { md: 'sticky' }, top: { md: 120 }, alignSelf: 'flex-start', zIndex: 1 }}>
+            <Paper sx={{ p: 2, maxHeight: '500px', overflowY: 'auto' }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography variant="body2" color="text.secondary">
                   Quality score

@@ -32,6 +32,8 @@ import PremiumBlogSubscription from "../../../../../components/premium/PremiumBl
 import { Clock, AlertTriangle, Check, Star, DollarSign, ArrowRight, ArrowLeft } from "lucide-react";
 import { computeBlogQuality, finalizeBlogQualityScore, type BlogQualityBreakdown } from '@/features/ranking/quality';
 import { BLOG_QUALITY_CONFIG } from '@/features/ranking/config';
+import { compressImage, validateImage, type CompressedImage } from "../../../../../utils/imageCompression";
+import { extractDomain } from "../../../../utils/founderDomainStorage";
 
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -281,17 +283,52 @@ function BlogSubmitPageContent() {
 
   const validateMetadata = () => {
     const errors: Record<string, string> = {};
-    if (!formData.title?.trim()) errors.title = "Title is required";
-    else if (formData.title.trim().length < BLOG_LIMITS.titleMin) errors.title = `Title must be at least ${BLOG_LIMITS.titleMin} characters`;
-    if (!formData.author?.trim()) errors.author = "Author name is required";
-    if (!formData.role?.trim()) errors.role = "Author role is required";
-    if (!formData.category?.toString().trim()) errors.category = "Category is required";
-    if (!formData.authorBio?.trim()) errors.authorBio = "Author bio is required";
-    else if (formData.authorBio.trim().length < BLOG_LIMITS.authorBioMin) errors.authorBio = `Author bio must be at least ${BLOG_LIMITS.authorBioMin} characters`;
-    if (!Array.isArray(formData.tags) || formData.tags.length === 0) errors.tags = "At least one tag is required";
-    else if (formData.tags.length < BLOG_LIMITS.tagsMin || formData.tags.length > BLOG_LIMITS.tagsMax) errors.tags = `Use between ${BLOG_LIMITS.tagsMin}-${BLOG_LIMITS.tagsMax} tags`;
-    if (!formData.excerpt?.trim()) errors.excerpt = "Excerpt is required";
-    else if (formData.excerpt.trim().length < BLOG_LIMITS.excerptMin) errors.excerpt = `Excerpt must be at least ${BLOG_LIMITS.excerptMin} characters`;
+    
+    // Only validate fields that have been touched or have content
+    if (formData.title !== undefined && formData.title !== null) {
+      if (!formData.title?.trim()) {
+        errors.title = "Title is required";
+      } else if (formData.title.trim().length < BLOG_LIMITS.titleMin) {
+        errors.title = `Title must be at least ${BLOG_LIMITS.titleMin} characters`;
+      }
+    }
+    
+    if (formData.author !== undefined && formData.author !== null) {
+      if (!formData.author?.trim()) errors.author = "Author name is required";
+    }
+    
+    if (formData.role !== undefined && formData.role !== null) {
+      if (!formData.role?.trim()) errors.role = "Author role is required";
+    }
+    
+    if (formData.category !== undefined && formData.category !== null) {
+      if (!formData.category?.toString().trim()) errors.category = "Category is required";
+    }
+    
+    if (formData.authorBio !== undefined && formData.authorBio !== null) {
+      if (!formData.authorBio?.trim()) {
+        errors.authorBio = "Author bio is required";
+      } else if (formData.authorBio.trim().length < BLOG_LIMITS.authorBioMin) {
+        errors.authorBio = `Author bio must be at least ${BLOG_LIMITS.authorBioMin} characters`;
+      }
+    }
+    
+    if (formData.tags !== undefined && formData.tags !== null) {
+      if (!Array.isArray(formData.tags) || formData.tags.length === 0) {
+        errors.tags = "At least one tag is required";
+      } else if (formData.tags.length < BLOG_LIMITS.tagsMin || formData.tags.length > BLOG_LIMITS.tagsMax) {
+        errors.tags = `Use between ${BLOG_LIMITS.tagsMin}-${BLOG_LIMITS.tagsMax} tags`;
+      }
+    }
+    
+    if (formData.excerpt !== undefined && formData.excerpt !== null) {
+      if (!formData.excerpt?.trim()) {
+        errors.excerpt = "Excerpt is required";
+      } else if (formData.excerpt.trim().length < BLOG_LIMITS.excerptMin) {
+        errors.excerpt = `Excerpt must be at least ${BLOG_LIMITS.excerptMin} characters`;
+      }
+    }
+    
     if (formData.isFounderStory) {
       const status = formData.founderDomainCheck?.status;
       if (!formData.founderUrl?.trim()) {
@@ -302,6 +339,7 @@ function BlogSubmitPageContent() {
         errors.founderUrl = "Please wait for domain check to complete";
       }
     }
+    
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -330,11 +368,32 @@ function BlogSubmitPageContent() {
   };
 
   const handleNext = () => {
-    if (activeStep === 0 && !validateMetadata()) {
-      setError("Please fix the highlighted fields before continuing.");
-      setValidationSnackbar("❌ Please fix validation errors above");
-      scrollToTop();
-      return;
+    if (activeStep === 0) {
+      // Force validation of all required fields when trying to proceed
+      const requiredFieldsValid = 
+        formData.title?.trim() &&
+        formData.author?.trim() &&
+        formData.role?.trim() &&
+        formData.category?.toString().trim() &&
+        formData.authorBio?.trim() &&
+        formData.authorBio.trim().length >= BLOG_LIMITS.authorBioMin &&
+        Array.isArray(formData.tags) &&
+        formData.tags.length >= BLOG_LIMITS.tagsMin &&
+        formData.tags.length <= BLOG_LIMITS.tagsMax &&
+        formData.excerpt?.trim() &&
+        formData.excerpt.trim().length >= BLOG_LIMITS.excerptMin &&
+        (!formData.isFounderStory || (
+          formData.founderUrl?.trim() &&
+          formData.founderDomainCheck?.status === "ok"
+        ));
+        
+      if (!requiredFieldsValid) {
+        validateMetadata(); // This will set validation errors
+        setError("Please complete all required fields before continuing.");
+        setValidationSnackbar("❌ Please complete required fields above");
+        scrollToTop();
+        return;
+      }
     }
     if (activeStep === 1 && !validateContent()) {
       setError("Please add more content before continuing.");
@@ -480,12 +539,16 @@ function BlogSubmitPageContent() {
         if (imageRes.status === 503) {
           // Image upload service not configured, continue without image
           console.warn('Image upload service not configured, proceeding without image');
+          setError('Image upload service not configured. Blog will be saved without image.');
         } else if (!imageRes.ok) {
-          throw new Error('Failed to upload image');
+          const errorData = await imageRes.json().catch(() => ({}));
+          console.error('Image upload failed:', errorData);
+          throw new Error(`Failed to upload image: ${errorData.message || 'Unknown error'}`);
         } else {
           const imageData = await imageRes.json();
           imageUrl = imageData.url;
           imagePublicId = imageData.publicId;
+          console.log('Image uploaded successfully:', { imageUrl, imagePublicId });
         }
       }
 
@@ -721,6 +784,26 @@ function BlogSubmitPageContent() {
         </Stepper>
 
 
+        {/* Sticky toolbar for editor step - outside Paper container */}
+        {activeStep === 1 && (
+          <Box sx={{ 
+            position: 'sticky', 
+            top: 16, 
+            zIndex: 1000, 
+            backgroundColor: 'background.default', 
+            p: 2, 
+            mb: 2, 
+            borderRadius: 1, 
+            boxShadow: 2,
+            border: `1px solid ${theme.palette.divider}`
+          }}>
+            {/* Placeholder for toolbar - will need to extract ContextualMenuBar */}
+            <Typography variant="body2" color="text.secondary">
+              Editor Toolbar (will be moved here)
+            </Typography>
+          </Box>
+        )}
+
         <Box sx={{ display: 'flex', gap: 3 }}>
           <Paper
             sx={{
@@ -748,6 +831,7 @@ function BlogSubmitPageContent() {
               }}
             />
           )}
+
           {activeStep === 1 && (
             <Box sx={{ pb: { xs: 12, sm: 12, md: 8 } }}> {/* Add bottom padding on mobile for FAB */}
               <StepEditor 
@@ -764,10 +848,10 @@ function BlogSubmitPageContent() {
               />
             </Box>
           )}
+
           {activeStep === 2 && (
-            <Box>
-              <Typography variant="h5" fontWeight={600} mb={3} display="flex" alignItems="center" gap={1}>
-                <DollarSign size={24} color={theme.palette.primary.main} />
+            <>
+              <Typography variant="h6" gutterBottom>
                 Choose Your Plan
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -916,8 +1000,9 @@ function BlogSubmitPageContent() {
                   .
                 </Typography>
               </Box>
-            </Box>
+            </>
           )}
+          
           {activeStep === 3 && (
             <>
               {/* Show countdown timer if editing a draft */}
@@ -940,9 +1025,7 @@ function BlogSubmitPageContent() {
             </>
           )}
         </Paper>
-        
-
-      </Box>
+        </Box>
         {/* Regular navigation buttons - hidden during editor step */}
         {activeStep !== 1 && (
           <Box mt={4} display="flex" justifyContent="space-between">

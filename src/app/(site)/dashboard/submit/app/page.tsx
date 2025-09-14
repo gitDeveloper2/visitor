@@ -169,82 +169,104 @@ function SubmitAppPageContent() {
   const validateAppMetadata = () => {
     const errors: Record<string, string> = {};
     
-    // Required fields
-    if (!form.name?.trim()) {
-      errors.name = "App name is required";
-    } else if (form.name.trim().length < APP_LIMITS.nameMin) {
-      errors.name = `App name must be at least ${APP_LIMITS.nameMin} characters`;
-    } else if (form.name.trim().length > APP_LIMITS.nameMax) {
-      errors.name = `App name must be under ${APP_LIMITS.nameMax} characters`;
+    // Only validate fields that have been touched or have content
+    if (form.name !== undefined && form.name !== null) {
+      if (!form.name?.trim()) {
+        errors.name = "App name is required";
+      } else if (form.name.trim().length < APP_LIMITS.nameMin) {
+        errors.name = `App name must be at least ${APP_LIMITS.nameMin} characters`;
+      } else if (form.name.trim().length > APP_LIMITS.nameMax) {
+        errors.name = `App name must be under ${APP_LIMITS.nameMax} characters`;
+      }
     }
     
-    if (!form.tagline?.trim()) {
-      errors.tagline = "Tagline is required";
-    } else if (form.tagline.trim().length < APP_LIMITS.taglineMin) {
-      errors.tagline = `Tagline must be at least ${APP_LIMITS.taglineMin} characters`;
-    } else if (form.tagline.trim().length > APP_LIMITS.taglineMax) {
-      errors.tagline = `Tagline must be under ${APP_LIMITS.taglineMax} characters`;
+    if (form.tagline !== undefined && form.tagline !== null) {
+      if (!form.tagline?.trim()) {
+        errors.tagline = "Tagline is required";
+      } else if (form.tagline.trim().length < APP_LIMITS.taglineMin) {
+        errors.tagline = `Tagline must be at least ${APP_LIMITS.taglineMin} characters`;
+      } else if (form.tagline.trim().length > APP_LIMITS.taglineMax) {
+        errors.tagline = `Tagline must be under ${APP_LIMITS.taglineMax} characters`;
+      }
     }
     
-    if (!form.description?.trim()) {
-      errors.description = "Description is required";
-    } else if (form.description.trim().length < APP_LIMITS.descriptionMin) {
-      errors.description = `Description must be at least ${APP_LIMITS.descriptionMin} characters`;
-    } else if (form.description.trim().length > APP_LIMITS.descriptionMax) {
-      errors.description = `Description must be under ${APP_LIMITS.descriptionMax} characters`;
+    if (form.description !== undefined && form.description !== null) {
+      if (!form.description?.trim()) {
+        errors.description = "Description is required";
+      } else if (form.description.trim().length < APP_LIMITS.descriptionMin) {
+        errors.description = `Description must be at least ${APP_LIMITS.descriptionMin} characters`;
+      } else if (form.description.trim().length > APP_LIMITS.descriptionMax) {
+        errors.description = `Description must be under ${APP_LIMITS.descriptionMax} characters`;
+      }
     }
     
-    if (!form.fullDescription?.trim()) {
-      errors.fullDescription = "Full description is required";
-    } else if (form.fullDescription.trim().length < APP_LIMITS.fullDescriptionMin) {
-      errors.fullDescription = `Full description must be at least ${APP_LIMITS.fullDescriptionMin} characters`;
-    } else if (form.fullDescription.trim().length > APP_LIMITS.fullDescriptionMax) {
-      errors.fullDescription = `Full description must be under ${APP_LIMITS.fullDescriptionMax} characters`;
+    if (form.fullDescription !== undefined && form.fullDescription !== null) {
+      if (!form.fullDescription?.trim()) {
+        errors.fullDescription = "Full description is required";
+      } else if (form.fullDescription.trim().length < APP_LIMITS.fullDescriptionMin) {
+        errors.fullDescription = `Full description must be at least ${APP_LIMITS.fullDescriptionMin} characters`;
+      } else if (form.fullDescription.trim().length > APP_LIMITS.fullDescriptionMax) {
+        errors.fullDescription = `Full description must be under ${APP_LIMITS.fullDescriptionMax} characters`;
+      }
     }
     
-    if (!form.category?.trim()) {
-      errors.category = "Category is required";
+    if (form.category !== undefined && form.category !== null) {
+      if (!form.category?.trim()) {
+        errors.category = "Category is required";
+      }
     }
     
-    if (!form.website?.trim()) {
-      errors.website = "Website URL is required";
-    } else if (!isValidUrl(form.website)) {
-      errors.website = "Please enter a valid website URL";
+    if (form.website !== undefined && form.website !== null) {
+      if (!form.website?.trim()) {
+        errors.website = "Website URL is required";
+      } else if (!isValidUrl(form.website)) {
+        errors.website = "Please enter a valid website URL";
+      }
     }
     
-    if (!form.authorName?.trim()) {
-      errors.authorName = "Author name is required";
-    } else if (form.authorName.trim().length < APP_LIMITS.authorNameMin) {
-      errors.authorName = `Author name must be at least ${APP_LIMITS.authorNameMin} characters`;
-    } else if (form.authorName.trim().length > APP_LIMITS.authorNameMax) {
-      errors.authorName = `Author name must be under ${APP_LIMITS.authorNameMax} characters`;
+    if (form.authorName !== undefined && form.authorName !== null) {
+      if (!form.authorName?.trim()) {
+        errors.authorName = "Author name is required";
+      } else if (form.authorName.trim().length < APP_LIMITS.authorNameMin) {
+        errors.authorName = `Author name must be at least ${APP_LIMITS.authorNameMin} characters`;
+      } else if (form.authorName.trim().length > APP_LIMITS.authorNameMax) {
+        errors.authorName = `Author name must be under ${APP_LIMITS.authorNameMax} characters`;
+      }
     }
     
-    if (!form.authorEmail?.trim()) {
-      errors.authorEmail = "Author email is required";
-    } else if (!isValidEmail(form.authorEmail)) {
-      errors.authorEmail = "Please enter a valid email address";
+    if (form.authorEmail !== undefined && form.authorEmail !== null) {
+      if (!form.authorEmail?.trim()) {
+        errors.authorEmail = "Author email is required";
+      } else if (!isValidEmail(form.authorEmail)) {
+        errors.authorEmail = "Please enter a valid email address";
+      }
     }
     
-    if (!form.authorBio?.trim()) {
-      errors.authorBio = "Author bio is required";
-    } else if (form.authorBio.trim().length < APP_LIMITS.authorBioMin) {
-      errors.authorBio = `Author bio must be at least ${APP_LIMITS.authorBioMin} characters`;
-    } else if (form.authorBio.trim().length > APP_LIMITS.authorBioMax) {
-      errors.authorBio = `Author bio must be under ${APP_LIMITS.authorBioMax} characters`;
+    if (form.authorBio !== undefined && form.authorBio !== null) {
+      if (!form.authorBio?.trim()) {
+        errors.authorBio = "Author bio is required";
+      } else if (form.authorBio.trim().length < APP_LIMITS.authorBioMin) {
+        errors.authorBio = `Author bio must be at least ${APP_LIMITS.authorBioMin} characters`;
+      } else if (form.authorBio.trim().length > APP_LIMITS.authorBioMax) {
+        errors.authorBio = `Author bio must be under ${APP_LIMITS.authorBioMax} characters`;
+      }
     }
     
-    // Array validations
-    if (!Array.isArray(form.features) || form.features.length < APP_LIMITS.featuresMin) {
-      errors.features = `Add at least ${APP_LIMITS.featuresMin} feature`;
-    } else if (form.features.length > APP_LIMITS.featuresMax) {
-      errors.features = `Keep features under ${APP_LIMITS.featuresMax}`;
+    // Array validations - only validate if arrays exist
+    if (form.features !== undefined && form.features !== null) {
+      if (!Array.isArray(form.features) || form.features.length < APP_LIMITS.featuresMin) {
+        errors.features = `Add at least ${APP_LIMITS.featuresMin} feature`;
+      } else if (form.features.length > APP_LIMITS.featuresMax) {
+        errors.features = `Keep features under ${APP_LIMITS.featuresMax}`;
+      }
     }
     
-    if (!Array.isArray(form.techStack) || form.techStack.length < APP_LIMITS.techStackMin) {
-      errors.techStack = `Add at least ${APP_LIMITS.techStackMin} technology`;
-    } else if (form.techStack.length > APP_LIMITS.techStackMax) {
-      errors.techStack = `Keep tech stack under ${APP_LIMITS.techStackMax}`;
+    if (form.techStack !== undefined && form.techStack !== null) {
+      if (!Array.isArray(form.techStack) || form.techStack.length < APP_LIMITS.techStackMin) {
+        errors.techStack = `Add at least ${APP_LIMITS.techStackMin} technology`;
+      } else if (form.techStack.length > APP_LIMITS.techStackMax) {
+        errors.techStack = `Keep tech stack under ${APP_LIMITS.techStackMax}`;
+      }
     }
     
     // Optional GitHub validation
@@ -338,9 +360,28 @@ function SubmitAppPageContent() {
     setSuccess(false);
     
     try {
-      // Validate all fields before submission
-      if (!validateAppMetadata()) {
-        setError("Please fix the highlighted validation errors before submitting.");
+      // Force validation of all required fields when submitting
+      const requiredFieldsValid = 
+        form.name?.trim() &&
+        form.tagline?.trim() &&
+        form.description?.trim() &&
+        form.fullDescription?.trim() &&
+        form.category?.trim() &&
+        form.website?.trim() &&
+        isValidUrl(form.website) &&
+        form.authorName?.trim() &&
+        form.authorEmail?.trim() &&
+        isValidEmail(form.authorEmail) &&
+        form.authorBio?.trim() &&
+        Array.isArray(form.features) &&
+        form.features.length >= APP_LIMITS.featuresMin &&
+        Array.isArray(form.techStack) &&
+        form.techStack.length >= APP_LIMITS.techStackMin &&
+        (!form.github?.trim() || isValidUrl(form.github));
+        
+      if (!requiredFieldsValid) {
+        validateAppMetadata(); // This will set validation errors
+        setError("Please complete all required fields before submitting.");
         setLoading(false);
         return;
       }
@@ -1154,7 +1195,7 @@ function SubmitAppPageContent() {
                     size="large" 
                     sx={{ borderRadius: "999px", px: 6, py: 1.5 }}
                     startIcon={<Star size={20} />}
-                    disabled={loading || Object.keys(validationErrors).length > 0}
+                    disabled={loading}
                   >
                     {loading ? 'Submitting...' : 'Submit App for Review'}
                   </Button>

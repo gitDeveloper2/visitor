@@ -52,9 +52,11 @@ export default function OnboardingPage() {
     setError(null);
 
     // Validate required fields
-    if (!form.bio || !form.jobTitle) {
+    if (!form.bio?.trim() || !form.jobTitle?.trim()) {
       setError('Please fill in your bio and job title');
       setLoading(false);
+      // Scroll to top to show error
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -73,13 +75,23 @@ export default function OnboardingPage() {
       }
       console.log("succeeded")
       
-      // Force session refresh and page refresh to update onboarding status
+      // Mark onboarding as complete in the API response
+      const updatedProfile = await response.json();
+      console.log("Profile updated:", updatedProfile);
+      
+      // Force session refresh to get updated user data
       await authClient.getSession({ query: { disableCookieCache: true } });
       
-      // Force a complete page refresh to update all session data
-      window.location.href = '/dashboard';
+      // Small delay to ensure session is updated
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Navigate without full page reload to preserve any potential error states
+      router.push('/dashboard');
     } catch (err: any) {
+      console.error("Onboarding error:", err);
       setError(err.message || 'Unknown error occurred');
+      // Scroll to top to show error
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setLoading(false);
     }
@@ -111,7 +123,17 @@ export default function OnboardingPage() {
         </Box>
 
         {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
+          <Alert 
+            severity="error" 
+            sx={{ 
+              mb: 3,
+              position: 'sticky',
+              top: 16,
+              zIndex: 1000,
+              boxShadow: 2
+            }}
+            onClose={() => setError(null)}
+          >
             {error}
           </Alert>
         )}

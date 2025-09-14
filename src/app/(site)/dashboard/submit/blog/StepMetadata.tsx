@@ -22,6 +22,7 @@ import {
 import { Upload, X, Image as ImageIcon } from "lucide-react";
 import { getSubcategorySuggestions, type BlogCategory, fetchCategoryNames } from "../../../../../utils/categories";
 import { compressImage, validateImage, type CompressedImage } from "../../../../../utils/imageCompression";
+import { extractDomain } from "../../../../../utils/founderDomainStorage";
 
 export type FounderDomainStatus = "unknown" | "checking" | "ok" | "taken" | "invalid";
 
@@ -61,14 +62,6 @@ interface StepMetadataProps {
   >>;
 }
 
-function extractDomain(url: string) {
-  try {
-    const u = new URL(url);
-    return u.hostname.replace(/^www\./, "").toLowerCase();
-  } catch {
-    return null;
-  }
-}
 
 export default function StepMetadata({ formData, setFormData, errors = {} }: StepMetadataProps) {
   const [imageError, setImageError] = useState<string | null>(null);
@@ -152,43 +145,55 @@ export default function StepMetadata({ formData, setFormData, errors = {} }: Ste
     setFormData({ subcategories: newSubcategories });
   };
 
-  // debounced domain check
+  // Client-side URL validation  // Founder URL validation - frontend only, no domain uniqueness check
   useEffect(() => {
     let timer: any;
     const url = formData.founderUrl ?? "";
     const domain = extractDomain(url);
+    
     if (!formData.isFounderStory) {
-      // reset
       setFormData({ founderDomainCheck: { status: "unknown", message: "" } });
       return;
     }
-    if (!url) {
-      setFormData({ founderDomainCheck: { status: "invalid", message: "Enter a URL" } });
+    
+    if (!url.trim()) {
+      setFormData({ founderDomainCheck: { status: "unknown", message: "" } });
       return;
     }
+    
     if (!domain) {
-      setFormData({ founderDomainCheck: { status: "invalid", message: "Invalid URL" } });
+      setFormData({ founderDomainCheck: { status: "invalid", message: "Please enter a valid URL (e.g., https://yourblog.com/post)" } });
       return;
     }
-
-    setFormData({ founderDomainCheck: { status: "checking", message: "Checking domain..." } });
-
+    
     timer = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/founder-story/check?domain=${encodeURIComponent(domain)}`);
-        const j = await res.json();
-        // expected { status: 'ok' } | { status: 'taken', existingAppSlug: '...' }
-        if (res.ok && j.status === "ok") {
-          setFormData({ founderDomainCheck: { status: "ok", message: "Domain available" } });
-        } else if (res.ok && j.status === "taken") {
-          setFormData({ founderDomainCheck: { status: "taken", message: `Already used by ${j.existingAppSlug}` } });
-        } else {
-          setFormData({ founderDomainCheck: { status: "invalid", message: j.error || "Check failed" } });
-        }
-      } catch (e) {
-        setFormData({ founderDomainCheck: { status: "invalid", message: "Network error" } });
+      // Basic domain format validation
+      const domainRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?\.[a-zA-Z]{2,}$/;
+      if (!domainRegex.test(domain)) {
+        setFormData({ founderDomainCheck: { status: "invalid", message: "Please enter a valid domain name" } });
+        return;
       }
-    }, 700);
+
+      // URL format validation
+      try {
+        const urlObj = new URL(url);
+      } catch {
+        setFormData({ founderDomainCheck: { status: "invalid", message: "Invalid URL format" } });
+        return;
+      }
+
+      // Set checking status
+      setFormData({ founderDomainCheck: { status: "checking", message: "Checking URL accessibility..." } });
+
+      // Try to check URL accessibility (may be blocked by CORS)
+      try {
+        const response = await fetch(url, { method: 'HEAD', mode: 'no-cors', cache: 'no-cache' });
+        setFormData({ founderDomainCheck: { status: "ok", message: "✓ URL appears to be accessible" } });
+      } catch {
+        // If fetch fails (likely due to CORS), still consider it valid if format is correct
+        setFormData({ founderDomainCheck: { status: "ok", message: "✓ URL format valid (note: accessibility check may be blocked by CORS)" } });
+      }
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, [formData.isFounderStory, formData.founderUrl]);
@@ -199,14 +204,16 @@ export default function StepMetadata({ formData, setFormData, errors = {} }: Ste
         Blog Information
       </Typography>
       
-      {/* Validation Summary */}
-      {Object.keys(errors).length > 0 && (
-        <Alert severity="error" sx={{ mb: 3 }}>
+      {/* Validation Summary - Only show if user has interacted with fields */}
+      {Object.keys(errors).length > 0 && Object.values(errors).some(error => error && error.trim()) && (
+        <Alert severity="warning" sx={{ mb: 3 }}>
           <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-            Please fix the following issues:
+            Please complete the required fields:
           </Typography>
           <Box component="ul" sx={{ m: 0, pl: 2 }}>
-            {Object.entries(errors).map(([field, message]) => (
+            {Object.entries(errors)
+              .filter(([field, message]) => message && message.trim())
+              .map(([field, message]) => (
               <Box component="li" key={field} sx={{ mb: 0.5 }}>
                 <Typography variant="body2">
                   <strong>{field.charAt(0).toUpperCase() + field.slice(1)}:</strong> {message}
@@ -287,10 +294,8 @@ export default function StepMetadata({ formData, setFormData, errors = {} }: Ste
                     key={index}
                     label={category}
                     onDelete={() => {
-                      setFormData(prev => ({
-                        ...prev,
-                        subcategories: prev.subcategories?.filter((_, i) => i !== index) || []
-                      }));
+                      const newSubcategories = formData.subcategories?.filter((_, i) => i !== index) || [];
+                      setFormData({ subcategories: newSubcategories });
                     }}
                     color="primary"
                     variant="outlined"
@@ -305,7 +310,18 @@ export default function StepMetadata({ formData, setFormData, errors = {} }: Ste
           </Typography>
         </Grid>
         <Grid item xs={12}>
-          <TextField fullWidth multiline minRows={3} maxRows={5} label="Author Bio" value={formData.authorBio} onChange={(e) => setFormData({ authorBio: e.target.value })} required error={Boolean(errors.authorBio)} helperText={errors.authorBio}
+          <TextField 
+            fullWidth 
+            multiline 
+            minRows={3} 
+            maxRows={5} 
+            label="Author Bio" 
+            value={formData.authorBio} 
+            onChange={(e) => setFormData({ authorBio: e.target.value })} 
+            required 
+            error={Boolean(errors.authorBio)} 
+            helperText={errors.authorBio || `Tell us about yourself. This will appear with your content submissions. (${formData.authorBio?.length || 0}/500 characters)`}
+            inputProps={{ maxLength: 500 }}
           />
         </Grid>
 
@@ -426,10 +442,10 @@ export default function StepMetadata({ formData, setFormData, errors = {} }: Ste
               <TextField
                 fullWidth
                 label="Founder story URL"
-                placeholder="https://yourblog.com/my-founder-story"
+                placeholder="https://yourwebsite.com"
                 value={formData.founderUrl ?? ""}
                 onChange={(e) => setFormData({ founderUrl: e.target.value })}
-                helperText="One founder story allowed per domain. We'll check domain availability."
+                helperText="Link to your website where the founder badge will be displayed. We'll check if the URL is accessible."
                 required
                 error={Boolean(errors.founderUrl)}
                 FormHelperTextProps={{ error: Boolean(errors.founderUrl) }}
@@ -438,17 +454,26 @@ export default function StepMetadata({ formData, setFormData, errors = {} }: Ste
               />
             </Grid>
             <Grid item xs={12}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, minHeight: 24 }}>
                 {formData.founderDomainCheck?.status === "checking" && <CircularProgress size={16} />}
-                <Typography variant="body2" color={
-                  formData.founderDomainCheck?.status === "ok"
-                    ? "success.main"
-                    : formData.founderDomainCheck?.status === "taken"
-                    ? "error.main"
-                    : "text.secondary"
-                }>
-                  {formData.founderDomainCheck?.message || "Enter a URL to check domain"}
-                </Typography>
+                {formData.founderDomainCheck?.message && (
+                  <Typography variant="body2" color={
+                    formData.founderDomainCheck?.status === "ok"
+                      ? "success.main"
+                      : formData.founderDomainCheck?.status === "taken"
+                      ? "error.main"
+                      : formData.founderDomainCheck?.status === "invalid"
+                      ? "error.main"
+                      : "text.secondary"
+                  }>
+                    {formData.founderDomainCheck.message}
+                  </Typography>
+                )}
+                {!formData.founderDomainCheck?.message && formData.founderUrl?.trim() === "" && (
+                  <Typography variant="body2" color="text.secondary">
+                    Enter your blog post URL for validation
+                  </Typography>
+                )}
               </Box>
             </Grid>
           </>

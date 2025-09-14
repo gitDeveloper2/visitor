@@ -24,18 +24,13 @@ export function useOnboarding(): OnboardingStatus {
 
   const missingFields: string[] = [];
   
-  // Check required fields
+  // Check required fields only
   if (!userWithOnboarding.bio) missingFields.push('bio');
   if (!userWithOnboarding.jobTitle) missingFields.push('jobTitle');
-  
-  // Optional fields (for reference)
-  if (!userWithOnboarding.websiteUrl) missingFields.push('websiteUrl');
-  if (!userWithOnboarding.twitterUsername) missingFields.push('twitterUsername');
-  if (!userWithOnboarding.linkedinUsername) missingFields.push('linkedinUsername');
 
-  const hasRequiredFields = missingFields.length === 0;
-  const onboardingCompleted = userWithOnboarding.onboardingCompleted || false;
-  const needsOnboarding = userWithOnboarding.needsOnboarding || !onboardingCompleted || !hasRequiredFields;
+  const hasRequiredFields = !userWithOnboarding.bio || !userWithOnboarding.jobTitle ? false : true;
+  const onboardingCompleted = userWithOnboarding.onboardingCompleted === true;
+  const needsOnboarding = !onboardingCompleted || !hasRequiredFields;
 
   return {
     needsOnboarding,

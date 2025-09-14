@@ -32,6 +32,10 @@ export async function PUT(request: NextRequest) {
 
     const { name, bio, jobTitle, websiteUrl, twitterUsername, linkedinUsername } = await request.json();
     const {db} = await connectToDatabase();
+    
+    // Only mark onboarding complete if required fields are provided
+    const hasRequiredFields = bio?.trim() && jobTitle?.trim();
+    
     const result = await db.collection('user').updateOne(
       { _id: new ObjectId(session.user.id) },
       {
@@ -42,8 +46,10 @@ export async function PUT(request: NextRequest) {
           websiteUrl: websiteUrl || "",
           twitterUsername: twitterUsername || "",
           linkedinUsername: linkedinUsername || "",
-          onboardingCompleted: true, // Mark onboarding as complete
-          needsOnboarding: false, // Mark that onboarding is no longer needed
+          ...(hasRequiredFields ? {
+            onboardingCompleted: true, // Only mark complete if required fields present
+            needsOnboarding: false,
+          } : {})
         }
       }
     );

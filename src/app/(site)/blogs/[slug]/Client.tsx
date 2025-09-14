@@ -133,6 +133,15 @@ export default function Client({ blog }: { blog: BlogPost }) {
           '& em': {
             fontStyle: 'italic',
           },
+          '& img': {
+            maxWidth: '100%',
+            height: 'auto',
+            borderRadius: '8px',
+            mb: 2,
+            display: 'block',
+            mx: 'auto',
+            boxShadow: theme.shadows[2],
+          },
         }}
         dangerouslySetInnerHTML={{ __html: blog.content }}
       />
