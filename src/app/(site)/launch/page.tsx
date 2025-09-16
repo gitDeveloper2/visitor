@@ -50,6 +50,24 @@ function serializeMongoObject(obj: any): any {
  * 2. Daytime: Users vote via Voting API (validates with token, updates Redis)
  * 3. Night: Scheduled process flushes Redis counts to MongoDB
  */
+// Debug log environment variables
+console.log('Environment Variables:', {
+  BLOG_DEPLOYMENT_COMPLETE: process.env.BLOG_DEPLOYMENT_COMPLETE,
+  LAUNCH_PAGE_ENABLED: process.env.LAUNCH_PAGE_ENABLED,
+  APP_LAUNCH_ENABLED: process.env.APP_LAUNCH_ENABLED,
+  VOTING_SYSTEM_ENABLED: process.env.VOTING_SYSTEM_ENABLED,
+  NODE_ENV: process.env.NODE_ENV
+});
+
+// Debug log deployment flags
+const flags = DeploymentFlagService.getFlags();
+console.log('Deployment Flags:', {
+  blogDeploymentComplete: flags.blogDeploymentComplete,
+  launchPageEnabled: flags.launchPageEnabled,
+  appLaunchEnabled: flags.appLaunchEnabled,
+  votingSystemEnabled: flags.votingSystemEnabled
+});
+
 export default async function LaunchPage() {
   // Check deployment flags first
   if (!DeploymentFlagService.isLaunchPageEnabled()) {
