@@ -2,16 +2,6 @@
     "version": 2,
     "name": "basic-utils-next-js",
     "scope": "justin-s-projects-f2beb211",
-    "crons": [
-        {
-            "path": "/api/cron/finalize-votes",
-            "schedule": "5 0 * * *"
-        },
-        {
-            "path": "/api/cron/manage-voting",
-            "schedule": "0 10 * * *"
-        }
-    ],
     "env": {
         "BLOG_DEPLOYMENT_COMPLETE": "true",
         "BLOG_CONTENT_ENABLED": "true",
