@@ -10,6 +10,7 @@ import { DeploymentFlagService } from '@/utils/deploymentFlags';
 import DeploymentStatusBanner from '@/components/DeploymentStatusBanner';
 import { redis, votingKeys } from '@/lib/voting/redis';
 import { getActiveSession } from '@/lib/voting/session';
+import { ObjectId } from 'mongodb';
 
 // Main page should revalidate after 24 hours per requirement
 export const revalidate = 86400;
@@ -120,13 +121,21 @@ export default async function LaunchPage() {
     let votingApps = [];
     if (activeSession?.tools?.length) {
       // Get app details from MongoDB (source of truth for app data)
-      votingApps = await db.collection('userapps')
-        .find({ 
-          _id: { $in: activeSession.tools },
-          status: 'approved'
-        })
-        .toArray();
+      // votingApps = await db.collection('userapps')
       
+      //   .find({ 
+      //     _id: { $in: activeSession.tools },
+      //     status: 'approved'
+      //   })
+      //   .toArray();
+      const toolIds = activeSession.tools.map((id: string) => new ObjectId(id));
+
+      votingApps = await db.collection('userapps')
+  .find({ 
+    _id: { $in: toolIds },
+    status: 'approved'
+  })
+  .toArray();
       // Get live vote counts from Redis (temporary store for fast updates)
       const redisClient = await redis;
       const voteCounts = await Promise.all(
@@ -150,7 +159,9 @@ export default async function LaunchPage() {
 
     // NON-VOTING APPS: Get today's launches that are NOT in the voting session
     // These are apps that launched today but aren't competing in the vote
-    const nonVotingAppIds = activeSession?.tools || [];
+    // const nonVotingAppIds = activeSession?.tools || [];
+    const nonVotingAppIds = (activeSession?.tools || []).map(id => new ObjectId(id));
+
     let allApps = [];
     
     if (nonVotingAppIds.length > 0) {
@@ -170,6 +181,7 @@ export default async function LaunchPage() {
         .limit(24)
         .toArray();
     }
+    
     
     // Add voting status
     allApps = allApps.map(app => ({
