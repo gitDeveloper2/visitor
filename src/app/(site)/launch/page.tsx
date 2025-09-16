@@ -8,8 +8,7 @@ import { sortByScore, computeAppScore } from '@/features/ranking/score';
 import AdSlot from '@/app/components/adds/google/AdSlot';
 import { DeploymentFlagService } from '@/utils/deploymentFlags';
 import DeploymentStatusBanner from '@/components/DeploymentStatusBanner';
-import { redis, votingKeys } from '@/lib/voting/redis';
-import { getActiveSession } from '@/lib/voting/session';
+import { getActiveLaunch, getLaunchWithApps } from '@/lib/launches';
 import { ObjectId } from 'mongodb';
 
 // Main page should revalidate after 24 hours per requirement
@@ -41,15 +40,16 @@ function serializeMongoObject(obj: any): any {
 /**
  * Launch Page - Main voting and app discovery page
  * 
- * VOTING SYSTEM ARCHITECTURE:
+ * NEW LAUNCHES SYSTEM ARCHITECTURE:
+ * - Voting API: Manages launches collection and Redis voting
+ * - Main App: Read-only access to launches collection
  * - MongoDB: Master record for launches and final vote counts
- * - Redis: Temporary store for live vote counts during voting sessions
- * - Voting API: Separate service that handles vote operations
+ * - Redis: Temporary store for live vote counts (managed by Voting API)
  * 
  * DATA FLOW:
- * 1. Morning: Main app creates daily launches in MongoDB
+ * 1. Morning: Voting API creates daily launches via cron job
  * 2. Daytime: Users vote via Voting API (validates with token, updates Redis)
- * 3. Night: Scheduled process flushes Redis counts to MongoDB
+ * 3. Evening: Voting API flushes Redis counts to MongoDB via cron job
  */
 // Debug log environment variables
 console.log('Environment Variables:', {
@@ -90,17 +90,14 @@ export default async function LaunchPage() {
   try {
     const { db } = await connectToDatabase();
     
-    // Get active voting session from Redis
-    // This contains today's apps that are eligible for voting
-    const activeSession = await getActiveSession();
-    const votingEndTime = activeSession?.endTime || new Date();
+    // Get active launch from launches collection (read-only)
+    const activeLaunch = await getActiveLaunch();
     
     // Calculate date 7 days ago for featured apps
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     
     // Get today's date range for MongoDB queries
-    // This defines what constitutes "today's launches" in the database
     const today = new Date();
     const y = today.getUTCFullYear();
     const m = String(today.getUTCMonth() + 1).padStart(2, '0');
@@ -116,51 +113,32 @@ export default async function LaunchPage() {
       .limit(featuredLimit)
       .toArray();
 
-    // VOTING APPS: Get tools that are currently in active voting session
-    // These apps are loaded from MongoDB but vote counts come from Redis for real-time updates
+    // VOTING APPS: Get apps from active launch
     let votingApps = [];
-    if (activeSession?.tools?.length) {
-      // Get app details from MongoDB (source of truth for app data)
-      // votingApps = await db.collection('userapps')
-      
-      //   .find({ 
-      //     _id: { $in: activeSession.tools },
-      //     status: 'approved'
-      //   })
-      //   .toArray();
-      const toolIds = activeSession.tools.map((id: string) => new ObjectId(id));
-
+    let votingEndTime = new Date();
+    
+    if (activeLaunch && activeLaunch.status === 'active') {
+      // Get app details from MongoDB for active launch
       votingApps = await db.collection('userapps')
-  .find({ 
-    _id: { $in: toolIds },
-    status: 'approved'
-  })
-  .toArray();
-      // Get live vote counts from Redis (temporary store for fast updates)
-      const redisClient = await redis;
-      const voteCounts = await Promise.all(
-        activeSession.tools.map(async (toolId: string) => {
-          const count = await redisClient.get(votingKeys.toolVotes(toolId));
-          return { toolId, votes: parseInt(count || '0', 10) };
+        .find({ 
+          _id: { $in: activeLaunch.apps },
+          status: 'approved'
         })
-      );
+        .toArray();
       
-      // Add vote counts to apps
+      // Add voting metadata (vote counts will be fetched by client from Voting API)
       votingApps = votingApps.map(app => ({
         ...app,
-        votes: voteCounts.find(v => v.toolId === app._id.toString())?.votes || 0,
+        votes: 0, // Will be updated by client-side voting component
         inVoting: true,
-        votingEndTime: activeSession.endTime
+        votingEndTime: new Date(new Date().setHours(22, 0, 0, 0)) // Voting ends at 22:00 UTC
       }));
       
-      // Sort by vote count
-      votingApps.sort((a, b) => (b.votes || 0) - (a.votes || 0));
+      votingEndTime = new Date(new Date().setHours(22, 0, 0, 0));
     }
 
-    // NON-VOTING APPS: Get today's launches that are NOT in the voting session
-    // These are apps that launched today but aren't competing in the vote
-    // const nonVotingAppIds = activeSession?.tools || [];
-    const nonVotingAppIds = (activeSession?.tools || []).map(id => new ObjectId(id));
+    // NON-VOTING APPS: Get today's launches that are NOT in the active launch
+    const nonVotingAppIds = activeLaunch?.apps || [];
 
     let allApps = [];
     
@@ -182,7 +160,6 @@ export default async function LaunchPage() {
         .toArray();
     }
     
-    
     // Add voting status
     allApps = allApps.map(app => ({
       ...app,
@@ -196,7 +173,7 @@ export default async function LaunchPage() {
     // Count total apps for pagination
     const totalApps = allAppsCombined.length;
 
-    // Compute category counts for the "Browse by Category" chips (mirror blogs logic)
+    // Compute category counts for the "Browse by Category" chips
     const categoryNames: string[] = await Cache.getOrSet(
       Cache.keys.categories('app'),
       CachePolicy.page.launchCategory,
@@ -226,7 +203,7 @@ export default async function LaunchPage() {
     }));
 
     // Non-today apps (for All Apps section)
-    // Exclude apps that are in today's voting
+    // Exclude apps that are in today's active launch
     const nonTodayFilter = {
       status: 'approved',
       $and: [
@@ -239,7 +216,7 @@ export default async function LaunchPage() {
             { launchDate: { $type: 'string' } },
           ]
         },
-        activeSession?.tools?.length ? { _id: { $nin: activeSession.tools } } : {}
+        activeLaunch?.apps?.length ? { _id: { $nin: activeLaunch.apps } } : {}
       ]
     } as const;
 
@@ -248,7 +225,7 @@ export default async function LaunchPage() {
       .sort({ createdAt: -1 })
       .limit(24)
       .toArray();
-      console.log(nonTodayApps);
+      
     // Serialize MongoDB objects before passing to client component
     const serializedApps = serializeMongoObject(allAppsCombined);
     const serializedFeaturedApps = serializeMongoObject(featuredApps);
@@ -257,10 +234,8 @@ export default async function LaunchPage() {
     // Add voting end time to the page props
     const pageProps = {
       votingEndTime: votingEndTime.toISOString(),
-      isVotingActive: activeSession !== null
+      isVotingActive: activeLaunch !== null && activeLaunch.status === 'active'
     };
-
-    // Diagnostics removed for cleaner logs
 
     // Count of all approved apps not launching today
     const allAppsCount = await db.collection('userapps').countDocuments(nonTodayFilter as any);
@@ -313,4 +288,3 @@ export default async function LaunchPage() {
     );
   }
 }
-
