@@ -13,6 +13,8 @@ import ThumbUpAltOutlined from '@mui/icons-material/ThumbUpAltOutlined';
 import ThumbUpAlt from '@mui/icons-material/ThumbUpAlt';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { authClient } from '@/app/auth-client';
+import { VOTING_ENDPOINTS } from '@/config/voting';
+import { encryptVotingToken } from '@/lib/voting-token';
 
 type Props = {
   toolId: string;
@@ -43,8 +45,39 @@ export default function VoteButton({
     setVotes(initialVotes);
   }, [initialVotes]);
 
+  // Check vote status on mount
+  useEffect(() => {
+    const checkVoteStatus = async () => {
+      if (!isAuthenticated || !session?.user?.id) return;
+      
+      try {
+        // Generate encrypted token for the voting API
+        const user = session.user as any;
+        const token = encryptVotingToken({
+          sub: user.id,
+          role: user.role || 'user',
+          pro: user.isPremium || false
+        });
+        
+        const response = await fetch(
+          VOTING_ENDPOINTS.VOTE_STATUS(toolId, token),
+          { credentials: 'include' }
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          setHasVoted(!!data.alreadyVoted);
+        }
+      } catch (error) {
+        console.error('Error checking vote status:', error);
+      }
+    };
+    
+    checkVoteStatus();
+  }, [isAuthenticated, session?.user?.id, toolId]);
+
   const handleVote = useCallback(async () => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !session?.user?.id) {
       setSnackbarMessage('Please sign in to vote');
       setSnackbarOpen(true);
       return;
@@ -59,22 +92,46 @@ export default function VoteButton({
     setLoading(true);
     
     try {
-      const response = await fetch('/api/vote', {
-        method: 'POST',
+      // Generate encrypted token for the voting API
+      const user = session.user as any;
+      const token = encryptVotingToken({
+        sub: user.id,
+        role: user.role || 'user',
+        pro: user.isPremium || false
+      });
+      
+      // Determine if this is an unvote action
+      const isUnvote = hasVoted;
+      const url = new URL(VOTING_ENDPOINTS.VOTE(toolId, token));
+      
+      if (isUnvote) {
+        url.searchParams.append('unvote', 'true');
+      }
+
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ toolId }),
       });
 
       const data = await response.json();
       
       if (!response.ok) {
+        // Handle specific error codes from voting API
+        if (data.code === 'NO_ACTIVE_LAUNCH') {
+          throw new Error('No active launch to vote in');
+        } else if (data.code === 'VOTING_CLOSED') {
+          throw new Error('Voting is currently closed');
+        } else if (data.code === 'APP_NOT_ELIGIBLE') {
+          throw new Error('This app is not eligible for voting');
+        }
         throw new Error(data.error || 'Failed to process vote');
       }
 
-      // Update local state
-      const newVotedState = !hasVoted;
+      // Update local state based on the action
+      const newVotedState = !isUnvote;
       setHasVoted(newVotedState);
       setVotes(prev => newVotedState ? prev + 1 : Math.max(0, prev - 1));
       
@@ -92,7 +149,7 @@ export default function VoteButton({
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, toolId, hasVoted, onVoteUpdate, disabled]);
+  }, [isAuthenticated, session?.user?.id, toolId, hasVoted, onVoteUpdate, disabled]);
 
   const votingOver = useMemo(() => {
     // If disabled prop is true, voting is over
