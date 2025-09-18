@@ -14,7 +14,6 @@ import ThumbUpAlt from '@mui/icons-material/ThumbUpAlt';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { authClient } from '@/app/auth-client';
 import { VOTING_ENDPOINTS } from '@/config/voting';
-import { encryptVotingToken } from '@/lib/voting-token';
 
 type Props = {
   toolId: string;
@@ -48,16 +47,11 @@ export default function VoteButton({
   // Check vote status on mount
   useEffect(() => {
     const checkVoteStatus = async () => {
-      if (!isAuthenticated || !session?.user?.id) return;
+      if (!isAuthenticated || !session?.votingToken) return;
       
       try {
-        // Generate encrypted token for the voting API
-        const user = session.user as any;
-        const token = encryptVotingToken({
-          sub: user.id,
-          role: user.role || 'user',
-          pro: user.isPremium || false
-        });
+        // Use the voting token from the session (already encrypted server-side)
+        const token = session.votingToken;
         
         const response = await fetch(
           VOTING_ENDPOINTS.VOTE_STATUS(toolId, token),
@@ -77,7 +71,7 @@ export default function VoteButton({
   }, [isAuthenticated, session?.user?.id, toolId]);
 
   const handleVote = useCallback(async () => {
-    if (!isAuthenticated || !session?.user?.id) {
+    if (!isAuthenticated || !session?.votingToken) {
       setSnackbarMessage('Please sign in to vote');
       setSnackbarOpen(true);
       return;
@@ -92,13 +86,8 @@ export default function VoteButton({
     setLoading(true);
     
     try {
-      // Generate encrypted token for the voting API
-      const user = session.user as any;
-      const token = encryptVotingToken({
-        sub: user.id,
-        role: user.role || 'user',
-        pro: user.isPremium || false
-      });
+      // Use the voting token from the session (already encrypted server-side)
+      const token = session.votingToken;
       
       // Determine if this is an unvote action
       const isUnvote = hasVoted;

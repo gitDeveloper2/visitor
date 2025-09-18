@@ -2,6 +2,7 @@
 import { MongoClient, Db } from "mongodb";
 import { PageStats } from "../types/PageStats";
 const uri =
+  process.env.MONGODB_URI ??
   process.env.NEXT_PUBLIC_MONGO_URI_DEV ??
   process.env.NEXT_PUBLIC_MONGO_URI ??
   "mongodb+srv://2iamjustin:Z4aFXyaraOXkjUDB@cluster0.10dpslm.mongodb.net/?retryWrites=true&w=majority"; // Use environment variable for URI
@@ -14,10 +15,13 @@ let db: Db;
 export async function connectToDatabase() {
   if (!db) {
     try {
+      console.log('[MongoDB] Attempting to connect with URI:', uri.replace(/\/\/[^:]+:[^@]+@/, '//***:***@'));
       await client.connect();
       db = client.db(databasename);
+      console.log('[MongoDB] Successfully connected to database:', databasename);
     } catch (error) {
-      throw new Error("Database connection error");
+      console.error('[MongoDB] Connection failed:', error);
+      throw new Error(`Database connection error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { Container, Typography, Box, CircularProgress } from '@mui/material';
+import { Container, Typography, Box, CircularProgress, Alert } from '@mui/material';
 import AppsMainPage from './AppsMainPage';
 import { fetchCategoryNames } from '@/utils/categories';
 import { connectToDatabase } from '@/lib/mongodb';
@@ -270,9 +270,25 @@ export default async function LaunchPage() {
     );
   } catch (error) {
     console.error('[LaunchPage] Error fetching app data:', error);
-    // Fallback with empty data
+    console.error('[LaunchPage] Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined
+    });
+    
+    // Fallback with empty data and error message
     return (
       <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
+        <Box sx={{ mb: 2 }}>
+          <Alert severity="error">
+            Unable to load launch data. Please try refreshing the page.
+            {process.env.NODE_ENV === 'development' && (
+              <Box sx={{ mt: 1, fontSize: '0.875rem', fontFamily: 'monospace' }}>
+                Error: {error instanceof Error ? error.message : 'Unknown error'}
+              </Box>
+            )}
+          </Alert>
+        </Box>
         <Suspense fallback={
           <Box sx={{ display: 'flex', justifyContent: 'center', py: { xs: 4, sm: 8 } }}>
             <CircularProgress />
@@ -282,6 +298,11 @@ export default async function LaunchPage() {
             initialApps={[]}
             initialFeaturedApps={[]}
             initialTotalApps={0}
+            categoryChips={[]}
+            allAppsCount={0}
+            initialAllApps={[]}
+            votingEndTime={new Date().toISOString()}
+            isVotingActive={false}
           />
         </Suspense>
       </Container>
