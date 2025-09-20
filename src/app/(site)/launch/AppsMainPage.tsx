@@ -69,6 +69,7 @@ export default function AppsMainPage({
   const [featuredApps, setFeaturedApps] = useState(initialFeaturedApps);
   const [allApps, setAllApps] = useState(initialAllApps);
   const [totalApps, setTotalApps] = useState(initialTotalApps);
+  const [actualVotingActive, setActualVotingActive] = useState(globalVotingActive);
   
   // Update local state when props change
   useEffect(() => {
@@ -155,6 +156,10 @@ export default function AppsMainPage({
         const data = await res.json();
         setTodayPremium(data.premium || []);
         setTodayNonPremium(data.nonPremium || []);
+        
+        // Determine voting status: if we have apps in the launch, voting is active
+        const hasActiveApps = (data.premium && data.premium.length > 0) || (data.nonPremium && data.nonPremium.length > 0);
+        setActualVotingActive(data.success && hasActiveApps);
       } catch (error) {
         console.error('Network error fetching from Voting API:', error);
         // Graceful fallback - show empty state
@@ -511,7 +516,7 @@ export default function AppsMainPage({
                 toolId={appId} 
                 initialVotes={app.votes || app.stats?.votes || 0}
                 launchDate={app.launchDate}
-                disabled={!globalVotingActive || !app.inVoting}
+                disabled={!actualVotingActive || !app.inVoting}
                 onVoteUpdate={handleVoteUpdate}
               />
             </Box>
@@ -707,7 +712,7 @@ export default function AppsMainPage({
               toolId={appId} 
               initialVotes={app.votes || app.stats?.votes || 0}
               launchDate={app.launchDate}
-              disabled={!globalVotingActive || !app.inVoting}
+              disabled={!actualVotingActive || !app.inVoting}
               onVoteUpdate={handleVoteUpdate}
             />
           </Box>

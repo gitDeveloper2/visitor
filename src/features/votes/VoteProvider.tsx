@@ -8,8 +8,10 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { buildVoteUrl } from './constants';
 import { authClient } from '@/app/auth-client';
+
+// Use the launches system to get vote data instead of deprecated snapshot endpoint
+const VOTING_API_URL = process.env.NEXT_PUBLIC_VOTES_URL || 'https://voting-ebon-seven.vercel.app';
 
 type VoteSnapshot = {
   totals: Record<string, number>;
@@ -20,38 +22,25 @@ type VoteContextValue = {
   getCount: (toolId: string) => number;
   hasVoted: (toolId: string) => boolean;
   vote: (toolId: string, unvote?: boolean) => Promise<void>;
+  updateVoteCounts: (apps: any[]) => void;
 };
 
 const VoteContext = createContext<VoteContextValue | undefined>(undefined);
 
 export function VoteProvider({ children }: { children: React.ReactNode }) {
-  const { data } = authClient.useSession(); // { user, session }
+  const { data } = authClient.useSession();
+  
+  // Type assertion to include votingToken (same pattern as VoteButton)
+  const sessionWithToken = data as typeof data & {
+    session: { votingToken?: string } & typeof data.session;
+  };
+  
   const [totals, setTotals] = useState<Record<string, number>>({});
   const [userVotes, setUserVotes] = useState<Set<string>>(new Set());
 
-  // --- Fetch snapshot once session is loaded ---
-  useEffect(() => {
-    if (!data?.session?.votingToken) return;
-
-    const fetchSnapshot = async () => {
-      try {
-        const token = encodeURIComponent(data.session.votingToken);
-        const url = `${buildVoteUrl('/api/snapshot')}?token=${token}`;
-
-        const res = await fetch(url, { method: 'GET' });
-        if (!res.ok) throw new Error(`Snapshot failed: ${res.status}`);
-
-        const payload: VoteSnapshot = await res.json();
-        setTotals(payload?.totals ?? {});
-        setUserVotes(new Set(payload?.userVotes ?? []));
-      } catch (err) {
-        console.error('Snapshot fetch failed', err);
-      }
-    };
-
-    fetchSnapshot();
-  }, [data?.session?.votingToken]);
-
+  // Note: VoteProvider now gets data from AppsMainPage to avoid duplicate API calls
+  // The launch data is passed down from the parent component that already fetched it
+  
   // --- Stable getters ---
   const getCount = useCallback(
     (toolId: string) => totals[toolId] ?? 0,
@@ -62,11 +51,22 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
     (toolId: string) => userVotes.has(toolId),
     [userVotes]
   );
+  
+  // Method to update vote counts from external source (like AppsMainPage)
+  const updateVoteCounts = useCallback((apps: any[]) => {
+    const voteCounts: Record<string, number> = {};
+    apps.forEach(app => {
+      if (app._id && typeof app.totalVotes === 'number') {
+        voteCounts[app._id] = app.totalVotes;
+      }
+    });
+    setTotals(voteCounts);
+  }, []);
 
   // --- Vote / Unvote action ---
   const vote = useCallback(
     async (toolId: string, unvote = false) => {
-      if (!data?.session?.votingToken) {
+      if (!sessionWithToken?.session?.votingToken) {
         console.error('No voting token available');
         return;
       }
@@ -88,28 +88,42 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
       setUserVotes(updatedVotes);
 
       try {
-        const token = encodeURIComponent(data.session.votingToken);
-        const url = `${buildVoteUrl('/api/vote')}?token=${token}&toolId=${toolId}${
+        const token = encodeURIComponent(sessionWithToken.session.votingToken);
+        const url = `${VOTING_API_URL}/api/vote?token=${token}&toolId=${toolId}${
           willUnvote ? '&unvote=true' : ''
         }`;
 
         const res = await fetch(url, { method: 'GET' });
-        if (!res.ok) throw new Error(`Vote request failed: ${res.status}`);
+        if (!res.ok) {
+          console.warn(`Vote request failed: ${res.status}`);
+          // Rollback on failure
+          setTotals(prevTotals);
+          setUserVotes(prevUserVotes);
+          return;
+        }
+        
+        // Update with actual count from API response
+        const data = await res.json();
+        if (data.count !== undefined) {
+          setTotals(prev => ({ ...prev, [toolId]: data.count }));
+        }
       } catch (err) {
-        console.error('Vote request failed', err);
+        console.warn('Vote request failed', err);
         // Rollback on failure
         setTotals(prevTotals);
         setUserVotes(prevUserVotes);
       }
     },
-    [totals, userVotes, data?.session?.votingToken]
+    [totals, userVotes, sessionWithToken?.session?.votingToken]
   );
 
-  const value = useMemo(() => ({ getCount, hasVoted, vote }), [
+  // Expose all methods through context
+  const value = useMemo(() => ({
     getCount,
     hasVoted,
     vote,
-  ]);
+    updateVoteCounts
+  }), [getCount, hasVoted, vote, updateVoteCounts]);
 
   return <VoteContext.Provider value={value}>{children}</VoteContext.Provider>;
 }

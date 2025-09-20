@@ -1,5 +1,5 @@
-// Voting API configuration
-export const VOTING_API_URL = process.env.NEXT_PUBLIC_VOTING_API_URL || 'http://localhost:3001';
+// Voting API configuration - use the same URL as VoteProvider
+export const VOTING_API_URL = process.env.NEXT_PUBLIC_VOTES_URL || 'https://voting-ebon-seven.vercel.app';
 
 export const VOTING_ENDPOINTS = {
   VOTE: (toolId: string, token: string) => 

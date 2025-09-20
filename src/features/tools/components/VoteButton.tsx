@@ -53,31 +53,9 @@ export default function VoteButton({
     setVotes(initialVotes);
   }, [initialVotes]);
 
-  // Check vote status on mount
-  useEffect(() => {
-    const checkVoteStatus = async () => {
-      if (!isAuthenticated || !sessionWithToken?.session.votingToken) return;
-      
-      try {
-        // Use the voting token from the session (already encrypted server-side)
-        const token = sessionWithToken.session.votingToken;
-        
-        const response = await fetch(
-          VOTING_ENDPOINTS.VOTE_STATUS(toolId, token),
-          { credentials: 'include' }
-        );
-        
-        if (response.ok) {
-          const data = await response.json();
-          setHasVoted(!!data.alreadyVoted);
-        }
-      } catch (error) {
-        console.error('Error checking vote status:', error);
-      }
-    };
-    
-    checkVoteStatus();
-  }, [isAuthenticated, session?.user?.id, toolId]);
+  // Note: We don't check vote status on mount to avoid calling the vote endpoint
+  // The vote endpoint will return the appropriate status when user actually tries to vote
+  // Vote status is managed through user interaction and API responses
 
   const handleVote = useCallback(async () => {
     if (!isAuthenticated || !sessionWithToken?.session.votingToken) {
@@ -118,6 +96,22 @@ export default function VoteButton({
       
       if (!response.ok) {
         // Handle specific error codes from voting API
+        if (response.status === 409) {
+          // 409 means already voted (when trying to vote) or not voted (when trying to unvote)
+          if (isUnvote) {
+            setSnackbarMessage('You haven\'t voted for this app yet');
+          } else {
+            // Already voted - update UI to reflect this
+            setHasVoted(true);
+            if (data.count !== undefined) {
+              setVotes(data.count);
+            }
+            setSnackbarMessage('You have already voted for this app');
+          }
+          setSnackbarOpen(true);
+          return;
+        }
+        
         if (data.code === 'NO_ACTIVE_LAUNCH') {
           throw new Error('No active launch to vote in');
         } else if (data.code === 'VOTING_CLOSED') {
@@ -128,10 +122,17 @@ export default function VoteButton({
         throw new Error(data.error || 'Failed to process vote');
       }
 
-      // Update local state based on the action
+      // Success - update local state
       const newVotedState = !isUnvote;
       setHasVoted(newVotedState);
-      setVotes(prev => newVotedState ? prev + 1 : Math.max(0, prev - 1));
+      
+      // Update vote count from API response
+      if (data.count !== undefined) {
+        setVotes(data.count);
+      } else {
+        // Fallback to local calculation
+        setVotes(prev => newVotedState ? prev + 1 : Math.max(0, prev - 1));
+      }
       
       // Notify parent component
       if (onVoteUpdate) {
@@ -153,16 +154,11 @@ export default function VoteButton({
     // If disabled prop is true, voting is over
     if (disabled) return true;
     
-    // If no launch date, voting is not time-bound
-    if (!launchDate) return false;
-    
-    // Otherwise check if voting period has passed
-    const launch = new Date(launchDate);
-    const now = new Date();
-    const votingEnd = new Date(launch.getTime() + (24 * 60 * 60 * 1000)); // 24 hours
-    
-    return now > votingEnd;
-  }, [launchDate, disabled]);
+    // Voting status is determined by the launches system, not by date
+    // If there's an active launch with this app, voting should be allowed
+    // The voting API will return proper error codes if voting is not allowed
+    return false; // Let the API determine voting eligibility
+  }, [disabled]);
 
   const voted = useMemo(
     () => isAuthenticated && hasVoted,
@@ -213,50 +209,52 @@ export default function VoteButton({
         arrow
         placement="top"
       >
-        <Button
-          variant={buttonVariant}
-          color={buttonColor}
-          size={buttonSize}
-          disabled={!isAuthenticated || loading || votingOver}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            handleVote();
-          }}
-          sx={{
-            minWidth: 'auto',
-            px: 1.5,
-            py: 0.5,
-            borderRadius: 2,
-            textTransform: 'none',
-            fontWeight: 500,
-            '&:hover': {
-              boxShadow: hasVoted ? theme.shadows[2] : 'none',
-              backgroundColor: hasVoted 
-                ? alpha(theme.palette.primary.main, 0.9) 
-                : alpha(theme.palette.action.hover, 0.4)
-            },
-          }}
-          startIcon={
-            hasVoted ? (
-              <ThumbUpAlt fontSize="small" sx={{ width: 18, height: 18 }} />
-            ) : (
-              <ThumbUpAltOutlined fontSize="small" sx={{ width: 18, height: 18 }} />
-            )
-          }
-        >
-          <Typography 
-            variant="body2" 
-            component="span" 
-            sx={{ 
-              ml: 0.5, 
-              fontWeight: 500,
-              color: hasVoted ? 'primary.contrastText' : 'inherit'
+        <span>
+          <Button
+            variant={buttonVariant}
+            color={buttonColor}
+            size={buttonSize}
+            disabled={!isAuthenticated || loading || votingOver}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleVote();
             }}
+            sx={{
+              minWidth: 'auto',
+              px: 1.5,
+              py: 0.5,
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 500,
+              '&:hover': {
+                boxShadow: hasVoted ? theme.shadows[2] : 'none',
+                backgroundColor: hasVoted 
+                  ? alpha(theme.palette.primary.main, 0.9) 
+                  : alpha(theme.palette.action.hover, 0.4)
+              },
+            }}
+            startIcon={
+              hasVoted ? (
+                <ThumbUpAlt fontSize="small" sx={{ width: 18, height: 18 }} />
+              ) : (
+                <ThumbUpAltOutlined fontSize="small" sx={{ width: 18, height: 18 }} />
+              )
+            }
           >
-            {votes}
-          </Typography>
-        </Button>
+            <Typography 
+              variant="body2" 
+              component="span" 
+              sx={{ 
+                ml: 0.5, 
+                fontWeight: 500,
+                color: hasVoted ? 'primary.contrastText' : 'inherit'
+              }}
+            >
+              {votes}
+            </Typography>
+          </Button>
+        </span>
       </Tooltip>
 
       <Snackbar
