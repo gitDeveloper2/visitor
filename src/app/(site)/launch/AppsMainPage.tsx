@@ -79,6 +79,15 @@ export default function AppsMainPage({
   }, [initialApps, initialFeaturedApps, initialAllApps, initialTotalApps]);
 
   const theme = useTheme();
+  console.log('🔍 THEME DEBUG - AppsMainPage theme loaded:', {
+    themeExists: !!theme,
+    paletteExists: !!theme?.palette,
+    primaryExists: !!theme?.palette?.primary,
+    primaryMain: theme?.palette?.primary?.main,
+    secondaryMain: theme?.palette?.secondary?.main,
+    successMain: theme?.palette?.success?.main,
+    warningMain: theme?.palette?.warning?.main
+  });
   const isMobile = useMediaQuery(theme.breakpoints.down('md'), { noSsr: true });
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true });
   const debugMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1';
@@ -94,35 +103,42 @@ export default function AppsMainPage({
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [todayPremium, setTodayPremium] = useState<any[]>([]);
   const [todayNonPremium, setTodayNonPremium] = useState<any[]>([]);
-
+console.log("mukban 23 ")
   // No need to gate rendering; useMediaQuery uses noSsr to avoid hydration mismatches
 
-  // Fetch categories from API
+  // Categories should be passed as props from server-side ISR, not fetched client-side
+  // This is a temporary fallback - categories should come from server
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const categoriesData = await fetchCategoriesFromAPI('app');
-        setCategories(categoriesData);
-      } catch {
-        // ignore
-      } finally {
-        setCategoriesLoading(false);
-      }
-    };
+    if (categories.length === 0) {
+      const fetchCategories = async () => {
+        try {
+          const categoriesData = await fetchCategoriesFromAPI('app');
+          setCategories(categoriesData);
+        } catch {
+          // ignore
+        } finally {
+          setCategoriesLoading(false);
+        }
+      };
+      fetchCategories();
+    } else {
+      setCategoriesLoading(false);
+    }
+  }, [categories]);
 
-    fetchCategories();
-  }, []);
-
-  // Fetch today's launches for top sections
+  // Fetch today's launches from Voting API (only client-side fetch needed)
   useEffect(() => {
     const fetchToday = async () => {
       try {
-        const res = await fetch('/api/launch/today');
+        const votingApiUrl = process.env.NEXT_PUBLIC_VOTING_API_URL || '';
+        const res = await fetch(`${votingApiUrl}/api/launch/today`);
         if (!res.ok) return;
         const data = await res.json();
         setTodayPremium(data.premium || []);
         setTodayNonPremium(data.nonPremium || []);
-      } catch {}
+      } catch (error) {
+        console.error('Failed to fetch today\'s launches from Voting API:', error);
+      }
     };
     fetchToday();
   }, []);
@@ -255,7 +271,8 @@ export default function AppsMainPage({
     const timer = setTimeout(() => {
       (async () => {
         try {
-          const res = await fetch('/api/launch/today');
+          const votingApiUrl = process.env.NEXT_PUBLIC_VOTING_API_URL || '';
+          const res = await fetch(`${votingApiUrl}/api/launch/today`);
           if (!res.ok) return;
           const data = await res.json();
           setTodayPremium(data.premium || []);
@@ -276,8 +293,9 @@ export default function AppsMainPage({
 
     const refresh = async () => {
       try {
-        // Refresh today's launches
-        const resToday = await fetch('/api/launch/today');
+        // Refresh today's launches from Voting API
+        const votingApiUrl = process.env.NEXT_PUBLIC_VOTING_API_URL || '';
+        const resToday = await fetch(`${votingApiUrl}/api/launch/today`);
         if (resToday.ok) {
           const data = await resToday.json();
           if (!cancelled) {
@@ -306,7 +324,7 @@ export default function AppsMainPage({
             return !(t >= start && t <= end);
           });
           if (!cancelled) {
-            setAllAppsList(nonToday);
+            setAllApps(nonToday);
           }
         }
       } catch {}
@@ -711,7 +729,8 @@ export default function AppsMainPage({
   ];
 
   return (
-    <Box component="main" sx={{ bgcolor: "background.default", py: { xs: 4, sm: 6, md: 10 } }}>
+   <Box  role="main" sx={{ bgcolor: "background.default", py: { xs: 4, sm: 6, md: 10 } }}>
+
       {/* Hero */}
       <Box sx={{ textAlign: "center", mb: { xs: 4, sm: 6, md: 8 } }}>
         <Typography 

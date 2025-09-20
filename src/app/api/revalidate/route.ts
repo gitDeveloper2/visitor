@@ -11,9 +11,27 @@ export async function POST(req: Request) {
     }
 
     // Trigger revalidation for the provided path
-    await revalidatePath(path);
-    logger.info(`Path ${path} revalidated successfully` )
-    return NextResponse.json({ message: `Path ${path} revalidated successfully` }, { status: 200 });
+    console.log(`🔄 Attempting to revalidate path: ${path}`);
+    
+    try {
+      revalidatePath(path);
+      console.log(`✅ revalidatePath(${path}) called successfully`);
+      
+      // Also try revalidating with 'page' type explicitly
+      revalidatePath(path, 'page');
+      console.log(`✅ revalidatePath(${path}, 'page') called successfully`);
+      
+    } catch (revalidateError) {
+      console.error(`❌ revalidatePath failed:`, revalidateError);
+      throw revalidateError;
+    }
+    
+    logger.info(`Path ${path} revalidated successfully`);
+    return NextResponse.json({ 
+      message: `Path ${path} revalidated successfully`,
+      timestamp: new Date().toISOString(),
+      success: true
+    }, { status: 200 });
   } catch (error) {
     logger.error('Error:', {error:error});
     return NextResponse.json({ message: 'Error revalidating path', error: error}, { status: 500 });

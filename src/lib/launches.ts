@@ -27,13 +27,14 @@ export interface LaunchWithApps extends Launch {
  * Main app only reads from launches collection
  */
 export async function getActiveLaunch(): Promise<Launch | null> {
+  console.log("trying to fetch active launches")
   try {
     const { db } = await connectToDatabase();
     
     const launch = await db.collection('launches').findOne({
       status: 'active'
     }) as Launch | null;
-    
+    console.log("fetched active launch", launch)
     return launch;
   } catch (error) {
     console.error('[MainApp] Error fetching active launch:', error);

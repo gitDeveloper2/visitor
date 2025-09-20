@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/features/shared/utils/auth';
 import { connectToDatabase } from '@lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { revalidatePath } from 'next/cache';
 
 // Force dynamic rendering to prevent build-time static generation issues
 export const dynamic = 'force-dynamic';
@@ -46,16 +47,38 @@ export async function PUT(
       return NextResponse.json({ message: 'App not found' }, { status: 404 });
     }
 
-    // Update the status
+    // Update the status and set launchDate for approved apps
+    const updateFields: any = { status, updatedAt: new Date() };
+    
+    // If approving an app, set launchDate to today
+    if (status === 'approved') {
+      const today = new Date();
+      const y = today.getUTCFullYear();
+      const m = String(today.getUTCMonth() + 1).padStart(2, '0');
+      const d = String(today.getUTCDate()).padStart(2, '0');
+      updateFields.launchDate = new Date(`${y}-${m}-${d}T00:00:00.000Z`);
+    }
+    
     const result = await db
       .collection('userapps')
       .updateOne(
         { _id: new ObjectId(params.id) },
-        { $set: { status, updatedAt: new Date() } }
+        { $set: updateFields }
       );
 
     if (result.matchedCount === 0) {
       return NextResponse.json({ message: 'App not found' }, { status: 404 });
+    }
+
+    // Revalidate launch page when approving apps
+    if (status === 'approved') {
+      try {
+        revalidatePath('/launch');
+        console.log('✅ Launch page revalidated after app approval');
+      } catch (revalidateError) {
+        console.error('❌ Failed to revalidate launch page:', revalidateError);
+        // Don't fail the request if revalidation fails
+      }
     }
 
     return NextResponse.json({ message: 'App status updated successfully' }, { status: 200 });

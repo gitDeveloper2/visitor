@@ -1,17 +1,20 @@
 'use client';
 
-import {
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { 
+  Box, 
+  Button, 
+  CircularProgress, 
+  IconButton, 
+  Snackbar, 
+  Stack, 
+  Tooltip, 
   Typography,
-  Box,
-  CircularProgress,
-  Snackbar,
-  Tooltip,
-  IconButton,
-  Button,
+  alpha,
+  useTheme
 } from '@mui/material';
 import ThumbUpAltOutlined from '@mui/icons-material/ThumbUpAltOutlined';
 import ThumbUpAlt from '@mui/icons-material/ThumbUpAlt';
-import { useState, useEffect, useMemo, useCallback } from 'react';
 import { authClient } from '@/app/auth-client';
 import { VOTING_ENDPOINTS } from '@/config/voting';
 
@@ -31,6 +34,7 @@ export default function VoteButton({
   onVoteUpdate,
 }: Props) {
   const { data: session } = authClient.useSession();
+  console.log(session)
   const isAuthenticated = !!session?.user;
   
   const [votes, setVotes] = useState(initialVotes);
@@ -160,14 +164,32 @@ export default function VoteButton({
     [isAuthenticated, hasVoted]
   );
 
+  const theme = useTheme();
+  const buttonVariant = hasVoted ? 'contained' : 'outlined';
+  const buttonColor = hasVoted ? 'primary' : 'inherit';
+  const buttonSize = 'small';
+
   if (loading) {
     return (
-      <Box display="inline-flex" alignItems="center" gap={0.5}>
-        <CircularProgress size={20} />
-        <Typography variant="body2" color="text.secondary">
-          {votes}
-        </Typography>
-      </Box>
+      <Button
+        variant="outlined"
+        size={buttonSize}
+        disabled
+        sx={{
+          minWidth: 'auto',
+          px: 1.5,
+          py: 0.5,
+          borderRadius: 2,
+          '& .MuiButton-startIcon': {
+            margin: 0
+          }
+        }}
+        startIcon={
+          <CircularProgress size={16} color="inherit" />
+        }
+      >
+        {votes}
+      </Button>
     );
   }
 
@@ -183,52 +205,75 @@ export default function VoteButton({
                 ? 'Remove your vote' 
                 : 'Vote for this tool'
         }
+        arrow
+        placement="top"
       >
-        <Box 
-          component="span"
+        <Button
+          variant={buttonVariant}
+          color={buttonColor}
+          size={buttonSize}
+          disabled={!isAuthenticated || loading || votingOver}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             handleVote();
           }}
           sx={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 0.5,
-            border: '1px solid',
-            borderColor: hasVoted ? 'primary.main' : 'divider',
-            color: hasVoted ? 'primary.main' : 'text.secondary',
-            borderRadius: 2,
-            px: 1,
+            minWidth: 'auto',
+            px: 1.5,
             py: 0.5,
-            fontSize: '0.8rem',
-            cursor: isAuthenticated && !votingOver && !disabled ? 'pointer' : 'default',
-            opacity: votingOver || disabled ? 0.7 : 1,
-            transition: 'all 0.2s ease-in-out',
+            borderRadius: 2,
+            textTransform: 'none',
+            fontWeight: 500,
             '&:hover': {
-              borderColor: hasVoted ? 'primary.main' : 'primary.light',
-              backgroundColor: 'action.hover',
+              boxShadow: hasVoted ? theme.shadows[2] : 'none',
+              backgroundColor: hasVoted 
+                ? alpha(theme.palette.primary.main, 0.9) 
+                : alpha(theme.palette.action.hover, 0.4)
             },
           }}
+          startIcon={
+            hasVoted ? (
+              <ThumbUpAlt fontSize="small" sx={{ width: 18, height: 18 }} />
+            ) : (
+              <ThumbUpAltOutlined fontSize="small" sx={{ width: 18, height: 18 }} />
+            )
+          }
         >
-          {hasVoted ? (
-            <ThumbUpAlt sx={{ fontSize: 18 }} />
-          ) : (
-            <ThumbUpAltOutlined sx={{ fontSize: 18 }} />
-          )}
-          <Typography variant="body2" color="inherit">
+          <Typography 
+            variant="body2" 
+            component="span" 
+            sx={{ 
+              ml: 0.5, 
+              fontWeight: 500,
+              color: hasVoted ? 'primary.contrastText' : 'inherit'
+            }}
+          >
             {votes}
           </Typography>
-        </Box>
+        </Button>
       </Tooltip>
 
       <Snackbar
         open={snackbarOpen}
-        autoHideDuration={3000}
+        autoHideDuration={4000}
         onClose={() => setSnackbarOpen(false)}
-        message={snackbarMessage}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      />
+        sx={{
+          '& .MuiPaper-root': {
+            borderRadius: 2,
+            boxShadow: theme.shadows[3],
+            minWidth: 200,
+            textAlign: 'center',
+            bgcolor: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.50',
+            color: theme.palette.text.primary,
+          }
+        }}
+      >
+        <Typography variant="body2" sx={{ p: 1.5 }}>
+          {snackbarMessage}
+        </Typography>
+      </Snackbar>
     </>
   );
 }
