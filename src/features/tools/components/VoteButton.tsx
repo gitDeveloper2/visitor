@@ -61,7 +61,7 @@ export default function VoteButton({
       try {
         // Use the voting token from the session (already encrypted server-side)
         const token = sessionWithToken.session.votingToken;
-        console.log("vtok",token)
+        
         const response = await fetch(
           VOTING_ENDPOINTS.VOTE_STATUS(toolId, token),
           { credentials: 'include' }

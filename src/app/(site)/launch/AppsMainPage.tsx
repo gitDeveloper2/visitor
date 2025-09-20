@@ -79,15 +79,7 @@ export default function AppsMainPage({
   }, [initialApps, initialFeaturedApps, initialAllApps, initialTotalApps]);
 
   const theme = useTheme();
-  console.log('🔍 THEME DEBUG - AppsMainPage theme loaded:', {
-    themeExists: !!theme,
-    paletteExists: !!theme?.palette,
-    primaryExists: !!theme?.palette?.primary,
-    primaryMain: theme?.palette?.primary?.main,
-    secondaryMain: theme?.palette?.secondary?.main,
-    successMain: theme?.palette?.success?.main,
-    warningMain: theme?.palette?.warning?.main
-  });
+
   const isMobile = useMediaQuery(theme.breakpoints.down('md'), { noSsr: true });
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true });
   const debugMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1';
@@ -103,7 +95,7 @@ export default function AppsMainPage({
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [todayPremium, setTodayPremium] = useState<any[]>([]);
   const [todayNonPremium, setTodayNonPremium] = useState<any[]>([]);
-console.log("mukban 23 ")
+
   // No need to gate rendering; useMediaQuery uses noSsr to avoid hydration mismatches
 
   // Categories should be passed as props from server-side ISR, not fetched client-side
@@ -126,18 +118,48 @@ console.log("mukban 23 ")
     }
   }, [categories]);
 
-  // Fetch today's launches from Voting API (only client-side fetch needed)
+  // Fetch today's launches from external Voting API (source of truth)
   useEffect(() => {
     const fetchToday = async () => {
       try {
-        const votingApiUrl = process.env.NEXT_PUBLIC_VOTING_API_URL || '';
-        const res = await fetch(`${votingApiUrl}/api/launch/today`);
-        if (!res.ok) return;
+        const votingApiUrl = process.env.NEXT_PUBLIC_VOTES_URL || '';
+        
+        if (!votingApiUrl) {
+          console.error('NEXT_PUBLIC_VOTES_URL is not configured');
+          return;
+        }
+        
+        const fullUrl = `${votingApiUrl}/api/launch/today`;
+        console.log('Fetching from Voting API:', fullUrl);
+        
+        const res = await fetch(fullUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        console.log('Voting API response status:', res.status);
+        
+        if (!res.ok) {
+          console.error('Failed to fetch today\'s launches:', res.status, res.statusText);
+          const errorText = await res.text();
+          console.error('Error response body:', errorText);
+          
+          // If Voting API is down, show empty state but don't crash
+          setTodayPremium([]);
+          setTodayNonPremium([]);
+          return;
+        }
+        
         const data = await res.json();
         setTodayPremium(data.premium || []);
         setTodayNonPremium(data.nonPremium || []);
       } catch (error) {
-        console.error('Failed to fetch today\'s launches from Voting API:', error);
+        console.error('Network error fetching from Voting API:', error);
+        // Graceful fallback - show empty state
+        setTodayPremium([]);
+        setTodayNonPremium([]);
       }
     };
     fetchToday();
@@ -163,26 +185,7 @@ console.log("mukban 23 ")
     setCurrentPage(1);
   }, [searchQuery]);
 
-  // Debug logging
-  useEffect(() => {
-    if (debugMode) {
-      // eslint-disable-next-line no-console
-      console.log('[Launch Listing Debug] apps sample:', (apps || []).slice(0, 5).map(a => ({
-        _id: String(a._id || ''),
-        slug: a.slug,
-        name: a.name,
-        isVerified: a.isVerified,
-        verificationStatus: a.verificationStatus,
-        verificationScore: a.verificationScore,
-      })));
-      // eslint-disable-next-line no-console
-      console.log('[Launch Listing Debug] featured apps sample:', (featuredApps || []).slice(0, 3).map(a => ({
-        slug: a.slug,
-        name: a.name,
-        verificationStatus: a.verificationStatus,
-      })));
-    }
-  }, [debugMode, apps, featuredApps]);
+
 
   // Only fetch additional data when filter or page changes (not on initial load)
   useEffect(() => {
@@ -219,7 +222,7 @@ console.log("mukban 23 ")
         const res = await fetch(url);
         if (!res.ok) throw new Error("Failed to fetch apps");
         const data = await res.json();
-        console.log(data);
+       
         setApps(data.apps || []);
         setTotalPages(Math.ceil((data.total || 0) / 12));
         setTotalApps(data.total || 0);
@@ -271,7 +274,7 @@ console.log("mukban 23 ")
     const timer = setTimeout(() => {
       (async () => {
         try {
-          const votingApiUrl = process.env.NEXT_PUBLIC_VOTING_API_URL || '';
+          const votingApiUrl = process.env.NEXT_PUBLIC_VOTES_URL || '';
           const res = await fetch(`${votingApiUrl}/api/launch/today`);
           if (!res.ok) return;
           const data = await res.json();
@@ -293,8 +296,8 @@ console.log("mukban 23 ")
 
     const refresh = async () => {
       try {
-        // Refresh today's launches from Voting API
-        const votingApiUrl = process.env.NEXT_PUBLIC_VOTING_API_URL || '';
+        // Refresh today's launches from external Voting API
+        const votingApiUrl = process.env.NEXT_PUBLIC_VOTES_URL || '';
         const resToday = await fetch(`${votingApiUrl}/api/launch/today`);
         if (resToday.ok) {
           const data = await resToday.json();
@@ -956,11 +959,11 @@ console.log("mukban 23 ")
              </Box>
           </Typography>
           <Grid container spacing={{ xs: 2, sm: 2 }}>
-                           {(testMode ? todayPremium : todayPremium.filter(isVotingActiveForApp)).map((app) => (
-                 <Grid item xs={12} key={app._id?.toString() || app._id}>
-                   {renderAppCardHorizontal(app, true, true)}
-                 </Grid>
-               ))}
+            {todayPremium.map((app) => (
+              <Grid item xs={12} key={app._id?.toString() || app._id}>
+                {renderAppCardHorizontal(app, true, true)}
+              </Grid>
+            ))}
           </Grid>
         </Box>
       )}
@@ -980,13 +983,14 @@ console.log("mukban 23 ")
             <Box component="span" sx={{ color: theme.palette.secondary.main }}>
               Today's Launches
             </Box>
+          
           </Typography>
           <Grid container spacing={{ xs: 2, sm: 2 }}>
-                           {(testMode ? todayNonPremium : todayNonPremium.filter(isVotingActiveForApp)).map((app) => (
-                 <Grid item xs={12} key={app._id?.toString() || app._id}>
-                   {renderAppCardHorizontal(app, true, true)}
-                 </Grid>
-               ))}
+            {todayNonPremium.map((app) => (
+              <Grid item xs={12} key={app._id?.toString() || app._id}>
+                {renderAppCardHorizontal(app, true, true)}
+              </Grid>
+            ))}
           </Grid>
         </Box>
       )}
