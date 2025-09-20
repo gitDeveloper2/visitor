@@ -24,7 +24,15 @@ export interface CustomUser {
 export interface CustomSession {
   user: CustomUser;
   expires: string;
+  votingToken?: string;
 }
 
 // Export the auth instance type
-export type AuthInstance = typeof auth; 
+export type AuthInstance = typeof auth;
+
+// Module augmentation to extend Better Auth types
+declare module "better-auth/client" {
+  interface Session {
+    votingToken?: string;
+  }
+}

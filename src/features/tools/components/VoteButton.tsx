@@ -34,7 +34,12 @@ export default function VoteButton({
   onVoteUpdate,
 }: Props) {
   const { data: session } = authClient.useSession();
-  console.log(session)
+  
+  // Type assertion to include votingToken
+  const sessionWithToken = session as typeof session & {
+    session: { votingToken?: string } & typeof session.session;
+  };
+  
   const isAuthenticated = !!session?.user;
   
   const [votes, setVotes] = useState(initialVotes);
@@ -51,12 +56,12 @@ export default function VoteButton({
   // Check vote status on mount
   useEffect(() => {
     const checkVoteStatus = async () => {
-      if (!isAuthenticated || !session?.votingToken) return;
+      if (!isAuthenticated || !sessionWithToken?.session.votingToken) return;
       
       try {
         // Use the voting token from the session (already encrypted server-side)
-        const token = session.votingToken;
-        
+        const token = sessionWithToken.session.votingToken;
+        console.log("vtok",token)
         const response = await fetch(
           VOTING_ENDPOINTS.VOTE_STATUS(toolId, token),
           { credentials: 'include' }
@@ -75,7 +80,7 @@ export default function VoteButton({
   }, [isAuthenticated, session?.user?.id, toolId]);
 
   const handleVote = useCallback(async () => {
-    if (!isAuthenticated || !session?.votingToken) {
+    if (!isAuthenticated || !sessionWithToken?.session.votingToken) {
       setSnackbarMessage('Please sign in to vote');
       setSnackbarOpen(true);
       return;
@@ -91,7 +96,7 @@ export default function VoteButton({
     
     try {
       // Use the voting token from the session (already encrypted server-side)
-      const token = session.votingToken;
+      const token = sessionWithToken.session.votingToken;
       
       // Determine if this is an unvote action
       const isUnvote = hasVoted;
