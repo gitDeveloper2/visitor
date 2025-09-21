@@ -71,7 +71,9 @@ export default function AppsMainPage({
   const [totalApps, setTotalApps] = useState(initialTotalApps);
   const [actualVotingActive, setActualVotingActive] = useState(globalVotingActive);
   
-  // Update local state when props change
+  // Get VoteProvider context to initialize vote data
+  const { updateVoteCounts, getCount } = useVoteContext();
+
   useEffect(() => {
     setApps(initialApps);
     setFeaturedApps(initialFeaturedApps);
@@ -151,14 +153,32 @@ export default function AppsMainPage({
         }
         
         const data = await res.json();
+        console.log('🚀 Launch data received:', {
+          success: data.success,
+          premiumCount: data.premium?.length || 0,
+          nonPremiumCount: data.nonPremium?.length || 0,
+          hasSnapshot: !!data.snapshot,
+          snapshotKeys: data.snapshot ? Object.keys(data.snapshot).length : 0,
+          snapshot: data.snapshot
+        });
+        
         setTodayPremium(data.premium || []);
         setTodayNonPremium(data.nonPremium || []);
         
         // Update VoteProvider with launch app vote counts
         const allLaunchApps = [...(data.premium || []), ...(data.nonPremium || [])];
-        if (allLaunchApps.length > 0) {
-          // Use getCount from VoteProvider context if available
-          // This will be handled by the VoteProvider's updateVoteCounts method
+        console.log('🔄 Updating VoteProvider with launch apps and snapshot:', {
+          appsCount: allLaunchApps.length,
+          hasSnapshot: !!data.snapshot,
+          snapshotKeys: data.snapshot ? Object.keys(data.snapshot).length : 0
+        });
+        if (allLaunchApps.length > 0 && typeof updateVoteCounts === 'function') {
+          updateVoteCounts(allLaunchApps, data.snapshot);
+        } else {
+          console.warn('⚠️ Cannot update vote counts:', {
+            appsCount: allLaunchApps.length,
+            updateVoteCountsAvailable: typeof updateVoteCounts === 'function'
+          });
         }
         
         // Determine voting status: if we have apps in the launch, voting is active
@@ -245,8 +265,7 @@ export default function AppsMainPage({
     fetchApps();
   }, [selectedFilter, currentPage, initialApps, initialTotalApps]);
 
-  // Use centralized VoteProvider for counts
-  const { getCount } = useVoteContext();
+  // Vote counts are now available from the context above
 
   // Premium-vote blended ranking for today's combined list
   const premiumVoteBonus = Number(process.env.NEXT_PUBLIC_PREMIUM_VOTE_BONUS ?? 15);
@@ -310,9 +329,26 @@ export default function AppsMainPage({
         const resToday = await fetch(`${votingApiUrl}/api/launch/today`);
         if (resToday.ok) {
           const data = await resToday.json();
+          console.log(' Launch data received:', {
+            success: data.success,
+            premiumCount: data.premium?.length || 0,
+            nonPremiumCount: data.nonPremium?.length || 0,
+            hasSnapshot: !!data.snapshot,
+            snapshotKeys: data.snapshot ? Object.keys(data.snapshot).length : 0,
+            snapshot: data.snapshot,
+            premium: data.premium,
+            nonPremium: data.nonPremium
+          });
           if (!cancelled) {
+            console.log('🔄 Refresh: Updating launch data and VoteProvider');
             setTodayPremium(data.premium || []);
             setTodayNonPremium(data.nonPremium || []);
+            
+            // Update VoteProvider with refreshed data
+            const allLaunchApps = [...(data.premium || []), ...(data.nonPremium || [])];
+            if (allLaunchApps.length > 0 && typeof updateVoteCounts === 'function') {
+              updateVoteCounts(allLaunchApps, data.snapshot);
+            }
           }
         }
 

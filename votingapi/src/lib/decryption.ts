@@ -11,7 +11,7 @@ const algorithm = 'aes-256-gcm';
 const ivLength = 12;
 
 const secretKey = crypto.createHash('sha256')
-  .update(process.env.BETTER_AUTH_SECRET!)
+  .update(process.env.NEXTAUTH_SECRET!)
   .digest();
 
 export function decryptVotingToken(token: string): VotingTokenPayload {

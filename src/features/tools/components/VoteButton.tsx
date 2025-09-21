@@ -17,6 +17,7 @@ import ThumbUpAltOutlined from '@mui/icons-material/ThumbUpAltOutlined';
 import ThumbUpAlt from '@mui/icons-material/ThumbUpAlt';
 import { authClient } from '@/app/auth-client';
 import { VOTING_ENDPOINTS } from '@/config/voting';
+import { useVoteContext } from '@/features/votes/VoteProvider';
 
 type Props = {
   toolId: string;
@@ -42,20 +43,53 @@ export default function VoteButton({
   
   const isAuthenticated = !!session?.user;
   
-  const [votes, setVotes] = useState(initialVotes);
-  const [hasVoted, setHasVoted] = useState(false);
+  // Use VoteProvider for state management
+  const { getCount, hasVoted: hasVotedFromProvider, updateUserVoteStatus, snapshotLoaded } = useVoteContext();
+  
   const [loading, setLoading] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
+  
+  // Get current vote count and status from provider
+  const votes = getCount(toolId);
+  const hasVoted = hasVotedFromProvider(toolId);
 
-  // Sync with initialVotes prop
+  // Check initial vote status to avoid 409 conflicts
+  // Only check if snapshot is loaded (vote counts initialized) but user vote status unknown
   useEffect(() => {
-    setVotes(initialVotes);
-  }, [initialVotes]);
-
-  // Note: We don't check vote status on mount to avoid calling the vote endpoint
-  // The vote endpoint will return the appropriate status when user actually tries to vote
-  // Vote status is managed through user interaction and API responses
+    const checkInitialVoteStatus = async () => {
+      if (!isAuthenticated || !sessionWithToken?.session?.votingToken || !snapshotLoaded) return;
+      if (hasVoted !== false) return; // Already know the status
+      
+      try {
+        const token = sessionWithToken.session.votingToken;
+        const url = new URL(VOTING_ENDPOINTS.VOTE(toolId, token));
+        
+        const response = await fetch(url.toString(), {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        // If we get a 409, it means user has already voted
+        if (response.status === 409) {
+          const data = await response.json();
+          if (data.error === 'Already voted') {
+            updateUserVoteStatus(toolId, true);
+          }
+        }
+        // If we get 200, user hasn't voted yet (hasVoted stays false)
+        
+      } catch (error) {
+        // Silently fail - user can still vote and get proper feedback
+        console.log('Vote status check failed:', error);
+      }
+    };
+    
+    checkInitialVoteStatus();
+  }, [isAuthenticated, sessionWithToken?.session?.votingToken, toolId, snapshotLoaded, hasVoted, updateUserVoteStatus]);
 
   const handleVote = useCallback(async () => {
     if (!isAuthenticated || !sessionWithToken?.session.votingToken) {
@@ -97,15 +131,14 @@ export default function VoteButton({
       if (!response.ok) {
         // Handle specific error codes from voting API
         if (response.status === 409) {
-          // 409 means already voted (when trying to vote) or not voted (when trying to unvote)
+          // 409 means state mismatch - sync the state
           if (isUnvote) {
+            // Tried to unvote but haven't voted
+            updateUserVoteStatus(toolId, false);
             setSnackbarMessage('You haven\'t voted for this app yet');
           } else {
-            // Already voted - update UI to reflect this
-            setHasVoted(true);
-            if (data.count !== undefined) {
-              setVotes(data.count);
-            }
+            // Tried to vote but already voted
+            updateUserVoteStatus(toolId, true);
             setSnackbarMessage('You have already voted for this app');
           }
           setSnackbarOpen(true);
@@ -122,17 +155,9 @@ export default function VoteButton({
         throw new Error(data.error || 'Failed to process vote');
       }
 
-      // Success - update local state
+      // Success - update VoteProvider state
       const newVotedState = !isUnvote;
-      setHasVoted(newVotedState);
-      
-      // Update vote count from API response
-      if (data.count !== undefined) {
-        setVotes(data.count);
-      } else {
-        // Fallback to local calculation
-        setVotes(prev => newVotedState ? prev + 1 : Math.max(0, prev - 1));
-      }
+      updateUserVoteStatus(toolId, newVotedState);
       
       // Notify parent component
       if (onVoteUpdate) {
