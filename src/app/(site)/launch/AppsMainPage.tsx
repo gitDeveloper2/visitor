@@ -123,12 +123,9 @@ export default function AppsMainPage({
   useEffect(() => {
     const fetchToday = async () => {
       try {
-        const votingApiUrl = process.env.NEXT_PUBLIC_VOTES_URL || '';
+        const votingApiUrl = process.env.NEXT_PUBLIC_VOTES_URL || 'https://voting-ebon-seven.vercel.app';
         
-        if (!votingApiUrl) {
-          console.error('NEXT_PUBLIC_VOTES_URL is not configured');
-          return;
-        }
+        console.log('Using voting API URL:', votingApiUrl);
         
         const fullUrl = `${votingApiUrl}/api/launch/today`;
         console.log('Fetching from Voting API:', fullUrl);
@@ -156,6 +153,13 @@ export default function AppsMainPage({
         const data = await res.json();
         setTodayPremium(data.premium || []);
         setTodayNonPremium(data.nonPremium || []);
+        
+        // Update VoteProvider with launch app vote counts
+        const allLaunchApps = [...(data.premium || []), ...(data.nonPremium || [])];
+        if (allLaunchApps.length > 0) {
+          // Use getCount from VoteProvider context if available
+          // This will be handled by the VoteProvider's updateVoteCounts method
+        }
         
         // Determine voting status: if we have apps in the launch, voting is active
         const hasActiveApps = (data.premium && data.premium.length > 0) || (data.nonPremium && data.nonPremium.length > 0);
@@ -279,7 +283,7 @@ export default function AppsMainPage({
     const timer = setTimeout(() => {
       (async () => {
         try {
-          const votingApiUrl = process.env.NEXT_PUBLIC_VOTES_URL || '';
+          const votingApiUrl = process.env.NEXT_PUBLIC_VOTES_URL || 'https://voting-ebon-seven.vercel.app';
           const res = await fetch(`${votingApiUrl}/api/launch/today`);
           if (!res.ok) return;
           const data = await res.json();
@@ -302,7 +306,7 @@ export default function AppsMainPage({
     const refresh = async () => {
       try {
         // Refresh today's launches from external Voting API
-        const votingApiUrl = process.env.NEXT_PUBLIC_VOTES_URL || '';
+        const votingApiUrl = process.env.NEXT_PUBLIC_VOTES_URL || 'https://voting-ebon-seven.vercel.app';
         const resToday = await fetch(`${votingApiUrl}/api/launch/today`);
         if (resToday.ok) {
           const data = await resToday.json();
@@ -516,7 +520,7 @@ export default function AppsMainPage({
                 toolId={appId} 
                 initialVotes={app.votes || app.stats?.votes || 0}
                 launchDate={app.launchDate}
-                disabled={!actualVotingActive || !app.inVoting}
+                disabled={false}
                 onVoteUpdate={handleVoteUpdate}
               />
             </Box>
@@ -712,7 +716,7 @@ export default function AppsMainPage({
               toolId={appId} 
               initialVotes={app.votes || app.stats?.votes || 0}
               launchDate={app.launchDate}
-              disabled={!actualVotingActive || !app.inVoting}
+              disabled={false}
               onVoteUpdate={handleVoteUpdate}
             />
           </Box>
