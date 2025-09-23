@@ -27,11 +27,12 @@ import {
   commonStyles,
 } from "../../../utils/themeUtils";
 import UnifiedCTA from "../components/UnifiedCTA";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { fetchCategoriesFromAPI } from "../../../utils/categories";
 import VoteButton from '@/features/tools/components/VoteButton';
 import { computeAppScore } from '@/features/ranking/score';
 import { useVoteContext } from '@/features/votes/VoteProvider';
+import { authClient } from '@/app/auth-client';
 
 // Categories will be fetched from API
 interface Category {
@@ -72,7 +73,11 @@ export default function AppsMainPage({
   const [actualVotingActive, setActualVotingActive] = useState(globalVotingActive);
   
   // Get VoteProvider context to initialize vote data
-  const { updateVoteCounts, getCount } = useVoteContext();
+  const { setVotes, getCount } = useVoteContext();
+  
+  // Get session data at component level (hooks must be called at top level)
+  const { data: sessionData } = authClient.useSession();
+  const userToken = (sessionData as any)?.session?.votingToken || null;
 
   useEffect(() => {
     setApps(initialApps);
@@ -129,10 +134,15 @@ export default function AppsMainPage({
         
         console.log('Using voting API URL:', votingApiUrl);
         
-        const fullUrl = `${votingApiUrl}/api/launch/today`;
-        console.log('Fetching from Voting API:', fullUrl);
+        // Include user token if available to get user votes
+        const url = new URL(`${votingApiUrl}/api/launch/today`);
+        if (userToken) {
+          url.searchParams.set('token', userToken);
+        }
         
-        const res = await fetch(fullUrl, {
+        console.log('Fetching from Voting API:', url.toString());
+        
+        const res = await fetch(url.toString(), {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -159,26 +169,25 @@ export default function AppsMainPage({
           nonPremiumCount: data.nonPremium?.length || 0,
           hasSnapshot: !!data.snapshot,
           snapshotKeys: data.snapshot ? Object.keys(data.snapshot).length : 0,
-          snapshot: data.snapshot
+          userVotesCount: data.userVotes?.length || 0,
+          snapshot: data.snapshot,
+          userVotes: data.userVotes
         });
         
         setTodayPremium(data.premium || []);
         setTodayNonPremium(data.nonPremium || []);
         
-        // Update VoteProvider with launch app vote counts
+        // Update VoteProvider with launch app vote counts and user votes
         const allLaunchApps = [...(data.premium || []), ...(data.nonPremium || [])];
-        console.log('🔄 Updating VoteProvider with launch apps and snapshot:', {
+        console.log('🔄 Updating VoteProvider with launch apps, snapshot, and user votes:', {
           appsCount: allLaunchApps.length,
           hasSnapshot: !!data.snapshot,
-          snapshotKeys: data.snapshot ? Object.keys(data.snapshot).length : 0
+          snapshotKeys: data.snapshot ? Object.keys(data.snapshot).length : 0,
+          userVotesCount: data.userVotes?.length || 0
         });
-        if (allLaunchApps.length > 0 && typeof updateVoteCounts === 'function') {
-          updateVoteCounts(allLaunchApps, data.snapshot);
-        } else {
-          console.warn('⚠️ Cannot update vote counts:', {
-            appsCount: allLaunchApps.length,
-            updateVoteCountsAvailable: typeof updateVoteCounts === 'function'
-          });
+        if (allLaunchApps.length > 0) {
+          // Use userVotes directly from the API response
+          setVotes(allLaunchApps, data.snapshot, data.userVotes || []);
         }
         
         // Determine voting status: if we have apps in the launch, voting is active
@@ -192,7 +201,7 @@ export default function AppsMainPage({
       }
     };
     fetchToday();
-  }, []);
+  }, [userToken]);
 
   // Filter apps based on search query
   const filteredApps = apps.filter((app) => {
@@ -326,7 +335,11 @@ export default function AppsMainPage({
       try {
         // Refresh today's launches from external Voting API
         const votingApiUrl = process.env.NEXT_PUBLIC_VOTES_URL || 'https://voting-ebon-seven.vercel.app';
-        const resToday = await fetch(`${votingApiUrl}/api/launch/today`);
+        const url = new URL(`${votingApiUrl}/api/launch/today`);
+        if (userToken) {
+          url.searchParams.set('token', userToken);
+        }
+        const resToday = await fetch(url.toString());
         if (resToday.ok) {
           const data = await resToday.json();
           console.log(' Launch data received:', {
@@ -346,8 +359,9 @@ export default function AppsMainPage({
             
             // Update VoteProvider with refreshed data
             const allLaunchApps = [...(data.premium || []), ...(data.nonPremium || [])];
-            if (allLaunchApps.length > 0 && typeof updateVoteCounts === 'function') {
-              updateVoteCounts(allLaunchApps, data.snapshot);
+            if (allLaunchApps.length > 0) {
+              // Use userVotes directly from the API response
+              setVotes(allLaunchApps, data.snapshot, data.userVotes || []);
             }
           }
         }
@@ -421,6 +435,10 @@ export default function AppsMainPage({
 
   const renderAppCardHorizontal = (app: any, votingEnabled = false, showSpecialStyling = true) => {
     const appId = app._id?.toString() || app._id;
+    // Check if this app is in today's active launch
+    const isInActiveLaunch = [...(todayPremium || []), ...(todayNonPremium || [])].some(launchApp => 
+      (launchApp._id?.toString() || launchApp._id) === appId
+    );
     return (
       <Paper
         key={appId}
@@ -557,6 +575,7 @@ export default function AppsMainPage({
                 initialVotes={app.votes || app.stats?.votes || 0}
                 launchDate={app.launchDate}
                 disabled={false}
+                isInActiveLaunch={isInActiveLaunch}
                 onVoteUpdate={handleVoteUpdate}
               />
             </Box>
@@ -664,6 +683,10 @@ export default function AppsMainPage({
 
   const renderAppCard = (app: any) => {
     const appId = app._id?.toString() || app._id;
+    // Check if this app is in today's active launch
+    const isInActiveLaunch = [...(todayPremium || []), ...(todayNonPremium || [])].some(launchApp => 
+      (launchApp._id?.toString() || launchApp._id) === appId
+    );
     
     return (
       <Paper
@@ -753,6 +776,7 @@ export default function AppsMainPage({
               initialVotes={app.votes || app.stats?.votes || 0}
               launchDate={app.launchDate}
               disabled={false}
+              isInActiveLaunch={isInActiveLaunch}
               onVoteUpdate={handleVoteUpdate}
             />
           </Box>

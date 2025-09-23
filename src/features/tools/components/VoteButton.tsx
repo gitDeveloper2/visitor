@@ -24,6 +24,7 @@ type Props = {
   initialVotes: number;
   launchDate?: string;
   disabled?: boolean;
+  isInActiveLaunch?: boolean; // New prop to indicate if app is in today's launch
   onVoteUpdate?: (toolId: string, voted: boolean) => void;
 };
 
@@ -32,6 +33,7 @@ export default function VoteButton({
   initialVotes = 0,
   launchDate,
   disabled = false,
+  isInActiveLaunch = false,
   onVoteUpdate,
 }: Props) {
   const { data: session } = authClient.useSession();
@@ -44,7 +46,7 @@ export default function VoteButton({
   const isAuthenticated = !!session?.user;
   
   // Use VoteProvider for state management
-  const { getCount, hasVoted: hasVotedFromProvider, updateUserVoteStatus, snapshotLoaded } = useVoteContext();
+  const { getCount, hasVoted: hasVotedFromProvider, vote: providerVote } = useVoteContext();
   
   const [loading, setLoading] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -54,42 +56,7 @@ export default function VoteButton({
   const votes = getCount(toolId);
   const hasVoted = hasVotedFromProvider(toolId);
 
-  // Check initial vote status to avoid 409 conflicts
-  // Only check if snapshot is loaded (vote counts initialized) but user vote status unknown
-  useEffect(() => {
-    const checkInitialVoteStatus = async () => {
-      if (!isAuthenticated || !sessionWithToken?.session?.votingToken || !snapshotLoaded) return;
-      if (hasVoted !== false) return; // Already know the status
-      
-      try {
-        const token = sessionWithToken.session.votingToken;
-        const url = new URL(VOTING_ENDPOINTS.VOTE(toolId, token));
-        
-        const response = await fetch(url.toString(), {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        // If we get a 409, it means user has already voted
-        if (response.status === 409) {
-          const data = await response.json();
-          if (data.error === 'Already voted') {
-            updateUserVoteStatus(toolId, true);
-          }
-        }
-        // If we get 200, user hasn't voted yet (hasVoted stays false)
-        
-      } catch (error) {
-        // Silently fail - user can still vote and get proper feedback
-        console.log('Vote status check failed:', error);
-      }
-    };
-    
-    checkInitialVoteStatus();
-  }, [isAuthenticated, sessionWithToken?.session?.votingToken, toolId, snapshotLoaded, hasVoted, updateUserVoteStatus]);
+  // No need for status checks - VoteProvider handles all initial data loading
 
   const handleVote = useCallback(async () => {
     if (!isAuthenticated || !sessionWithToken?.session.votingToken) {
@@ -98,8 +65,8 @@ export default function VoteButton({
       return;
     }
 
-    if (disabled) {
-      setSnackbarMessage('Voting is not currently active');
+    if (disabled || !isInActiveLaunch) {
+      setSnackbarMessage(!isInActiveLaunch ? 'This app is not in today\'s launch' : 'Voting is not currently active');
       setSnackbarOpen(true);
       return;
     }
@@ -107,57 +74,11 @@ export default function VoteButton({
     setLoading(true);
     
     try {
-      // Use the voting token from the session (already encrypted server-side)
-      const token = sessionWithToken.session.votingToken;
-      
-      // Determine if this is an unvote action
+      // Determine if this is an unvote action and delegate to provider
       const isUnvote = hasVoted;
-      const url = new URL(VOTING_ENDPOINTS.VOTE(toolId, token));
-      
-      if (isUnvote) {
-        url.searchParams.append('unvote', 'true');
-      }
+      await providerVote(toolId, isUnvote);
 
-      const response = await fetch(url.toString(), {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        // Handle specific error codes from voting API
-        if (response.status === 409) {
-          // 409 means state mismatch - sync the state
-          if (isUnvote) {
-            // Tried to unvote but haven't voted
-            updateUserVoteStatus(toolId, false);
-            setSnackbarMessage('You haven\'t voted for this app yet');
-          } else {
-            // Tried to vote but already voted
-            updateUserVoteStatus(toolId, true);
-            setSnackbarMessage('You have already voted for this app');
-          }
-          setSnackbarOpen(true);
-          return;
-        }
-        
-        if (data.code === 'NO_ACTIVE_LAUNCH') {
-          throw new Error('No active launch to vote in');
-        } else if (data.code === 'VOTING_CLOSED') {
-          throw new Error('Voting is currently closed');
-        } else if (data.code === 'APP_NOT_ELIGIBLE') {
-          throw new Error('This app is not eligible for voting');
-        }
-        throw new Error(data.error || 'Failed to process vote');
-      }
-
-      // Success - update VoteProvider state
       const newVotedState = !isUnvote;
-      updateUserVoteStatus(toolId, newVotedState);
       
       // Notify parent component
       if (onVoteUpdate) {
@@ -173,7 +94,7 @@ export default function VoteButton({
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, session?.user?.id, toolId, hasVoted, onVoteUpdate, disabled]);
+  }, [isAuthenticated, sessionWithToken?.session?.votingToken, toolId, hasVoted, onVoteUpdate, disabled, isInActiveLaunch, providerVote]);
 
   const votingOver = useMemo(() => {
     // If disabled prop is true, voting is over
