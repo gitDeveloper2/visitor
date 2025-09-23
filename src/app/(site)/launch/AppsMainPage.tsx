@@ -773,7 +773,7 @@ export default function AppsMainPage({
             
             <VoteButton 
               toolId={appId} 
-              initialVotes={app.votes || app.stats?.votes || 0}
+              initialVotes={app.totalVotes || 0}
               launchDate={app.launchDate}
               disabled={false}
               isInActiveLaunch={isInActiveLaunch}
