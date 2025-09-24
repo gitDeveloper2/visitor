@@ -1,9 +1,7 @@
 import React, { Suspense } from 'react';
 import { Container, Typography, Box, CircularProgress, Alert } from '@mui/material';
 import AppsMainPage from './AppsMainPage';
-import { fetchCategoryNames } from '@/utils/categories';
 import { connectToDatabase } from '@/lib/mongodb';
-import { Cache, CachePolicy } from '@/features/shared/cache';
 import { sortByScore, computeAppScore } from '@/features/ranking/score';
 import AdSlot from '@/app/components/adds/google/AdSlot';
 import { DeploymentFlagService } from '@/utils/deploymentFlags';
@@ -120,23 +118,29 @@ export default async function LaunchPage() {
       .limit(24)
       .toArray();
 
-    // Get categories for ISR caching (24 hours)
-    const categoryNames: string[] = await Cache.getOrSet(
-      Cache.keys.categories('app'),
-      CachePolicy.page.launchCategory,
-      async () => {
-        try {
-          return await fetchCategoryNames('app');
-        } catch {
-          return [] as string[];
-        }
+    // Fetch categories directly via API so this fetch is cached with the page ISR
+    let categoryNames: string[] = [];
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+      const res = await fetch(`${baseUrl}/api/categories?type=app&isActive=true`);
+      
+      if (res.ok) {
+        const data = await res.json();
+        categoryNames = Array.isArray(data?.data) ? data.data.map((c: any) => c.name) : [];
       }
-    ) as any;
+    } catch(e:any) {
+      console.log(e)
+      categoryNames = [];
+    }
 
-    // Category counts based on all apps (ISR cached)
-    const categoryCounts = allOtherApps.reduce((acc: any, app: any) => {
-      const cat = app.category || 'Uncategorized';
-      acc[cat] = (acc[cat] || 0) + 1;
+    // Category counts across ALL approved apps (accurate counts for chips)
+    const categoryAgg = await db.collection('userapps').aggregate([
+      { $match: { status: 'approved', category: { $exists: true, $nin: [null, ''] } } },
+      { $group: { _id: '$category', count: { $sum: 1 } } }
+    ]).toArray();
+
+    const categoryCounts = (categoryAgg || []).reduce((acc: Record<string, number>, row: any) => {
+      acc[row._id] = row.count || 0;
       return acc;
     }, {} as Record<string, number>);
 

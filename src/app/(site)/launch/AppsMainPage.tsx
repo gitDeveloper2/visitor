@@ -28,7 +28,7 @@ import {
 } from "../../../utils/themeUtils";
 import UnifiedCTA from "../components/UnifiedCTA";
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { fetchCategoriesFromAPI } from "../../../utils/categories";
+// Categories are provided from server via categoryChips; no client fetch needed
 import VoteButton from '@/features/tools/components/VoteButton';
 import { computeAppScore } from '@/features/ranking/score';
 import { useVoteContext } from '@/features/votes/VoteProvider';
@@ -99,32 +99,13 @@ export default function AppsMainPage({
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(Math.ceil(initialTotalApps / 12));
   const [searchQuery, setSearchQuery] = useState("");
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  // Categories are derived from server-provided categoryChips to ensure stability
   const [todayPremium, setTodayPremium] = useState<any[]>([]);
   const [todayNonPremium, setTodayNonPremium] = useState<any[]>([]);
 
   // No need to gate rendering; useMediaQuery uses noSsr to avoid hydration mismatches
 
-  // Categories should be passed as props from server-side ISR, not fetched client-side
-  // This is a temporary fallback - categories should come from server
-  useEffect(() => {
-    if (categories.length === 0) {
-      const fetchCategories = async () => {
-        try {
-          const categoriesData = await fetchCategoriesFromAPI('app');
-          setCategories(categoriesData);
-        } catch {
-          // ignore
-        } finally {
-          setCategoriesLoading(false);
-        }
-      };
-      fetchCategories();
-    } else {
-      setCategoriesLoading(false);
-    }
-  }, [categories]);
+  // No client-side category fetching; categories remain stable from server props
 
   // Fetch today's launches from external Voting API (source of truth)
   useEffect(() => {
@@ -574,7 +555,7 @@ export default function AppsMainPage({
                 toolId={appId} 
                 initialVotes={app.votes || app.stats?.votes || 0}
                 launchDate={app.launchDate}
-                disabled={false}
+                disabled={!isInActiveLaunch}
                 isInActiveLaunch={isInActiveLaunch}
                 onVoteUpdate={handleVoteUpdate}
               />
@@ -775,7 +756,7 @@ export default function AppsMainPage({
               toolId={appId} 
               initialVotes={app.totalVotes || 0}
               launchDate={app.launchDate}
-              disabled={false}
+              disabled={!isInActiveLaunch}
               isInActiveLaunch={isInActiveLaunch}
               onVoteUpdate={handleVoteUpdate}
             />
@@ -792,12 +773,18 @@ export default function AppsMainPage({
     return acc;
   }, {} as Record<string, number>);
 
+  // Build category filters from server-provided categoryChips for stable names/counts
+  const categoryFilters = (categoryChips || []).map(({ category }) => ({
+    name: category,
+    slug: category.toLowerCase().replace(/\s+/g, '-'),
+  }));
+
   const allFilters = [
     "All",
-    ...categories.map(cat => ({ name: cat.name, slug: cat.slug })),
+    ...categoryFilters,
     "Free",
-    "Freemium", 
-    "Premium"
+    "Freemium",
+    "Premium",
   ];
 
   return (
@@ -889,80 +876,33 @@ export default function AppsMainPage({
           justifyContent: "center", 
           mt: { xs: 2, sm: 3 } 
         }}>
-          {allFilters.map((filter) => {
-            // Handle different filter types
-            if (filter === "All") {
-              return (
-                <Chip
-                  key="All"
-                  label="All"
-                  onClick={() => setSelectedFilter("All")}
-                  color={selectedFilter === "All" ? "primary" : "default"}
-                  variant={selectedFilter === "All" ? "filled" : "outlined"}
-                  size={isMobile ? "small" : "medium"}
-                  sx={{ 
-                    fontWeight: 500, 
-                    cursor: "pointer",
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                    ...(selectedFilter === "All" && {
-                      backgroundColor: theme.palette.primary.main,
-                      color: theme.palette.primary.contrastText,
-                    })
-                  }}
-                />
-              );
-            } else if (typeof filter === "string") {
-              // Handle pricing filters
-              return (
-                <Chip
-                  key={filter}
-                  label={filter}
-                  onClick={() => setSelectedFilter(filter)}
-                  color={selectedFilter === filter ? "primary" : "default"}
-                  variant={selectedFilter === filter ? "filled" : "outlined"}
-                  size={isMobile ? "small" : "medium"}
-                  sx={{ 
-                    fontWeight: 500, 
-                    cursor: "pointer",
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                    ...(selectedFilter === filter && {
-                      backgroundColor: theme.palette.primary.main,
-                      color: theme.palette.primary.contrastText,
-                    })
-                  }}
-                />
-              );
-            } else {
-              // Handle category filters
-              return (
-                <Chip
-                  key={filter.slug}
-                  label={
-                    categoryCountMap[filter.name] !== undefined
-                      ? `${filter.name} (${categoryCountMap[filter.name]})`
-                      : filter.name
-                  }
-                  component={Link as any}
-                  href={`/launch/category/${filter.slug}`}
-                  clickable
-                  variant="outlined"
-                  size={isMobile ? "small" : "medium"}
-                  sx={{ 
-                    fontWeight: 500, 
-                    cursor: "pointer",
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                    borderColor: theme.palette.secondary.main,
-                    color: theme.palette.secondary.main,
-                    '&:hover': {
-                      backgroundColor: theme.palette.secondary.main,
-                      color: theme.palette.secondary.contrastText,
-                      borderColor: theme.palette.secondary.main,
-                    },
-                  }}
-                />
-              );
-            }
-          })}
+          {categoryFilters.map((filter) => (
+            <Chip
+              key={filter.slug}
+              label={
+                categoryCountMap[filter.name] !== undefined
+                  ? `${filter.name} (${categoryCountMap[filter.name]})`
+                  : filter.name
+              }
+              component={Link as any}
+              href={`/launch/category/${filter.slug}`}
+              clickable
+              variant="outlined"
+              size={isMobile ? "small" : "medium"}
+              sx={{ 
+                fontWeight: 500, 
+                cursor: "pointer",
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                borderColor: theme.palette.secondary.main,
+                color: theme.palette.secondary.main,
+                '&:hover': {
+                  backgroundColor: theme.palette.secondary.main,
+                  color: theme.palette.secondary.contrastText,
+                  borderColor: theme.palette.secondary.main,
+                },
+              }}
+            />
+          ))}
         </Box>
       </Paper>
 

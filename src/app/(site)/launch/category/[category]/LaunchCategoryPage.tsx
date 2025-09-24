@@ -20,7 +20,6 @@ import { useTheme } from '@mui/material/styles';
 import { Search, AppWindow, DollarSign } from 'lucide-react';
 import Link from 'next/link';
 import { getShadow, getGlassStyles, typographyVariants, commonStyles } from '@/utils/themeUtils';
-import { fetchCategoryNames } from '@/utils/categories';
 
 interface App {
   _id: string;
@@ -72,7 +71,7 @@ export default function LaunchCategoryPage({
   const [currentPage, setCurrentPage] = useState(page);
   const [totalPages, setTotalPages] = useState(Math.ceil(initialTotalApps / 12));
   const [totalApps, setTotalApps] = useState(initialTotalApps);
-  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+
   const categoryCountMap: Record<string, number> = (categoryChips || []).reduce((acc, item) => {
     acc[item.category] = item.count;
     return acc;
@@ -99,22 +98,6 @@ export default function LaunchCategoryPage({
     setCurrentPage(1);
   }, [searchQuery]);
 
-  // Fetch available categories for filtering
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const categories = await fetchCategoryNames('app');
-        setAvailableCategories(categories);
-      } catch (error) {
-        console.error('Error loading categories:', error);
-        // Fallback to empty array
-        setAvailableCategories([]);
-      }
-    };
-    
-    loadCategories();
-  }, []);
-
   // Fetch additional data when page changes (not on initial load)
   useEffect(() => {
     if (currentPage === page && apps.length === initialApps.length) {
@@ -134,8 +117,6 @@ export default function LaunchCategoryPage({
         params.append('category', category);
         params.append('page', currentPage.toString());
         params.append('limit', '12');
-        
-
 
         const res = await fetch(`/api/user-apps/public?${params.toString()}`);
         if (!res.ok) throw new Error('Failed to fetch apps');
@@ -556,31 +537,35 @@ export default function LaunchCategoryPage({
           justifyContent: "center", 
           mt: { xs: 2, sm: 3 } 
         }}>
-          {availableCategories.map((categoryName) => (
-            <Chip
-              key={categoryName}
-              component={Link as any}
-              href={`/launch/category/${categoryName.toLowerCase().replace(/\s+/g, '-')}`}
-              clickable
-              label={
-                categoryCountMap[categoryName] !== undefined
-                  ? `${categoryName} (${categoryCountMap[categoryName]})`
-                  : categoryName
-              }
-              variant="outlined"
-              size={isMobile ? "small" : "medium"}
-              sx={{ 
-                fontWeight: 500, 
-                cursor: "pointer",
-                fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                '&:hover': {
-                  backgroundColor: theme.palette.primary.main,
-                  color: theme.palette.primary.contrastText,
-                  borderColor: theme.palette.primary.main,
-                }
-              }}
-            />
-          ))}
+          {categoryChips.map(({ category }) => {
+            const slug = category.toLowerCase().replace(/\s+/g, '-');
+            const label = categoryCountMap[category] !== undefined
+              ? `${category} (${categoryCountMap[category]})`
+              : category;
+            return (
+              <Chip
+                key={slug}
+                component={Link as any}
+                href={`/launch/category/${slug}`}
+                clickable
+                label={label}
+                variant="outlined"
+                size={isMobile ? "small" : "medium"}
+                sx={{ 
+                  fontWeight: 500, 
+                  cursor: "pointer",
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                  borderColor: theme.palette.secondary.main,
+                  color: theme.palette.secondary.main,
+                  '&:hover': {
+                    backgroundColor: theme.palette.secondary.main,
+                    color: theme.palette.secondary.contrastText,
+                    borderColor: theme.palette.secondary.main,
+                  },
+                }}
+              />
+            );
+          })}
         </Box>
       </Paper>
 

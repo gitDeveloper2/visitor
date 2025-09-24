@@ -178,6 +178,7 @@ export default async function LaunchCategoryPageWrapper({
     ) as number;
 
     // Compute category counts for the Browse by Category chips (mirror /launch root)
+    // 1) Fetch active category names via API (cached)
     const categoryNames: string[] = await Cache.getOrSet(
       Cache.keys.categories('app'),
       CachePolicy.page.launchCategory,
@@ -190,14 +191,14 @@ export default async function LaunchCategoryPageWrapper({
       }
     ) as any;
 
-    const recentAppsForCounts = await db.collection('userapps')
-      .find({ status: 'approved', createdAt: { $gte: sevenDaysAgo } })
-      .project({ category: 1 })
-      .toArray();
+    // 2) Aggregate counts across ALL approved apps (not just last 7 days)
+    const categoryAgg = await db.collection('userapps').aggregate([
+      { $match: { status: 'approved', category: { $exists: true, $nin: [null, ''] } } },
+      { $group: { _id: '$category', count: { $sum: 1 } } }
+    ]).toArray();
 
-    const categoryCounts = recentAppsForCounts.reduce((acc: any, app: any) => {
-      const cat = app.category || 'Uncategorized';
-      acc[cat] = (acc[cat] || 0) + 1;
+    const categoryCounts = (categoryAgg || []).reduce((acc: Record<string, number>, row: any) => {
+      acc[row._id] = row.count || 0;
       return acc;
     }, {} as Record<string, number>);
 
