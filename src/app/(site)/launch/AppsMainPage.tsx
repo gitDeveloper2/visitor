@@ -241,10 +241,12 @@ export default function AppsMainPage({
         const res = await fetch(url);
         if (!res.ok) throw new Error("Failed to fetch apps");
         const data = await res.json();
-       
-        setApps(data.apps || []);
-        setTotalPages(Math.ceil((data.total || 0) / 12));
-        setTotalApps(data.total || 0);
+        // Ensure only launched apps are shown in All Apps (require lastLaunchedDate)
+        const launchedOnly = Array.isArray(data.apps) ? data.apps.filter((a: any) => !!a.lastLaunchedDate) : [];
+        setApps(launchedOnly);
+        // Note: total may include non-launched apps; keep server total for now until API supports filtering
+        setTotalPages(Math.ceil((data.total || launchedOnly.length || 0) / 12));
+        setTotalApps(data.total || launchedOnly.length || 0);
       } catch (err: any) {
         setError(err.message || "Unknown error");
       } finally {
@@ -355,7 +357,9 @@ export default function AppsMainPage({
         const resAll = await fetch(`/api/user-apps/public?${params.toString()}`);
         if (resAll.ok) {
           const d = await resAll.json();
-          const list = Array.isArray(d.apps) ? d.apps : [];
+          // Only include launched apps
+          const listAll = Array.isArray(d.apps) ? d.apps : [];
+          const list = listAll.filter((a: any) => !!a.lastLaunchedDate);
           const todayUtc = new Date();
           const y = todayUtc.getUTCFullYear();
           const m = String(todayUtc.getUTCMonth() + 1).padStart(2, '0');

@@ -50,8 +50,9 @@ export async function PUT(
     // Update the status and set launchDate for approved apps
     const updateFields: any = { status, updatedAt: new Date() };
     
-    // If approving an app, set launchDate to today
-    if (status === 'approved') {
+    // If approving an app: only set a launchDate if it doesn't already exist.
+    // Do NOT override an existing scheduled date to avoid corrupting launch schedules.
+    if (status === 'approved' && !existingApp.launchDate) {
       const today = new Date();
       const y = today.getUTCFullYear();
       const m = String(today.getUTCMonth() + 1).padStart(2, '0');

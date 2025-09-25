@@ -7,6 +7,8 @@ import AdSlot from '@/app/components/adds/google/AdSlot';
 import { DeploymentFlagService } from '@/utils/deploymentFlags';
 import DeploymentStatusBanner from '@/components/DeploymentStatusBanner';
 import { getActiveLaunch, getLaunchWithApps } from '@/lib/launches';
+import { fetchCategoryNames } from '@/utils/categories';
+import { Cache, CachePolicy } from '@/features/shared/cache';
 import { ObjectId } from 'mongodb';
 
 // ISR: Revalidate after 24 hours for static content (featured apps, categories, etc.)
@@ -113,25 +115,23 @@ export default async function LaunchPage() {
     // All apps (for All Apps section) - ISR cached for 24 hours
     // Client-side will handle excluding today's launches dynamically
     const allOtherApps = await db.collection('userapps')
-      .find({ status: 'approved' })
+      .find({ status: 'approved', lastLaunchedDate: { $exists: true, $ne: null } })
       .sort({ createdAt: -1 })
       .limit(24)
       .toArray();
 
-    // Fetch categories directly via API so this fetch is cached with the page ISR
-    let categoryNames: string[] = [];
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-      const res = await fetch(`${baseUrl}/api/categories?type=app&isActive=true`);
-      
-      if (res.ok) {
-        const data = await res.json();
-        categoryNames = Array.isArray(data?.data) ? data.data.map((c: any) => c.name) : [];
+    // Fetch categories using the same helper and cache policy as category pages
+    const categoryNames: string[] = await Cache.getOrSet(
+      Cache.keys.categories('app'),
+      CachePolicy.page.launchCategory,
+      async () => {
+        try {
+          return await fetchCategoryNames('app');
+        } catch {
+          return [] as string[];
+        }
       }
-    } catch(e:any) {
-      console.log(e)
-      categoryNames = [];
-    }
+    ) as any;
 
     // Category counts across ALL approved apps (accurate counts for chips)
     const categoryAgg = await db.collection('userapps').aggregate([
@@ -161,7 +161,7 @@ export default async function LaunchPage() {
     };
 
     // Count of all approved apps (ISR cached)
-    const allAppsCount = await db.collection('userapps').countDocuments({ status: 'approved' });
+    const allAppsCount = await db.collection('userapps').countDocuments({ status: 'approved', lastLaunchedDate: { $exists: true, $ne: null } });
 
     return (
       <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
