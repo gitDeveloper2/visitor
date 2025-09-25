@@ -7,7 +7,7 @@ import AdSlot from '@/app/components/adds/google/AdSlot';
 import { DeploymentFlagService } from '@/utils/deploymentFlags';
 import DeploymentStatusBanner from '@/components/DeploymentStatusBanner';
 import { getActiveLaunch, getLaunchWithApps } from '@/lib/launches';
-import { fetchCategoryNames } from '@/utils/categories';
+import { fetchCategoryNames, fetchCategoriesFromAPI } from '@/utils/categories';
 import { Cache, CachePolicy } from '@/features/shared/cache';
 import { ObjectId } from 'mongodb';
 
@@ -126,7 +126,15 @@ export default async function LaunchPage() {
       CachePolicy.page.launchCategory,
       async () => {
         try {
-          return await fetchCategoryNames('app');
+          // Fetch categories for 'app' and for 'both' separately, then merge
+          const [appsOnly, bothTypes] = await Promise.all([
+            fetchCategoriesFromAPI('app'),
+            fetchCategoriesFromAPI('both'),
+          ]);
+          const names = new Set<string>();
+          (Array.isArray(appsOnly) ? appsOnly : []).forEach((c: any) => c?.name && names.add(c.name));
+          (Array.isArray(bothTypes) ? bothTypes : []).forEach((c: any) => c?.name && names.add(c.name));
+          return Array.from(names);
         } catch {
           return [] as string[];
         }

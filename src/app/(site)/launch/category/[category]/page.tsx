@@ -184,7 +184,10 @@ export default async function LaunchCategoryPageWrapper({
       CachePolicy.page.launchCategory,
       async () => {
         try {
-          return await fetchCategoryNames('app');
+          // Include categories of type 'app' and 'both' to match /launch
+          const cats = await fetchCategoriesFromAPI('both');
+          const filtered = Array.isArray(cats) ? cats.filter((c: any) => c?.type === 'app' || c?.type === 'both') : [];
+          return filtered.map((c: any) => c.name);
         } catch {
           return [] as string[];
         }

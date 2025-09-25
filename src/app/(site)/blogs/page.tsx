@@ -4,7 +4,7 @@ import BlogMainPage from './BlogMainPage';
 import { connectToDatabase } from '../../../lib/mongodb';
 import { sortByScore, computeBlogScore } from '@/features/ranking/score';
 import Link from 'next/link';
-import { fetchCategoryNames } from '../../../utils/categories';
+import { fetchCategoryNames, fetchCategoriesFromAPI } from '../../../utils/categories';
 import { Cache, CachePolicy } from '@/features/shared/cache';
 import AdSlot from '@/app/components/adds/google/AdSlot';
 
@@ -106,14 +106,20 @@ export default async function BlogsPage() {
     // Get blogs from the last 7 days for featured selection
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     
-    // Fetch categories for the "Browse by Topic" section (cached)
+    // Fetch categories for the "Browse by Topic" section (cached) including 'blog' and 'both'
     const categories: string[] = await Cache.getOrSet(
       Cache.keys.categories('blog'),
       CachePolicy.page.blogsCategory,
       async () => {
         try {
-          const all = await fetchCategoryNames();
-          return all;
+          const [blogOnly, bothTypes] = await Promise.all([
+            fetchCategoriesFromAPI('blog'),
+            fetchCategoriesFromAPI('both')
+          ]);
+          const names = new Set<string>();
+          (Array.isArray(blogOnly) ? blogOnly : []).forEach((c: any) => c?.name && names.add(c.name));
+          (Array.isArray(bothTypes) ? bothTypes : []).forEach((c: any) => c?.name && names.add(c.name));
+          return Array.from(names);
         } catch {
           return [
             'Technology', 'Business', 'Development', 'Design', 'Marketing',

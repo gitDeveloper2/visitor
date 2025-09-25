@@ -3,52 +3,31 @@ import { Container, Typography, Box, CircularProgress } from '@mui/material';
 import BlogCategoryPage from './BlogCategoryPage';
 import { connectToDatabase } from '../../../../../lib/mongodb';
 import { Cache, CachePolicy } from '@/features/shared/cache';
-import { fetchCategoryNames } from '../../../../../utils/categories';
+import { fetchCategoryNames, fetchCategoriesFromAPI } from '../../../../../utils/categories';
+
 import AdSlot from '@/app/components/adds/google/AdSlot';
 
 // Category pages are very static; extend to 7 days
 export const revalidate = 604800;
-
-export async function generateStaticParams() {
-  // For static generation, we'll use a predefined list of common category slugs
-  const commonCategorySlugs = [
-    'technology', 'business', 'development', 'design', 'marketing',
-    'startup', 'productivity', 'ai', 'web-development', 'mobile-development'
-  ];
-  
-  return commonCategorySlugs.map((category) => ({ category }));
-}
-
-export default async function BlogCategoryPageWrapper({ 
-  params, 
-  searchParams 
-}: { 
-  params: { category: string }, 
-  searchParams: { page?: string, tag?: string } 
-}) {
-  const { category } = params;
-  const page = parseInt(searchParams.page || '1');
-  const tag = searchParams.tag;
-  
-  // Define common category slugs for validation
-  const commonCategorySlugs = [
-    'technology', 'business', 'development', 'design', 'marketing',
-    'startup', 'productivity', 'ai', 'web-development', 'mobile-development'
-  ];
+ 
   
   // Fetch categories from API to validate (with fallback)
   let validCategory: string | undefined;
   let categoryName: string | undefined;
   
   try {
-    const categories = await fetchCategoryNames('blog');
-    // Convert category slug back to name for validation
-    const matchedCategory = categories.find(c => 
-      c.toLowerCase().replace(/\s+/g, '-') === category
-    );
-    if (matchedCategory) {
-      validCategory = matchedCategory;
-      categoryName = matchedCategory;
+    // Include categories of type 'blog' and 'both' for validation
+    const cats = await fetchCategoriesFromAPI('both');
+    const filtered = Array.isArray(cats) ? cats.filter((c: any) => c?.type === 'blog' || c?.type === 'both') : [];
+    const bySlug = new Map<string, string>();
+    filtered.forEach((c: any) => {
+      const slug = String(c?.slug || c?.name || '').toLowerCase().replace(/\s+/g, '-');
+      if (slug) bySlug.set(slug, c.name);
+    });
+    const name = bySlug.get(category);
+    if (name) {
+      validCategory = category;
+      categoryName = name;
     }
   } catch (error) {
     console.error('Error fetching categories for validation:', error);
@@ -62,72 +41,37 @@ export default async function BlogCategoryPageWrapper({
     validCategory = commonCategorySlugs.find(c => c === category);
     categoryName = validCategory; // Use slug as name for fallback
   }
-  
-  if (!validCategory) {
-    return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Typography variant="h4" color="error">
-          Category not found: {category}
-        </Typography>
-        <Typography variant="body1" sx={{ mt: 2 }}>
-          Available categories: {commonCategorySlugs.join(', ')}
-        </Typography>
-      </Container>
-    );
-  }
-
-  try {
-    const { db } = await connectToDatabase();
-    
-    // Build query for category blogs
-    const query: any = { 
-      status: 'approved',
-      category: categoryName // Use category name for database query
-    };
-    
-    if (tag) {
-      query.tags = tag;
-    }
-    
-    const limit = 12;
-    const skip = (page - 1) * limit;
-    
-    // Fetch blogs for this category (cached)
-    const blogs = await Cache.getOrSet(
-      Cache.keys.blogsCategory(category),
-      CachePolicy.page.blogsCategory,
-      async () => {
-        return await db.collection('userblogs')
-          .find(query)
-          .sort({ createdAt: -1 })
-          .skip(skip)
-          .limit(limit)
-          .toArray();
-      }
-    ) as any[];
-    
-    // Get total count for pagination
-    const totalBlogs = await Cache.getOrSet(
       `${Cache.keys.blogsCategory(category)}:count:${page}:${tag || ''}`,
       CachePolicy.page.blogsCategory,
       async () => await db.collection('userblogs').countDocuments(query)
     ) as number;
 
-    // Compute category counts to replicate Browse by Category from /blogs (7-day window)
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    let categories: string[] = [];
-    try {
-      categories = await fetchCategoryNames('blog');
-    } catch (e) {
-      categories = [];
-    }
-    const recentBlogsForCounts = await db.collection('userblogs')
-      .find({ status: 'approved', createdAt: { $gte: sevenDaysAgo } })
-      .project({ category: 1 })
-      .toArray();
-    const categoryCounts = recentBlogsForCounts.reduce((acc: any, b: any) => {
-      const cat = b.category || 'Uncategorized';
-      acc[cat] = (acc[cat] || 0) + 1;
+    // Compute category counts for Browse by Category chips (match /blogs behavior)
+    const categories: string[] = await Cache.getOrSet(
+      Cache.keys.categories('blog'),
+      CachePolicy.page.blogsCategory,
+      async () => {
+        try {
+          const [blogOnly, bothTypes] = await Promise.all([
+            fetchCategoriesFromAPI('blog'),
+            fetchCategoriesFromAPI('both')
+          ]);
+          const names = new Set<string>();
+          (Array.isArray(blogOnly) ? blogOnly : []).forEach((c: any) => c?.name && names.add(c.name));
+          (Array.isArray(bothTypes) ? bothTypes : []).forEach((c: any) => c?.name && names.add(c.name));
+          return Array.from(names);
+        } catch {
+          return [] as string[];
+        }
+      }
+    ) as any;
+
+    const categoryAgg = await db.collection('userblogs').aggregate([
+      { $match: { status: 'approved', category: { $exists: true, $nin: [null, ''] } } },
+      { $group: { _id: '$category', count: { $sum: 1 } } }
+    ]).toArray();
+    const categoryCounts = (categoryAgg || []).reduce((acc: Record<string, number>, row: any) => {
+      acc[row._id] = row.count || 0;
       return acc;
     }, {} as Record<string, number>);
     const categoryChips = categories.map((c) => ({ category: c, count: categoryCounts[c] || 0 }));
