@@ -1,31 +1,28 @@
 "use client";
 
 import * as React from "react";
-import {
-  Box,
-  Container,
-  Typography,
-  Button,
-  Chip,
-  Stack,
-  Card,
-  CardMedia,
-  CardContent,
-  Avatar,
-  Divider,
-  Grid,
-  IconButton,
-  Tooltip,
-  Paper,
-} from "@mui/material";
-import LaunchIcon from "@mui/icons-material/Launch";
-import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import ShareIcon from "@mui/icons-material/Share";
-import VerifiedIcon from "@mui/icons-material/CheckCircleOutline";
-import { Globe } from "lucide-react";
-import { useTheme } from "@mui/material/styles";
-import Image from "next/image";
-// removed: import VoteButton from '@/features/tools/components/VoteButton';
+  import {
+    Box,
+    Container,
+    Typography,
+    Button,
+    Chip,
+    Stack,
+    Card,
+    CardContent,
+    Avatar,
+    Divider,
+    Grid,
+    IconButton,
+    Tooltip,
+    Paper,
+  } from "@mui/material";
+  import LaunchIcon from "@mui/icons-material/Launch";
+  import ShareIcon from "@mui/icons-material/Share";
+  import VerifiedIcon from "@mui/icons-material/CheckCircleOutline";
+  import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+  import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+  import { useTheme } from "@mui/material/styles";
 
 // Optional small Markdown renderer (safe): use a lightweight renderer you sanitize server-side.
 // Here we render plain text with paragraphs to avoid dangerous HTML.
@@ -154,78 +151,89 @@ export default function AppClient({
                   </Box>
                 </Stack>
 
-                <Stack direction="row" spacing={2} alignItems="center" sx={{ pt: 1 }}>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Avatar src={author.avatarUrl ?? undefined} alt={author.name} sx={{ width: 36, height: 36 }}>
-                      {author.name?.charAt(0) ?? "?"}
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {author.name}
-                      </Typography>
-                      {author.bio && (
-                        <Typography variant="caption" color="text.secondary">
-                          {author.bio}
-                        </Typography>
-                      )}
-                    </Box>
-                  </Stack>
+                <Stack direction="row" spacing={1} alignItems="center" sx={{ pt: 1, flexWrap: 'wrap' }}>
+                  {externalUrl && (
+                    <Button variant="contained" startIcon={<LaunchIcon />} component="a" href={externalUrl} target="_blank" rel="noopener">
+                      Visit site
+                    </Button>
+                  )}
 
-                  <Stack direction="row" spacing={1} sx={{ ml: 2 }}>
-                    {externalUrl && (
-                      <Button variant="contained" startIcon={<LaunchIcon />} component="a" href={externalUrl} target="_blank" rel="noopener">
-                        Visit site
-                      </Button>
-                    )}
+                  {github && (
+                    <Button 
+                      variant="outlined" 
+                      size="small" 
+                      startIcon={<img src="/github-mark.svg" alt="GitHub" style={{ width: 16, height: 16 }} />} 
+                      href={github} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    >
+                      GitHub
+                    </Button>
+                  )}
 
-                    {/* Removed VoteButton from detail page */}
+                  {/* Removed VoteButton from detail page */}
 
-                    <Tooltip title="Share">
-                      <IconButton aria-label="Share">
-                        <ShareIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </Stack>
+                  <Tooltip title="Share">
+                    <IconButton aria-label="Share">
+                      <ShareIcon />
+                    </IconButton>
+                  </Tooltip>
                 </Stack>
 
-                {/* tags */}
-                {tags.length > 0 && (
+                {/* tags + category/pricing */}
+                {(tags.length > 0 || category || pricing) && (
                   <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: "wrap" }}>
                     {tags.map((t) => (
                       <Chip key={t} label={t} size="small" variant="outlined" />
                     ))}
+                    {category && (
+                      <Chip key="category" label={category} size="small" variant="outlined" color="primary" />
+                    )}
+                    {pricing && (
+                      <Chip key="pricing" label={pricing} size="small" variant="outlined" color={pricing === 'Free' ? 'success' : 'warning'} />
+                    )}
                   </Stack>
                 )}
               </Stack>
             </Grid>
 
             {/* hero image / screenshot */}
-            <Grid item xs={12} md={4}>
-              <Box sx={{ display: "flex", justifyContent: { xs: "flex-start", md: "flex-end" } }}>
-                <Box
-                  sx={{
-                    width: { xs: 160, md: 220 },
-                    height: { xs: 120, md: 140 },
-                    borderRadius: 2,
-                    overflow: "hidden",
-                    background: theme.palette.background.paper,
-                    boxShadow,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  {gallery[0] ? (
-                    // next/image is optional; if you're not using Next image optimization, swap to <img>
+            {gallery[0] && (
+              <Grid item xs={12} md={4}>
+                <Box sx={{ display: "flex", justifyContent: { xs: "flex-start", md: "flex-end" } }}>
+                  <Box
+                    sx={{
+                      width: { xs: 160, md: 220 },
+                      height: { xs: 120, md: 140 },
+                      borderRadius: 2,
+                      overflow: "hidden",
+                      background: theme.palette.background.paper,
+                      boxShadow,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {/* next/image is optional; if you're not using Next image optimization, swap to <img> */}
                     <img src={gallery[0]} alt={`${name} cover`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  ) : (
-                    <Typography color="text.secondary">Preview</Typography>
-                  )}
+                  </Box>
                 </Box>
-              </Box>
-            </Grid>
+              </Grid>
+            )}
           </Grid>
         </Paper>
+
+        {/* GALLERY CAROUSEL */}
+        {gallery.length > 0 && (
+          <Card sx={{ mb: 4, boxShadow }}>
+            <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+              <Typography variant="h6" gutterBottom>
+                Gallery
+              </Typography>
+              <Carousel images={gallery} name={name} boxShadow={boxShadow} />
+            </CardContent>
+          </Card>
+        )}
 
         {/* MAIN: two-column layout */}
         <Grid container spacing={3}>
@@ -256,88 +264,8 @@ export default function AppClient({
                 ) : (
                   <Typography color="text.secondary">No long-form description provided yet.</Typography>
                 )}
-              </CardContent>
-            </Card>
-
-            {/* App Details & Features */}
-            <Card sx={{ mb: 3, boxShadow }}>
-              <CardContent sx={{ p: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                  App Details & Features
-                </Typography>
-                
-                {/* Category and Pricing */}
-                <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-                  {category && (
-                    <Chip 
-                      label={category} 
-                      color="primary" 
-                      variant="outlined" 
-                      size="small"
-                    />
-                  )}
-                  {pricing && (
-                    <Chip 
-                      label={pricing} 
-                      color={pricing === 'Free' ? 'success' : 'warning'} 
-                      variant="outlined" 
-                      size="small"
-                    />
-                  )}
-                </Box>
-
-                {/* Tech Stack */}
-                {techStack.length > 0 && (
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-                      Tech Stack
-                    </Typography>
-                    <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
-                      {techStack.map((tech) => (
-                        <Chip key={tech} label={tech} size="small" variant="outlined" />
-                      ))}
-                    </Stack>
-                  </Box>
-                )}
-                
-                {/* External Links */}
-                {(website || github) && (
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-                      Links
-                    </Typography>
-                    <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
-                      {website && (
-                        <Button 
-                          variant="outlined" 
-                          size="small" 
-                          startIcon={<Globe size={16} />} 
-                          href={website} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                        >
-                          Website
-                        </Button>
-                      )}
-                      {github && (
-                        <Button 
-                          variant="outlined" 
-                          size="small" 
-                          startIcon={<img src="/github-mark.svg" alt="GitHub" style={{ width: 16, height: 16 }} />} 
-                          href={github} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                        >
-                          GitHub
-                        </Button>
-                      )}
-                    </Stack>
-                  </Box>
-                )}
-
-                {/* Features */}
                 {features.length > 0 && (
-                  <Box>
+                  <Box sx={{ mt: 3 }}>
                     <Typography variant="subtitle2" fontWeight={600} gutterBottom>
                       Key Features
                     </Typography>
@@ -353,37 +281,9 @@ export default function AppClient({
               </CardContent>
             </Card>
 
-            {/* Gallery */}
-            {gallery.length > 1 && (
-              <Card sx={{ mb: 3, boxShadow }}>
-                <CardContent sx={{ p: 3 }}>
-                  <Typography variant="h6" gutterBottom>
-                    Gallery
-                  </Typography>
-                  <Grid container spacing={2}>
-                    {gallery.map((imgSrc, index) => (
-                      <Grid item xs={12} sm={6} md={4} key={index}>
-                        <Box
-                          sx={{
-                            width: '100%',
-                            height: 180,
-                            borderRadius: 2,
-                            overflow: "hidden",
-                            background: theme.palette.background.paper,
-                            boxShadow,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <img src={imgSrc} alt={`${name} screenshot ${index + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                        </Box>
-                      </Grid>
-                    ))}
-                  </Grid>
-                </CardContent>
-              </Card>
-            )}
+            {/* App Details & Features card removed; details integrated into hero/tags/story */}
+
+            {/* Gallery removed from here; moved to top as a carousel */}
 
             {/* Comments - Integrate your comment system here */}
             <Card sx={{ boxShadow }}>
@@ -416,12 +316,6 @@ export default function AppClient({
 
               {/* App Metadata */}
               <Box sx={{ mb: 2 }}>
-                {category && (
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="caption" color="text.secondary">Category:</Typography>
-                    <Typography variant="caption" fontWeight={600}>{category}</Typography>
-                  </Box>
-                )}
                 {pricing && (
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                     <Typography variant="caption" color="text.secondary">Pricing:</Typography>
@@ -447,17 +341,7 @@ export default function AppClient({
 
               <Divider sx={{ my: 1 }} />
 
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mt: 1 }}>
-                {externalUrl && (
-                  <Button variant="contained" component="a" href={externalUrl} target="_blank" rel="noopener noreferrer" startIcon={<LaunchIcon />}>
-                    Visit website
-                  </Button>
-                )}
-
-                <Button variant="outlined" startIcon={<ShareIcon />}>
-                  Share
-                </Button>
-              </Box>
+              {/* Action buttons moved to hero to avoid duplication */}
             </Card>
 
             <Card sx={{ p: 2, boxShadow }}>
@@ -482,6 +366,112 @@ export default function AppClient({
           </Grid>
         </Grid>
       </Container>
+    </Box>
+  );
+}
+
+// Lightweight Carousel Component (no external CSS dependencies)
+function Carousel({ images, name, boxShadow }: { images: string[]; name: string; boxShadow: string }) {
+  const theme = useTheme();
+  const [index, setIndex] = React.useState(0);
+
+  const hasMultiple = images.length > 1;
+  const goPrev = React.useCallback(() => setIndex((i) => (i - 1 + images.length) % images.length), [images.length]);
+  const goNext = React.useCallback(() => setIndex((i) => (i + 1) % images.length), [images.length]);
+
+  // Basic swipe support for touch devices
+  const startX = React.useRef<number | null>(null);
+  const handleTouchStart = (e: React.TouchEvent) => {
+    startX.current = e.touches[0].clientX;
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (startX.current == null) return;
+    const delta = e.changedTouches[0].clientX - startX.current;
+    if (Math.abs(delta) > 40) {
+      if (delta > 0) goPrev(); else goNext();
+    }
+    startX.current = null;
+  };
+
+  return (
+    <Box>
+      <Box
+        sx={{
+          position: 'relative',
+          borderRadius: 2,
+          overflow: 'hidden',
+          height: { xs: 200, sm: 260, md: 360 },
+          background: theme.palette.background.paper,
+          boxShadow,
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Slides */}
+        {images.map((src, i) => (
+          <Box
+            key={i}
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              transition: 'opacity 300ms ease',
+              opacity: i === index ? 1 : 0,
+            }}
+          >
+            <img
+              src={src}
+              alt={`${name} screenshot ${i + 1}`}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              loading={i === 0 ? 'eager' : 'lazy'}
+            />
+          </Box>
+        ))}
+
+        {/* Controls */}
+        {hasMultiple && (
+          <>
+            <IconButton
+              aria-label="Previous image"
+              onClick={goPrev}
+              sx={{ position: 'absolute', top: '50%', left: 8, transform: 'translateY(-50%)', bgcolor: 'rgba(0,0,0,0.35)', color: '#fff', '&:hover': { bgcolor: 'rgba(0,0,0,0.5)' } }}
+              size="small"
+            >
+              <ChevronLeftIcon />
+            </IconButton>
+            <IconButton
+              aria-label="Next image"
+              onClick={goNext}
+              sx={{ position: 'absolute', top: '50%', right: 8, transform: 'translateY(-50%)', bgcolor: 'rgba(0,0,0,0.35)', color: '#fff', '&:hover': { bgcolor: 'rgba(0,0,0,0.5)' } }}
+              size="small"
+            >
+              <ChevronRightIcon />
+            </IconButton>
+          </>
+        )}
+      </Box>
+
+      {/* Dots / Thumbnails */}
+      {hasMultiple && (
+        <Stack direction="row" spacing={1} sx={{ mt: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+          {images.map((src, i) => (
+            <Box
+              key={i}
+              onClick={() => setIndex(i)}
+              sx={{
+                width: 56,
+                height: 40,
+                borderRadius: 1,
+                overflow: 'hidden',
+                cursor: 'pointer',
+                outline: i === index ? `2px solid ${theme.palette.primary.main}` : '2px solid transparent',
+                opacity: i === index ? 1 : 0.7,
+              }}
+            >
+              <img src={src} alt={`thumb ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            </Box>
+          ))}
+        </Stack>
+      )}
     </Box>
   );
 }
