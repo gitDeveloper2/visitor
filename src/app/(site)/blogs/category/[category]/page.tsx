@@ -9,14 +9,35 @@ import AdSlot from '@/app/components/adds/google/AdSlot';
 
 // Category pages are very static; extend to 7 days
 export const revalidate = 604800;
- 
-  
-  // Fetch categories from API to validate (with fallback)
+
+export async function generateStaticParams() {
+  const commonCategorySlugs = [
+    'technology', 'business', 'development', 'design', 'marketing',
+    'startup', 'productivity', 'ai', 'web-development', 'mobile-development'
+  ];
+  return commonCategorySlugs.map((category) => ({ category }));
+}
+
+export default async function BlogCategoryPageWrapper({ 
+  params, 
+  searchParams 
+}: { 
+  params: { category: string }, 
+  searchParams: { page?: string, tag?: string } 
+}) {
+  const { category } = params;
+  const page = parseInt(searchParams.page || '1');
+  const tag = searchParams.tag;
+
+  const commonCategorySlugs = [
+    'technology', 'business', 'development', 'design', 'marketing',
+    'startup', 'productivity', 'ai', 'web-development', 'mobile-development'
+  ];
+
+  // Validate category using categories (blog + both)
   let validCategory: string | undefined;
   let categoryName: string | undefined;
-  
   try {
-    // Include categories of type 'blog' and 'both' for validation
     const cats = await fetchCategoriesFromAPI('both');
     const filtered = Array.isArray(cats) ? cats.filter((c: any) => c?.type === 'blog' || c?.type === 'both') : [];
     const bySlug = new Map<string, string>();
@@ -31,22 +52,60 @@ export const revalidate = 604800;
     }
   } catch (error) {
     console.error('Error fetching categories for validation:', error);
-    // Fallback to common categories
     validCategory = commonCategorySlugs.find(c => c === category);
-    categoryName = validCategory; // Use slug as name for fallback
+    categoryName = validCategory;
   }
-  
-  // If still not found, check if it's a valid category from our common list
   if (!validCategory) {
     validCategory = commonCategorySlugs.find(c => c === category);
-    categoryName = validCategory; // Use slug as name for fallback
+    categoryName = validCategory;
   }
-      `${Cache.keys.blogsCategory(category)}:count:${page}:${tag || ''}`,
+
+  if (!validCategory) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Typography variant="h4" color="error">Category not found: {category}</Typography>
+        <Typography variant="body1" sx={{ mt: 2 }}>Available categories: {commonCategorySlugs.join(', ')}</Typography>
+      </Container>
+    );
+  }
+
+  try {
+    const { db } = await connectToDatabase();
+
+    // Build a case-insensitive regex from the slug to match stored category names
+    const slugPattern = new RegExp('^' + String(category).replace(/-/g, '[-\\s]?') + '$', 'i');
+    const query: any = {
+      status: 'approved',
+      $or: [
+        ...(categoryName ? [{ category: categoryName }] : []),
+        { category: { $regex: slugPattern } }
+      ]
+    };
+    if (tag) query.tags = tag;
+
+    const limit = 12;
+    const skip = (page - 1) * limit;
+
+    const blogs = await Cache.getOrSet(
+      `${Cache.keys.blogsCategory(category)}:v2`,
+      CachePolicy.page.blogsCategory,
+      async () => {
+        return await db.collection('userblogs')
+          .find(query)
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .toArray();
+      }
+    ) as any[];
+
+    const totalBlogs = await Cache.getOrSet(
+      `${Cache.keys.blogsCategory(category)}:v2:count:${page}:${tag || ''}`,
       CachePolicy.page.blogsCategory,
       async () => await db.collection('userblogs').countDocuments(query)
     ) as number;
 
-    // Compute category counts for Browse by Category chips (match /blogs behavior)
+    // Browse by Category chips (blog + both)
     const categories: string[] = await Cache.getOrSet(
       Cache.keys.categories('blog'),
       CachePolicy.page.blogsCategory,
@@ -76,7 +135,6 @@ export const revalidate = 604800;
     }, {} as Record<string, number>);
     const categoryChips = categories.map((c) => ({ category: c, count: categoryCounts[c] || 0 }));
 
-    // Transform the database documents
     const transformedBlogs = blogs.map((blog: any) => ({
       _id: blog._id.toString(),
       title: blog.title || '',
@@ -100,40 +158,20 @@ export const revalidate = 604800;
 
     return (
       <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
-        {/* Blog Category Header Ad */}
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
           <AdSlot slot={20} />
         </Box>
-        
         <Box sx={{ mb: { xs: 3, sm: 4 } }}>
-          <Typography 
-            variant="h3" 
-            component="h1" 
-            gutterBottom
-            sx={{ 
-              fontSize: { xs: '1.75rem', sm: '2.125rem', md: '3rem' },
-              lineHeight: { xs: 1.2, sm: 1.1 }
-            }}
-          >
+          <Typography variant="h3" component="h1" gutterBottom sx={{ fontSize: { xs: '1.75rem', sm: '2.125rem', md: '3rem' }, lineHeight: { xs: 1.2, sm: 1.1 } }}>
             {categoryName} Blogs
           </Typography>
           {tag && (
-            <Typography 
-              variant="h6" 
-              color="text.secondary"
-              sx={{ 
-                fontSize: { xs: '1rem', sm: '1.25rem' }
-              }}
-            >
+            <Typography variant="h6" color="text.secondary" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
               Tagged with "{tag}"
             </Typography>
           )}
         </Box>
-        <Suspense fallback={
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: { xs: 3, sm: 4 } }}>
-            <CircularProgress />
-          </Box>
-        }>
+        <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: { xs: 3, sm: 4 } }}><CircularProgress /></Box>}>
           <BlogCategoryPage 
             category={categoryName} 
             page={page} 
@@ -149,29 +187,15 @@ export const revalidate = 604800;
     console.error('Error fetching category data:', error);
     return (
       <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
-        {/* Blog Category Header Ad */}
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
           <AdSlot slot={20} />
         </Box>
-        
         <Box sx={{ mb: { xs: 3, sm: 4 } }}>
-          <Typography 
-            variant="h3" 
-            component="h1" 
-            gutterBottom
-            sx={{ 
-              fontSize: { xs: '1.75rem', sm: '2.125rem', md: '3rem' },
-              lineHeight: { xs: 1.2, sm: 1.1 }
-            }}
-          >
+          <Typography variant="h3" component="h1" gutterBottom sx={{ fontSize: { xs: '1.75rem', sm: '2.125rem', md: '3rem' }, lineHeight: { xs: 1.2, sm: 1.1 } }}>
             {categoryName} Blogs
           </Typography>
         </Box>
-        <Suspense fallback={
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: { xs: 3, sm: 4 } }}>
-            <CircularProgress />
-          </Box>
-        }>
+        <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: { xs: 3, sm: 4 } }}><CircularProgress /></Box>}>
           <BlogCategoryPage 
             category={categoryName} 
             page={page} 
@@ -183,4 +207,5 @@ export const revalidate = 604800;
       </Container>
     );
   }
-} 
+}
+ 
